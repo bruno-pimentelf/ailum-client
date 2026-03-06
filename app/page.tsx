@@ -11,7 +11,7 @@ import { Footer } from "@/components/landing/footer"
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-transparent overflow-x-hidden relative">
+    <main className="min-h-screen bg-transparent relative" style={{ overflowX: "clip" }}>
       <ParticlesBackground />
       <Navbar />
       <Hero />
