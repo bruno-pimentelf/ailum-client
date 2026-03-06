@@ -1,70 +1,49 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { motion, useAnimationFrame, useMotionValue, useTransform } from "framer-motion"
+import { motion } from "framer-motion"
 
-// ECG waveform path data — one full PQRST cycle normalized to 0-1 x-axis
+// ECG waveform path — one full PQRST cycle
 const ECG_POINTS = [
-  [0, 0.5],
-  [0.04, 0.5],
-  [0.06, 0.48],
-  [0.08, 0.52],
-  [0.10, 0.5],
-  [0.14, 0.5],
-  [0.16, 0.42],
-  [0.18, 0.1],   // R peak (sharp spike up)
-  [0.20, 0.9],   // S trough
-  [0.22, 0.5],
-  [0.26, 0.5],
-  [0.30, 0.44],
-  [0.34, 0.44],
-  [0.38, 0.5],
-  [0.44, 0.5],
-  [0.50, 0.5],
-  [0.56, 0.5],
-  [0.60, 0.48],
-  [0.64, 0.52],
-  [0.66, 0.5],
-  [0.70, 0.5],
-  [0.72, 0.42],
-  [0.74, 0.1],
-  [0.76, 0.9],
-  [0.78, 0.5],
-  [0.82, 0.5],
-  [0.86, 0.44],
-  [0.90, 0.44],
-  [0.94, 0.5],
-  [1.0, 0.5],
+  [0, 0.5], [0.04, 0.5], [0.06, 0.48], [0.08, 0.52], [0.10, 0.5],
+  [0.14, 0.5], [0.16, 0.42], [0.18, 0.1], [0.20, 0.9], [0.22, 0.5],
+  [0.26, 0.5], [0.30, 0.44], [0.34, 0.44], [0.38, 0.5],
+  [0.44, 0.5], [0.50, 0.5], [0.56, 0.5],
+  [0.60, 0.48], [0.64, 0.52], [0.66, 0.5],
+  [0.70, 0.5], [0.72, 0.42], [0.74, 0.1], [0.76, 0.9], [0.78, 0.5],
+  [0.82, 0.5], [0.86, 0.44], [0.90, 0.44], [0.94, 0.5], [1.0, 0.5],
 ]
 
 function buildEcgPath(points: number[][], w: number, h: number) {
-  return points
-    .map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x * w} ${y * h}`)
-    .join(" ")
+  return points.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x * w} ${y * h}`).join(" ")
 }
 
+// Pure CSS animation — no JS per-frame, no setState on every tick
 function EcgLine({ width, height }: { width: number; height: number }) {
-  const progress = useMotionValue(0)
-  const [tick, setTick] = useState(0)
-
-  useAnimationFrame((t) => {
-    // cycle every 2.4 seconds
-    progress.set((t % 2400) / 2400)
-    setTick(Math.floor(t / 16))
-  })
-
+  const dashLen = Math.ceil(width * 2.4)
   const fullPath = buildEcgPath(ECG_POINTS, width, height)
-  const dashLen = width * 2.2
-
-  const dashOffset = useTransform(progress, (p) => dashLen - p * dashLen)
+  const animId = `ecg-${width}`
 
   return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      className="overflow-visible"
-    >
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+      <defs>
+        <style>{`
+          @keyframes ${animId} {
+            from { stroke-dashoffset: ${dashLen}; }
+            to   { stroke-dashoffset: 0; }
+          }
+          .ecg-bright-${width} {
+            stroke-dasharray: ${dashLen};
+            stroke-dashoffset: ${dashLen};
+            animation: ${animId} 2.4s linear infinite;
+          }
+          .ecg-glow-${width} {
+            stroke-dasharray: ${dashLen};
+            stroke-dashoffset: ${dashLen};
+            animation: ${animId} 2.4s linear infinite;
+          }
+        `}</style>
+      </defs>
       {/* Static dim trail */}
       <path
         d={fullPath}
@@ -74,27 +53,25 @@ function EcgLine({ width, height }: { width: number; height: number }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Animated bright line */}
-      <motion.path
+      {/* Animated bright line — pure CSS */}
+      <path
         d={fullPath}
         fill="none"
         stroke="rgba(0,181,212,0.85)"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeDasharray={`${dashLen}`}
-        style={{ strokeDashoffset: dashOffset }}
+        className={`ecg-bright-${width}`}
       />
       {/* Glow duplicate */}
-      <motion.path
+      <path
         d={fullPath}
         fill="none"
-        stroke="rgba(0,181,212,0.25)"
-        strokeWidth="6"
+        stroke="rgba(0,181,212,0.22)"
+        strokeWidth="7"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeDasharray={`${dashLen}`}
-        style={{ strokeDashoffset: dashOffset }}
+        className={`ecg-glow-${width}`}
       />
     </svg>
   )
@@ -145,24 +122,20 @@ const VITALS = [
 
 function VitalCard({ vital, delay }: { vital: typeof VITALS[0]; delay: number }) {
   const [value, setValue] = useState(vital.base)
-  const [pulse, setPulse] = useState(false)
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const next = vital.base + Math.round((Math.random() - 0.5) * vital.range * 2)
-      setValue(next)
-      setPulse(true)
-      setTimeout(() => setPulse(false), 300)
-    }, 1800 + delay * 200)
+      setValue(vital.base + Math.round((Math.random() - 0.5) * vital.range * 2))
+    }, 2400 + delay * 300)
     return () => clearInterval(interval)
   }, [vital, delay])
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, delay: 0.6 + delay * 0.15, ease: [0.33, 1, 0.68, 1] }}
-      className="relative flex flex-col gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 backdrop-blur-sm"
+      transition={{ duration: 0.6, delay: 0.5 + delay * 0.12, ease: [0.33, 1, 0.68, 1] }}
+      className="flex flex-col gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3"
     >
       <div className="flex items-center gap-2">
         <span className={`${vital.color} opacity-70`}>{vital.icon}</span>
@@ -172,9 +145,9 @@ function VitalCard({ vital, delay }: { vital: typeof VITALS[0]; delay: number })
       <div className="flex items-baseline gap-1">
         <motion.span
           key={value}
-          initial={{ opacity: 0.5, y: -4 }}
+          initial={{ opacity: 0.5, y: -3 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: 0.2 }}
           className={`text-2xl font-semibold tabular-nums ${vital.color}`}
         >
           {value}
@@ -192,49 +165,29 @@ const APPOINTMENTS = [
   { time: "14:00", name: "Carlos M.", type: "Consulta", status: "confirmed" },
 ]
 
-function AppointmentRow({ appt, delay }: { appt: typeof APPOINTMENTS[0]; delay: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.9 + delay * 0.1, ease: [0.33, 1, 0.68, 1] }}
-      className="flex items-center gap-3 py-2 border-b border-white/[0.05] last:border-0"
-    >
-      <span className="w-10 text-[11px] font-mono text-white/40 shrink-0">{appt.time}</span>
-      <span className="flex-1 text-[12px] font-medium text-white/75 truncate">{appt.name}</span>
-      <span className="text-[11px] text-white/35">{appt.type}</span>
-      <span
-        className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-          appt.status === "confirmed" ? "bg-emerald-400" : "bg-amber-400"
-        }`}
-      />
-    </motion.div>
-  )
-}
-
 export function MedicalViz() {
   const [mounted, setMounted] = useState(false)
-  const [ecgSize, setEcgSize] = useState({ w: 600, h: 80 })
+  const [ecgWidth, setEcgWidth] = useState(600)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true)
     const update = () => {
       if (containerRef.current) {
-        const w = containerRef.current.offsetWidth
-        setEcgSize({ w, h: 80 })
+        setEcgWidth(containerRef.current.offsetWidth - 40)
       }
     }
     update()
-    window.addEventListener("resize", update)
-    return () => window.removeEventListener("resize", update)
+    const ro = new ResizeObserver(update)
+    if (containerRef.current) ro.observe(containerRef.current)
+    return () => ro.disconnect()
   }, [])
 
   return (
     <div
       ref={containerRef}
       className="relative w-full rounded-2xl border border-white/[0.07] bg-zinc-950/80 backdrop-blur-xl overflow-hidden"
-      style={{ minHeight: 340 }}
+      style={{ minHeight: 320 }}
     >
       {/* Ambient glow */}
       <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[60%] h-40 bg-cyan-500/10 blur-3xl rounded-full" />
@@ -245,20 +198,17 @@ export function MedicalViz() {
           <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-[11px] font-medium text-white/50 tracking-wider uppercase">Monitor Clínico · Ao vivo</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        {mounted && (
           <span className="text-[11px] text-white/25 font-mono">
-            {mounted ? new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}
+            {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
           </span>
-          <div className="h-1.5 w-1.5 rounded-full bg-cyan-400/60" />
-        </div>
+        )}
       </div>
 
-      {/* ECG strip */}
+      {/* ECG strip — pure CSS animation, zero JS per-frame */}
       <div className="px-5 pt-4 pb-2">
         <div className="text-[10px] text-white/25 uppercase tracking-widest mb-2 font-mono">ECG · Lead II</div>
-        {mounted && (
-          <EcgLine width={ecgSize.w - 40} height={ecgSize.h} />
-        )}
+        {mounted && <EcgLine width={ecgWidth} height={80} />}
       </div>
 
       {/* Vitals + Appointments */}
@@ -276,13 +226,24 @@ export function MedicalViz() {
           <div className="text-[10px] text-white/25 uppercase tracking-widest font-mono mb-3">Agenda de Hoje</div>
           <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-1 flex-1">
             {APPOINTMENTS.map((a, i) => (
-              <AppointmentRow key={a.time} appt={a} delay={i} />
+              <motion.div
+                key={a.time}
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.8 + i * 0.08, ease: [0.33, 1, 0.68, 1] }}
+                className="flex items-center gap-3 py-2 border-b border-white/[0.05] last:border-0"
+              >
+                <span className="w-10 text-[11px] font-mono text-white/40 shrink-0">{a.time}</span>
+                <span className="flex-1 text-[12px] font-medium text-white/75 truncate">{a.name}</span>
+                <span className="text-[11px] text-white/35">{a.type}</span>
+                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${a.status === "confirmed" ? "bg-emerald-400" : "bg-amber-400"}`} />
+              </motion.div>
             ))}
           </div>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.4, duration: 0.6 }}
+            transition={{ delay: 1.2, duration: 0.5 }}
             className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2"
           >
             <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
