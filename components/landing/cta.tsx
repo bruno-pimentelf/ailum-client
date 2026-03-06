@@ -31,7 +31,7 @@ export function CTA() {
             className="mt-8 flex items-center justify-center"
           >
             <Button size="lg" asChild className="group relative h-11 rounded-lg bg-accent px-8 text-sm font-medium text-accent-foreground hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/20 transition-all duration-300 overflow-hidden">
-              <a href="#waitlist">
+              <a href="https://form.typeform.com/to/d4xLz0DX" target="_blank" rel="noopener noreferrer">
                 <motion.span
                   className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none"
                   animate={{ x: ['-100%', '200%'] }}

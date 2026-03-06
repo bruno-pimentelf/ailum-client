@@ -86,7 +86,7 @@ export function Hero() {
             className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
             <Button size="lg" asChild className="group relative h-11 rounded-lg bg-accent px-8 text-sm font-medium text-accent-foreground hover:bg-accent/90 transition-all duration-300 overflow-hidden">
-              <a href="#waitlist">
+              <a href="https://form.typeform.com/to/d4xLz0DX" target="_blank" rel="noopener noreferrer">
                 <motion.span
                   className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none"
                   animate={{ x: ['-100%', '200%'] }}

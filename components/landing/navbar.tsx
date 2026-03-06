@@ -52,7 +52,7 @@ export function Navbar() {
             <a href="/login">Entrar</a>
           </Button>
           <Button size="sm" asChild className="group relative h-8 rounded-lg bg-accent px-4 text-[13px] font-medium text-accent-foreground hover:bg-accent/90 transition-all duration-300 overflow-hidden">
-            <a href="#waitlist">
+            <a href="https://form.typeform.com/to/d4xLz0DX" target="_blank" rel="noopener noreferrer">
               <motion.span
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
                 animate={{ x: ['-100%', '200%'] }}
@@ -103,7 +103,7 @@ export function Navbar() {
                   <a href="/login" onClick={() => setMobileOpen(false)}>Entrar</a>
                 </Button>
                 <Button size="sm" asChild className="w-full bg-accent text-accent-foreground rounded-lg">
-                  <a href="#waitlist" onClick={() => setMobileOpen(false)}>Aplicar-se</a>
+                  <a href="https://form.typeform.com/to/d4xLz0DX" target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>Aplicar-se</a>
                 </Button>
               </div>
             </div>

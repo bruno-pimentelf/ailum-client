@@ -126,7 +126,7 @@ export function Pricing() {
                   : "bg-muted text-foreground hover:bg-muted/80"
                   }`}
               >
-                <a href="#waitlist">{plan.cta}</a>
+                <a href="https://form.typeform.com/to/d4xLz0DX" target="_blank" rel="noopener noreferrer">{plan.cta}</a>
               </Button>
 
               <ul className="mt-7 flex flex-col gap-3 border-t border-border pt-6">
