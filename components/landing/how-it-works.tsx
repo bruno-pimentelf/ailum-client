@@ -64,21 +64,21 @@ function StepChat({ active }: { active: boolean }) {
   }, [visible, typing])
 
   return (
-    <div className="rounded-xl border border-border bg-background/60 overflow-hidden w-full max-w-md mx-auto">
-      <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-border bg-accent/[0.05]">
+    <div className="rounded-xl border border-border bg-background/60 overflow-hidden w-full max-w-lg mx-auto">
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border bg-accent/[0.05]">
         <div className="relative">
-          <div className="h-8 w-8 rounded-full bg-accent/15 flex items-center justify-center">
-            <span className="text-[9px] font-bold text-accent">CH</span>
+          <div className="h-9 w-9 rounded-full bg-accent/15 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-accent">CH</span>
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
         </div>
         <div>
-          <p className="text-xs font-semibold text-foreground leading-none">Clínica Harmonia</p>
-          <p className="text-[9px] text-accent mt-0.5">IA ativa · online agora</p>
+          <p className="text-sm font-semibold text-foreground leading-none">Clínica Harmonia</p>
+          <p className="text-[10px] text-accent mt-0.5">IA ativa · online agora</p>
         </div>
-        <WhatsappLogo className="ml-auto h-4 w-4 text-emerald-500/60" />
+        <WhatsappLogo className="ml-auto h-4.5 w-4.5 text-emerald-500/60" />
       </div>
-      <div ref={scrollRef} className="flex flex-col gap-2.5 p-4 h-[260px] overflow-y-auto scroll-smooth">
+      <div ref={scrollRef} className="flex flex-col gap-3 p-5 h-[360px] overflow-y-auto scroll-smooth">
         <AnimatePresence initial={false}>
           {chatMessages.map(msg =>
             visible.includes(msg.id) ? (
@@ -87,11 +87,11 @@ function StepChat({ active }: { active: boolean }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 28 }}
                 className={`flex ${msg.from === "patient" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-2xl px-3 py-2 ${msg.from === "patient" ? "bg-accent/12 rounded-br-sm" : "bg-muted rounded-bl-sm"}`}>
-                  <p className="text-[11px] leading-relaxed text-foreground">{msg.text}</p>
-                  <div className="flex items-center justify-end gap-1 mt-0.5">
-                    <span className="text-[8px] text-muted-foreground/60">{msg.time}</span>
-                    {msg.from === "patient" && <Checks className="h-2.5 w-2.5 text-accent/70" />}
+                <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${msg.from === "patient" ? "bg-accent/12 rounded-br-sm" : "bg-muted rounded-bl-sm"}`}>
+                  <p className="text-[13px] leading-relaxed text-foreground">{msg.text}</p>
+                  <div className="flex items-center justify-end gap-1 mt-1">
+                    <span className="text-[9px] text-muted-foreground/60">{msg.time}</span>
+                    {msg.from === "patient" && <Checks className="h-3 w-3 text-accent/70" />}
                   </div>
                 </div>
               </motion.div>
@@ -124,7 +124,7 @@ function StepChat({ active }: { active: boolean }) {
 function QRPattern() {
   const pattern = [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,1,1,0,1],[1,0,1,0,1,0,1],[1,0,1,1,1,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]]
   const inner  = [[0,1,0,1,1,0,0],[1,0,1,0,0,1,0],[0,1,1,0,1,0,1],[1,0,0,1,0,1,1],[0,1,0,0,1,0,0],[1,1,0,1,0,1,0],[0,0,1,0,1,1,0]]
-  const cell = 8, total = 7 * cell
+  const cell = 12, total = 7 * cell
   return (
     <svg width={total} height={total} viewBox={`0 0 ${total} ${total}`} className="block">
       {Array.from({ length: 7 }).map((_, r) =>
@@ -156,11 +156,11 @@ function StepPix({ active }: { active: boolean }) {
   }, [active])
 
   return (
-    <div className="rounded-xl border border-border bg-background/60 overflow-hidden w-full max-w-md mx-auto">
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-accent/[0.05]">
+    <div className="rounded-xl border border-border bg-background/60 overflow-hidden w-full max-w-lg mx-auto">
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-border bg-accent/[0.05]">
         <motion.div animate={{ scale: phase === "paid" ? [1,1.3,1] : 1 }} transition={{ duration: 0.4 }}
           className={`h-1.5 w-1.5 rounded-full ${phase === "paid" ? "bg-emerald-400" : "bg-accent animate-pulse"}`} />
-        <span className="text-xs font-medium text-foreground">Pagamento via Pix</span>
+        <span className="text-sm font-medium text-foreground">Pagamento via Pix</span>
         <AnimatePresence mode="wait">
           {phase === "paid" ? (
             <motion.div key="paid" initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} className="ml-auto flex items-center gap-1">
@@ -171,7 +171,7 @@ function StepPix({ active }: { active: boolean }) {
           )}
         </AnimatePresence>
       </div>
-      <div className="p-4 flex flex-col gap-3 min-h-[240px] justify-center">
+      <div className="p-5 flex flex-col gap-4 min-h-[380px] justify-center">
         <AnimatePresence mode="wait">
           {phase === "idle" && (
             <motion.div key="idle" exit={{ opacity: 0 }} className="flex items-center justify-center py-16">
@@ -188,43 +188,46 @@ function StepPix({ active }: { active: boolean }) {
             </motion.div>
           )}
           {(phase === "qr" || phase === "waiting" || phase === "paid") && (
-            <motion.div key="qr" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease }} className="flex gap-4 items-start">
-              <div className="relative shrink-0 p-2.5 rounded-lg bg-zinc-950 border border-accent/20">
+            <motion.div key="qr" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease }} className="flex gap-6 items-start">
+              <div className="relative shrink-0 p-3 rounded-xl bg-zinc-950 border border-accent/20">
                 <QRPattern />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="h-7 w-7 rounded bg-zinc-950 border border-accent/25 flex items-center justify-center">
-                    <span className="text-[7px] font-bold text-accent">PIX</span>
+                  <div className="h-9 w-9 rounded bg-zinc-950 border border-accent/25 flex items-center justify-center">
+                    <span className="text-[9px] font-bold text-accent">PIX</span>
                   </div>
                 </div>
                 {phase === "paid" && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
-                      <CheckCircle className="h-8 w-8 text-emerald-400" weight="fill" />
+                      <CheckCircle className="h-10 w-10 text-emerald-400" weight="fill" />
                     </motion.div>
                   </motion.div>
                 )}
               </div>
-              <div className="flex flex-col gap-2.5 flex-1 min-w-0">
+              <div className="flex flex-col gap-3 flex-1 min-w-0">
                 <div>
-                  <p className="text-[9px] text-muted-foreground/50 uppercase tracking-wider mb-1">Pix Copia e Cola</p>
-                  <button onClick={() => setCopied(true)} className="w-full flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-2 text-left hover:border-accent/30 transition-colors">
-                    <span className="flex-1 truncate font-mono text-[9px] text-muted-foreground">00020126580014br.gov.bcb.pix…6304ABCD</span>
+                  <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider mb-1.5">Pix Copia e Cola</p>
+                  <button onClick={() => setCopied(true)} className="w-full flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-left hover:border-accent/30 transition-colors">
+                    <span className="flex-1 truncate font-mono text-[10px] text-muted-foreground">00020126580014br.gov.bcb.pix…6304ABCD</span>
                     <AnimatePresence mode="wait">
-                      {copied ? <motion.span key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }}><CheckCircle className="h-3 w-3 text-emerald-400" /></motion.span>
-                        : <motion.span key="cp" initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[9px] text-accent/50 shrink-0">copiar</motion.span>}
+                      {copied ? <motion.span key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }}><CheckCircle className="h-3.5 w-3.5 text-emerald-400" /></motion.span>
+                        : <motion.span key="cp" initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[10px] text-accent/50 shrink-0">copiar</motion.span>}
                     </AnimatePresence>
                   </button>
                 </div>
+                <div className="text-center">
+                  <p className="text-[11px] text-muted-foreground/40">ou escaneie com o app do banco</p>
+                </div>
                 <AnimatePresence mode="wait">
                   {phase === "waiting" && (
-                    <motion.div key="w" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-1.5">
-                      <div className="flex justify-between"><span className="text-[9px] text-muted-foreground/50">Aguardando pagamento</span><span className="text-[9px] text-accent/60 tabular-nums">{payProgress}%</span></div>
-                      <div className="h-1 rounded-full bg-border overflow-hidden"><motion.div className="h-full rounded-full bg-accent/70" style={{ width: `${payProgress}%` }} /></div>
+                    <motion.div key="w" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-2">
+                      <div className="flex justify-between"><span className="text-[10px] text-muted-foreground/50">Aguardando pagamento</span><span className="text-[10px] text-accent/60 tabular-nums font-mono">{payProgress}%</span></div>
+                      <div className="h-1.5 rounded-full bg-border overflow-hidden"><motion.div className="h-full rounded-full bg-accent/70" style={{ width: `${payProgress}%` }} /></div>
                     </motion.div>
                   )}
                   {phase === "paid" && (
-                    <motion.div key="d" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/8 px-2.5 py-2">
-                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" /><span className="text-[9px] text-emerald-400 font-medium">Pagamento confirmado</span>
+                    <motion.div key="d" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2.5">
+                      <div className="h-2 w-2 rounded-full bg-emerald-400" /><span className="text-[11px] text-emerald-400 font-medium">Pagamento confirmado · R$ 150,00</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -265,9 +268,9 @@ function StepCalendar({ active }: { active: boolean }) {
   }, [active])
 
   return (
-    <div className="rounded-xl border border-border bg-background/60 overflow-hidden w-full max-w-md mx-auto">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-accent/[0.05]">
-        <span className="text-xs font-medium text-foreground">Março 2026 · Quinta, 13</span>
+    <div className="rounded-xl border border-border bg-background/60 overflow-hidden w-full max-w-lg mx-auto">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-accent/[0.05]">
+        <span className="text-sm font-medium text-foreground">Março 2026 · Quinta, 13</span>
         <AnimatePresence mode="wait">
           {(phase === "confirmed" || phase === "notified") ? (
             <motion.div key="ok" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-1">
@@ -280,18 +283,18 @@ function StepCalendar({ active }: { active: boolean }) {
           )}
         </AnimatePresence>
       </div>
-      <div className="p-3 flex flex-col gap-0.5">
-        <div className="grid grid-cols-4 gap-px mb-1 pl-9">
+      <div className="p-4 flex flex-col gap-0.5">
+        <div className="grid grid-cols-4 gap-px mb-2 pl-10">
           {["Seg 10","Ter 11","Qua 12","Qui 13"].map((d,i) => (
-            <div key={d} className={`text-center text-[8px] font-medium py-0.5 rounded-sm ${i===3 ? "text-accent bg-accent/8" : "text-muted-foreground/40"}`}>{d}</div>
+            <div key={d} className={`text-center text-[9px] font-medium py-1 rounded-sm ${i===3 ? "text-accent bg-accent/8" : "text-muted-foreground/40"}`}>{d}</div>
           ))}
         </div>
         {calSlots.map((time, rowIdx) => {
           const isScanning = phase === "scanning" && scanRow === rowIdx
           const isTarget = time === "10:00"
           return (
-            <div key={time} className={`flex items-center gap-1.5 h-9 rounded-md transition-colors duration-150 ${isScanning ? "bg-accent/[0.04]" : ""}`}>
-              <span className="w-8 text-[8px] text-muted-foreground/40 font-mono shrink-0 text-right">{time}</span>
+            <div key={time} className={`flex items-center gap-2 h-11 rounded-md transition-colors duration-150 ${isScanning ? "bg-accent/[0.04]" : ""}`}>
+              <span className="w-9 text-[9px] text-muted-foreground/40 font-mono shrink-0 text-right">{time}</span>
               <div className="flex-1 grid grid-cols-4 gap-px h-full">
                 {[0,1,2,3].map(col => {
                   const apt = existingApts.find(a => a.time === time && a.col === col)
@@ -299,9 +302,9 @@ function StepCalendar({ active }: { active: boolean }) {
                   return (
                     <div key={col} className={`relative rounded-sm h-full ${col===3 ? "bg-accent/[0.03]" : ""}`}>
                       {apt && (
-                        <div className={`absolute inset-0.5 rounded-sm border flex flex-col justify-center px-1 ${apt.color}`}>
-                          <span className={`text-[7px] font-semibold truncate leading-tight ${apt.color.split(" ").find(c => c.startsWith("text-"))}`}>{apt.label}</span>
-                          <span className={`text-[5px] truncate opacity-60 ${apt.color.split(" ").find(c => c.startsWith("text-"))}`}>{apt.sub}</span>
+                        <div className={`absolute inset-0.5 rounded-sm border flex flex-col justify-center px-1.5 ${apt.color}`}>
+                          <span className={`text-[8px] font-semibold truncate leading-tight ${apt.color.split(" ").find(c => c.startsWith("text-"))}`}>{apt.label}</span>
+                          <span className={`text-[6px] truncate opacity-60 ${apt.color.split(" ").find(c => c.startsWith("text-"))}`}>{apt.sub}</span>
                         </div>
                       )}
                       {isNewSlot && (
@@ -314,9 +317,9 @@ function StepCalendar({ active }: { active: boolean }) {
                           )}
                           {(phase === "confirmed" || phase === "notified") && (
                             <motion.div key="cf" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 350, damping: 22 }}
-                              className="absolute inset-0.5 rounded-sm border border-accent/30 bg-accent/12 flex flex-col justify-center px-1">
-                              <span className="text-[7px] font-bold text-accent truncate leading-tight">Dra. Marina</span>
-                              <span className="text-[5px] text-accent/60 truncate">Consulta</span>
+                              className="absolute inset-0.5 rounded-sm border border-accent/30 bg-accent/12 flex flex-col justify-center px-1.5">
+                              <span className="text-[8px] font-bold text-accent truncate leading-tight">Dra. Marina</span>
+                              <span className="text-[6px] text-accent/60 truncate">Consulta</span>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -333,11 +336,11 @@ function StepCalendar({ active }: { active: boolean }) {
           {phase === "notified" && (
             <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", stiffness: 350, damping: 24, delay: 0.1 }}
-              className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
-              <WhatsappLogo className="h-4 w-4 text-emerald-400 shrink-0" />
+              className="mt-3 flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+              <WhatsappLogo className="h-5 w-5 text-emerald-400 shrink-0" />
               <div>
-                <p className="text-[9px] text-emerald-400 font-medium leading-none">Confirmação enviada no WhatsApp</p>
-                <p className="text-[7px] text-emerald-400/60 mt-0.5">Quinta 13/03 às 10h · Dra. Marina</p>
+                <p className="text-[11px] text-emerald-400 font-medium leading-none">Confirmação enviada no WhatsApp</p>
+                <p className="text-[9px] text-emerald-400/60 mt-1">Quinta 13/03 às 10h · Dra. Marina</p>
               </div>
             </motion.div>
           )}
@@ -378,7 +381,7 @@ const steps = [
 
 /* ═══ Main component — full-screen scroll-pinned experience ═════════════════ */
 
-const DEMO_HEIGHT = 420
+const DEMO_HEIGHT = 500
 
 export function HowItWorks() {
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -389,14 +392,11 @@ export function HowItWorks() {
   })
 
   const [activeStep, setActiveStep] = useState(0)
-  const [stepProgress, setStepProgress] = useState(0)
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     const raw = v * steps.length
     const step = Math.min(Math.floor(raw), steps.length - 1)
-    const progress = raw - step
     setActiveStep(step)
-    setStepProgress(Math.min(progress, 1))
   })
 
   const barHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"])
@@ -549,25 +549,6 @@ export function HowItWorks() {
                     {steps[activeStep].demo(true)}
                   </motion.div>
                 </AnimatePresence>
-              </div>
-
-              {/* Progress bar below demo */}
-              <div className="mt-5 mx-auto max-w-md">
-                <div className="h-[2px] rounded-full bg-border/20 overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full bg-accent/40"
-                    animate={{ width: `${stepProgress * 100}%` }}
-                    transition={{ duration: 0.1, ease: "linear" }}
-                  />
-                </div>
-                <div className="flex justify-between mt-2">
-                  <span className="text-[9px] text-muted-foreground/30 tabular-nums">
-                    {steps[activeStep].number} de {String(steps.length).padStart(2, "0")}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground/20">
-                    role para continuar
-                  </span>
-                </div>
               </div>
             </div>
           </div>
