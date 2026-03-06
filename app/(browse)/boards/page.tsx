@@ -398,6 +398,61 @@ function KanbanColumn({
   )
 }
 
+// ─── Mobile column (accordion, no drag) ──────────────────────────────────────
+
+function MobileColumn({ column, isOver }: { column: Column; isOver: boolean }) {
+  const [open, setOpen] = useState(true)
+
+  return (
+    <div className="rounded-xl border border-border/40 overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center justify-between px-3 py-2.5 border-b border-border/30 ${column.headerBg}`}
+      >
+        <div className="flex items-center gap-2">
+          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${column.dotColor}`} />
+          <span className={`text-[12px] font-semibold ${column.color}`}>{column.title}</span>
+          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
+            {column.cards.length}
+          </span>
+        </div>
+        <motion.div
+          animate={{ rotate: open ? 0 : -90 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Plus className="h-3.5 w-3.5 text-white/30 rotate-45" />
+        </motion.div>
+      </button>
+
+      {/* Cards */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-col gap-2.5 p-3">
+              {column.cards.length === 0 ? (
+                <p className="text-center text-[11px] text-muted-foreground/30 py-4">
+                  Nenhum contato nesta etapa
+                </p>
+              ) : (
+                column.cards.map((card) => (
+                  <KanbanCard key={card.id} card={card} />
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function BoardsPage() {
@@ -475,8 +530,9 @@ export default function BoardsPage() {
         </div>
       </div>
 
-      {/* Board — horizontal scroll, columns scroll vertically inside */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+      {/* Board */}
+      {/* Mobile: vertical stack with normal scroll | Desktop: horizontal kanban */}
+      <div className="flex-1 overflow-y-auto md:overflow-x-auto md:overflow-y-hidden">
         <DndContext
           id={dndId}
           sensors={sensors}
@@ -484,12 +540,21 @@ export default function BoardsPage() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {/* Outer row — full height, no vertical scroll here */}
-          <div className="flex gap-0 px-5 pt-4 pb-4 h-full min-w-max">
+          {/* Mobile layout — stacked columns */}
+          <div className="flex flex-col gap-5 px-4 py-4 md:hidden">
+            {columns.map((col) => (
+              <MobileColumn
+                key={col.id}
+                column={col}
+                isOver={overId === col.id || col.cards.some((c) => c.id === overId && overId !== activeCard?.id)}
+              />
+            ))}
+          </div>
+
+          {/* Desktop layout — horizontal kanban */}
+          <div className="hidden md:flex gap-0 px-5 pt-4 pb-4 h-full min-w-max">
             {columns.map((col, i) => (
-              /* overflow-visible so scale+glow bleeds outside the column bounds */
               <div key={col.id} className="flex shrink-0 h-full overflow-visible">
-                {/* Subtle vertical divider between columns */}
                 {i > 0 && (
                   <div className="w-px shrink-0 mx-3 self-stretch bg-gradient-to-b from-transparent via-border to-transparent" />
                 )}
@@ -501,8 +566,6 @@ export default function BoardsPage() {
                 </div>
               </div>
             ))}
-
-            {/* Add column */}
             <button className="flex w-[268px] shrink-0 items-center gap-2 rounded-xl border-2 border-dashed border-border/20 px-4 py-3 text-[12px] text-muted-foreground/30 hover:text-muted-foreground/60 hover:border-border/40 transition-all duration-200 self-start mt-8">
               <Plus className="h-3.5 w-3.5" />
               Adicionar coluna

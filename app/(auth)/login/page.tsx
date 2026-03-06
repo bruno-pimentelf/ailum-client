@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Eye, EyeSlash, Sparkle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
@@ -49,25 +48,6 @@ export default function LoginPage() {
         </motion.div>
       </div>
 
-      {/* Back to landing */}
-      <motion.div
-        initial={{ opacity: 0, x: -12 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, delay: 0.1, ease }}
-        className="absolute top-6 left-6"
-      >
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-[13px] text-muted-foreground hover:text-foreground transition-colors duration-300"
-        >
-          <span
-            className="text-base font-bold tracking-[0.35em] text-foreground"
-            style={{ fontFamily: "'Inter', sans-serif" }}
-          >
-            A I L U M
-          </span>
-        </Link>
-      </motion.div>
 
       {/* Card */}
       <motion.div
@@ -91,13 +71,14 @@ export default function LoginPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.6, delay: 0.25, ease }}
-                  className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur-sm px-4 py-1.5"
+                  className="mb-6 flex justify-center"
                 >
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span
+                    className="text-[18px] font-bold tracking-[0.4em] text-foreground"
+                    style={{ fontFamily: "'Inter', sans-serif" }}
+                  >
+                    A I L U M
                   </span>
-                  <span className="text-xs text-muted-foreground">Acesso restrito</span>
                 </motion.div>
                 <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                   Bem-vindo de volta

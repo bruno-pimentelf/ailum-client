@@ -17,7 +17,9 @@ export default function BrowseLayout({ children }: { children: React.ReactNode }
 
       {/* Below header: sidebar + content */}
       <div className="flex flex-1 overflow-hidden pt-14">
-        <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+        <div className="hidden md:flex">
+          <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+        </div>
 
         <motion.main
           className="flex-1 overflow-y-auto"
