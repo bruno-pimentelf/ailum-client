@@ -48,6 +48,9 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
+          <Button variant="ghost" size="sm" asChild className="text-[13px] text-muted-foreground hover:text-foreground hover:bg-transparent h-8 transition-all duration-300">
+            <a href="/login">Entrar</a>
+          </Button>
           <Button size="sm" asChild className="group relative h-8 rounded-lg bg-accent px-4 text-[13px] font-medium text-accent-foreground hover:bg-accent/90 transition-all duration-300 overflow-hidden">
             <a href="#waitlist">
               <motion.span
@@ -95,7 +98,10 @@ export function Navbar() {
                   </Link>
                 </motion.div>
               ))}
-              <div className="pt-4 border-t border-border mt-2">
+              <div className="flex flex-col gap-2 pt-4 border-t border-border mt-2">
+                <Button variant="ghost" size="sm" asChild className="justify-start text-muted-foreground">
+                  <a href="/login" onClick={() => setMobileOpen(false)}>Entrar</a>
+                </Button>
                 <Button size="sm" asChild className="w-full bg-accent text-accent-foreground rounded-lg">
                   <a href="#waitlist" onClick={() => setMobileOpen(false)}>Aplicar-se</a>
                 </Button>
