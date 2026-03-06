@@ -1,0 +1,204 @@
+"use client"
+
+import { useState, useRef, useEffect } from "react"
+import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  MagnifyingGlass,
+  Bell,
+  Question,
+  User,
+  Buildings,
+  CaretUpDown,
+  Check,
+} from "@phosphor-icons/react"
+
+const ease = [0.33, 1, 0.68, 1] as const
+
+const clinics = [
+  { id: "1", name: "Clínica Central" },
+  { id: "2", name: "Unidade Norte" },
+  { id: "3", name: "Unidade Sul" },
+]
+
+export function AppHeader() {
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
+  const [clinicOpen, setClinicOpen] = useState(false)
+  const [selectedClinic, setSelectedClinic] = useState(clinics[0])
+  const [clinicSearch, setClinicSearch] = useState("")
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const filtered = clinics.filter((c) =>
+    c.name.toLowerCase().includes(clinicSearch.toLowerCase())
+  )
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setClinicOpen(false)
+        setClinicSearch("")
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
+
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between border-b border-border bg-background/90 backdrop-blur-xl px-5">
+      {/* Left — logo + clinic selector */}
+      <div className="flex items-center gap-4">
+        {/* Logo */}
+        <Link href="/" className="flex items-center shrink-0">
+          <span
+            className="text-[15px] font-bold tracking-[0.35em] text-foreground"
+            style={{ fontFamily: "'Inter', sans-serif" }}
+          >
+            A I L U M
+          </span>
+        </Link>
+
+        {/* Divider */}
+        <div className="h-5 w-px bg-border" />
+
+        {/* Clinic selector */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => { setClinicOpen((v) => !v); setClinicSearch("") }}
+            className="flex h-8 items-center gap-2 rounded-lg border border-border bg-card/50 px-3 text-[13px] text-foreground hover:bg-muted/40 transition-colors duration-200"
+          >
+            <Buildings className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="max-w-[160px] truncate font-medium">{selectedClinic.name}</span>
+            <CaretUpDown className="h-3 w-3 text-muted-foreground shrink-0" />
+          </button>
+
+          <AnimatePresence>
+            {clinicOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                transition={{ duration: 0.2, ease }}
+                className="absolute left-0 top-full mt-2 w-64 rounded-xl border border-border bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+              >
+                {/* Search inside dropdown */}
+                <div className="p-2 border-b border-border">
+                  <div className="relative">
+                    <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <input
+                      autoFocus
+                      value={clinicSearch}
+                      onChange={(e) => setClinicSearch(e.target.value)}
+                      placeholder="Buscar clínica..."
+                      className="h-8 w-full rounded-lg bg-muted/40 pl-8 pr-3 text-[12px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all duration-200"
+                    />
+                  </div>
+                </div>
+
+                {/* List */}
+                <div className="p-1.5">
+                  <p className="px-2 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/50">
+                    Clínicas
+                  </p>
+                  {filtered.map((clinic) => {
+                    const active = clinic.id === selectedClinic.id
+                    return (
+                      <button
+                        key={clinic.id}
+                        onClick={() => {
+                          setSelectedClinic(clinic)
+                          setClinicOpen(false)
+                          setClinicSearch("")
+                        }}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-colors duration-150 ${
+                          active
+                            ? "bg-accent/10 text-foreground font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                        }`}
+                      >
+                        <Buildings className={`h-3.5 w-3.5 shrink-0 ${active ? "text-accent" : ""}`} weight={active ? "fill" : "regular"} />
+                        <span className="flex-1 text-left truncate">{clinic.name}</span>
+                        {active && <Check className="h-3.5 w-3.5 text-accent shrink-0" weight="bold" />}
+                      </button>
+                    )
+                  })}
+                  {filtered.length === 0 && (
+                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/50 text-center">
+                      Nenhuma clínica encontrada
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Right — search + actions + avatar */}
+      <div className="flex items-center gap-1.5">
+        {/* Search */}
+        <AnimatePresence initial={false} mode="wait">
+          {searchOpen ? (
+            <motion.div
+              key="search-open"
+              initial={{ width: 36, opacity: 0.5 }}
+              animate={{ width: 240, opacity: 1 }}
+              exit={{ width: 36, opacity: 0 }}
+              transition={{ duration: 0.3, ease }}
+              className="relative flex items-center overflow-hidden"
+            >
+              <MagnifyingGlass className="absolute left-3 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                autoFocus
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onBlur={() => { if (!searchValue) setSearchOpen(false) }}
+                placeholder="Buscar..."
+                className="h-8 w-full rounded-lg border border-border bg-card/60 pl-8 pr-10 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+              />
+              <kbd className="absolute right-2.5 flex items-center rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground/60 font-mono">
+                ⌘K
+              </kbd>
+            </motion.div>
+          ) : (
+            <motion.button
+              key="search-closed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setSearchOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200"
+            >
+              <MagnifyingGlass className="h-4 w-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Bell */}
+        <button className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200">
+          <Bell className="h-4 w-4" />
+          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-accent" />
+        </button>
+
+        {/* Help */}
+        <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200">
+          <Question className="h-4 w-4" />
+        </button>
+
+        {/* Divider */}
+        <div className="mx-1 h-5 w-px bg-border" />
+
+        {/* Avatar */}
+        <button className="flex h-8 items-center gap-2 rounded-lg px-2 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15 border border-accent/20 shrink-0">
+            <User className="h-3.5 w-3.5 text-accent" weight="fill" />
+          </div>
+          <span className="hidden md:block text-[13px] font-medium text-foreground max-w-[120px] truncate">
+            Bruno Pimentel
+          </span>
+        </button>
+      </div>
+    </header>
+  )
+}
