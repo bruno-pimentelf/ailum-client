@@ -737,11 +737,11 @@ export function HowItWorks() {
               {/* Bottom: text — always at same position, separated by border */}
               <div className="border-t border-border/60 px-5 py-4">
                 <h3 className="text-sm font-semibold tracking-tight text-foreground">
-                  {step.title}
-                </h3>
+                {step.title}
+              </h3>
                 <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
-                  {step.description}
-                </p>
+                {step.description}
+              </p>
               </div>
 
               {/* Timer bar */}

@@ -86,7 +86,7 @@ export function AppSidebar({ collapsed, onToggle }: SidebarProps) {
 
   return (
     <motion.aside
-      animate={{ width: collapsed ? 64 : 220 }}
+      animate={{ width: collapsed ? 52 : 204 }}
       transition={{ duration: 0.35, ease }}
       className="relative flex h-full flex-col border-r border-border bg-background/95 backdrop-blur-xl overflow-hidden shrink-0"
     >

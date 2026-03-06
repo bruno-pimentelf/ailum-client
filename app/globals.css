@@ -134,4 +134,34 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Custom scrollbar — dark mode, thin and refined */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: oklch(0.145 0.021 262.7 / 0%);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.38 0.025 263 / 70%);
+    border-radius: 999px;
+    transition: background 0.2s;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.52 0.04 263 / 85%);
+  }
+  ::-webkit-scrollbar-thumb:active {
+    background: oklch(0.712 0.126 215.9 / 60%);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.38 0.025 263 / 70%) transparent;
+  }
 }
