@@ -1,29 +1,19 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   MagnifyingGlass,
   User,
   ChatCircleText,
-  PaperclipHorizontal,
-  Microphone,
-  PaperPlaneTilt,
-  Smiley,
-  Star,
-  ArrowCounterClockwise,
-  BookmarkSimple,
-  Archive,
-  DotsThree,
-  Phone,
+  Copy,
   Check,
-  Checks,
-  Robot,
 } from "@phosphor-icons/react"
+import { ChatView } from "@/components/app/chat-view"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Message = {
   id: string
@@ -45,6 +35,8 @@ type Conversation = {
   messages: Message[]
 }
 
+// ─── Mock data ────────────────────────────────────────────────────────────────
+
 const conversations: Conversation[] = [
   {
     id: "1",
@@ -52,7 +44,7 @@ const conversations: Conversation[] = [
     preview: "Qual desses horários fica melhor para vo...",
     time: "01:24",
     funnel: "Sem funil",
-    phone: "0164",
+    phone: "+55 11 99164-0164",
     unread: 2,
     online: true,
     messages: [
@@ -70,7 +62,7 @@ const conversations: Conversation[] = [
     preview: "(apague)",
     time: "23:59",
     funnel: "Análise - Agend...",
-    phone: "4207",
+    phone: "+55 11 98765-4207",
     messages: [
       { id: "m1", text: "Boa noite! Preciso remarcar minha consulta.", time: "23:50 05/03", from: "contact" },
       { id: "m2", text: "Boa noite, João! Claro, sem problema. Qual data você prefere?", time: "23:52 05/03", from: "ai", read: true },
@@ -82,7 +74,7 @@ const conversations: Conversation[] = [
     preview: "Novo Lead em Humano - IR Lead...",
     time: "22:16",
     funnel: "Sem funil",
-    phone: "0888",
+    phone: "+55 21 97654-0888",
     messages: [
       { id: "m1", text: "Olá, vim pelo Instagram. Vocês atendem plano de saúde?", time: "22:10 05/03", from: "contact" },
       { id: "m2", text: "Olá, Thyago! Atendemos alguns planos, sim. Pode me informar qual é o seu?", time: "22:12 05/03", from: "ai" },
@@ -94,7 +86,7 @@ const conversations: Conversation[] = [
     preview: "Você pode me informar esses dados e, s...",
     time: "20:14",
     funnel: "Agendador",
-    phone: "3129",
+    phone: "+55 31 96543-3129",
     messages: [
       { id: "m1", text: "Preciso dos dados do médico para o meu convênio.", time: "20:10 05/03", from: "contact" },
       { id: "m2", text: "Você pode me informar esses dados e, se possível, o número do seu convênio?", time: "20:14 05/03", from: "ai" },
@@ -106,7 +98,7 @@ const conversations: Conversation[] = [
     preview: "Como posso te chamar? Me conta um po...",
     time: "18:25",
     funnel: "Recepção - Fec...",
-    phone: "5974",
+    phone: "+55 11 95432-5974",
     messages: [
       { id: "m1", text: "Oi! Quero marcar uma avaliação.", time: "18:20 05/03", from: "contact" },
       { id: "m2", text: "Oi! Fico feliz em ajudar. Como posso te chamar? Me conta um pouco sobre o que você está buscando.", time: "18:25 05/03", from: "ai" },
@@ -118,7 +110,7 @@ const conversations: Conversation[] = [
     preview: "Para começarmos: como posso te chama...",
     time: "18:22",
     funnel: "Recepção - Age...",
-    phone: "9661",
+    phone: "+55 11 94321-9661",
     messages: [
       { id: "m1", text: "Boa tarde!", time: "18:20 05/03", from: "contact" },
       { id: "m2", text: "Boa tarde! Para começarmos: como posso te chamar?", time: "18:22 05/03", from: "ai" },
@@ -126,7 +118,7 @@ const conversations: Conversation[] = [
   },
 ]
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Avatar ───────────────────────────────────────────────────────────────────
 
 function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
   const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
@@ -146,6 +138,49 @@ function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg"
   )
 }
 
+// ─── Phone copy button ────────────────────────────────────────────────────────
+
+function PhoneCopy({ phone }: { phone: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(phone).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }
+
+  return (
+    <div
+      onClick={handleCopy}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && handleCopy(e as any)}
+      title={`Copiar ${phone}`}
+      className="group flex items-center gap-1 cursor-pointer"
+    >
+      <span className="text-[10px] text-muted-foreground/40 font-mono group-hover:text-muted-foreground/70 transition-colors duration-150">
+        {phone}
+      </span>
+      <AnimatePresence mode="wait">
+        {copied ? (
+          <motion.span key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+            <Check className="h-2.5 w-2.5 text-accent" />
+          </motion.span>
+        ) : (
+          <motion.span key="cp" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            <Copy className="h-2.5 w-2.5 text-muted-foreground/40" />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Conversation item ────────────────────────────────────────────────────────
+
 function ConversationItem({
   conv,
   active,
@@ -156,10 +191,13 @@ function ConversationItem({
   onClick: () => void
 }) {
   return (
-    <motion.button
+    <motion.div
       layout
       onClick={onClick}
-      className={`w-full text-left px-3 py-3 flex items-start gap-3 border-b border-border/50 transition-colors duration-150 relative ${
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
+      className={`w-full cursor-pointer text-left px-3 py-3 flex items-start gap-3 border-b border-border/50 transition-colors duration-150 relative ${
         active ? "bg-accent/8" : "hover:bg-muted/30"
       }`}
     >
@@ -192,48 +230,13 @@ function ConversationItem({
             <span className="text-[11px] text-muted-foreground/50 truncate">{conv.funnel}</span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[10px] text-muted-foreground/40 font-mono">•••• {conv.phone}</span>
+            <PhoneCopy phone={conv.phone} />
             {conv.unread ? (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-accent-foreground px-1">
                 {conv.unread}
               </span>
             ) : null}
           </div>
-        </div>
-      </div>
-    </motion.button>
-  )
-}
-
-function MessageBubble({ msg, index }: { msg: Message; index: number }) {
-  const isAI = msg.from === "ai"
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.04, ease }}
-      className={`flex ${isAI ? "justify-start" : "justify-end"}`}
-    >
-      {isAI && (
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 border border-accent/20 mr-2 mt-1 self-end">
-          <Robot className="h-3.5 w-3.5 text-accent" weight="fill" />
-        </div>
-      )}
-      <div
-        className={`max-w-[72%] rounded-2xl px-4 py-2.5 ${
-          isAI
-            ? "bg-card border border-border/60 rounded-bl-sm text-foreground"
-            : "bg-accent/15 border border-accent/20 rounded-br-sm text-foreground"
-        }`}
-      >
-        <p className="text-[13px] leading-relaxed">{msg.text}</p>
-        <div className={`mt-1 flex items-center gap-1 ${isAI ? "justify-start" : "justify-end"}`}>
-          <span className="text-[10px] text-muted-foreground/40">{msg.time}</span>
-          {!isAI && (
-            msg.read
-              ? <Checks className="h-3 w-3 text-accent" />
-              : <Check className="h-3 w-3 text-muted-foreground/40" />
-          )}
         </div>
       </div>
     </motion.div>
@@ -245,8 +248,6 @@ function MessageBubble({ msg, index }: { msg: Message; index: number }) {
 export default function ChatsPage() {
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<Conversation | null>(conversations[0])
-  const [inputValue, setInputValue] = useState("")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const filtered = conversations.filter(
     (c) =>
@@ -254,20 +255,10 @@ export default function ChatsPage() {
       c.preview.toLowerCase().includes(search.toLowerCase())
   )
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [selected])
-
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault()
-    setInputValue("")
-  }
-
   return (
     <div className="flex h-full overflow-hidden">
       {/* ── Conversation list ── */}
-      <div className="flex w-[260px] shrink-0 flex-col border-r border-border bg-background/50">
-        {/* Search */}
+      <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-background/50">
         <div className="p-3 border-b border-border/50">
           <div className="relative">
             <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
@@ -280,7 +271,6 @@ export default function ChatsPage() {
           </div>
         </div>
 
-        {/* List */}
         <div className="flex-1 overflow-y-auto">
           <AnimatePresence initial={false}>
             {filtered.map((conv) => (
@@ -305,87 +295,7 @@ export default function ChatsPage() {
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         <AnimatePresence mode="wait">
           {selected ? (
-            <motion.div
-              key={selected.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-1 flex-col min-h-0 overflow-hidden"
-            >
-              {/* Chat header */}
-              <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-5">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Avatar name={selected.name} size="sm" />
-                    {selected.online && (
-                      <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-400 border-2 border-background" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold text-foreground leading-tight">{selected.name}</p>
-                    <p className="text-[11px] text-muted-foreground/50 leading-tight">
-                      {selected.online ? "Online agora" : `Visto às ${selected.time}`}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-0.5">
-                  {[Phone, ArrowCounterClockwise, ChatCircleText, Smiley, Star, BookmarkSimple, Archive, DotsThree].map((Icon, i) => (
-                    <button
-                      key={i}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
-                    >
-                      <Icon className="h-4 w-4" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-3">
-                {selected.messages.map((msg, i) => (
-                  <MessageBubble key={msg.id} msg={msg} index={i} />
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input */}
-              <div className="shrink-0 border-t border-border px-4 py-3">
-                <form onSubmit={handleSend} className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
-                  >
-                    <PaperclipHorizontal className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
-                  >
-                    <Microphone className="h-4 w-4" />
-                  </button>
-                  <input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Digite uma mensagem..."
-                    className="flex-1 h-9 rounded-xl border border-border bg-card/50 px-4 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
-                  />
-                  <motion.button
-                    type="submit"
-                    whileTap={{ scale: 0.92 }}
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
-                      inputValue.trim()
-                        ? "bg-accent text-accent-foreground shadow-md shadow-accent/20"
-                        : "bg-muted/40 text-muted-foreground/40"
-                    }`}
-                  >
-                    <PaperPlaneTilt className="h-4 w-4" weight="fill" />
-                  </motion.button>
-                </form>
-              </div>
-            </motion.div>
+            <ChatView key={selected.id} contact={selected} />
           ) : (
             <motion.div
               key="empty"

@@ -22,21 +22,42 @@ function gaussian(x: number, mu: number, sigma: number) {
   return Math.exp(-0.5 * ((x - mu) / sigma) ** 2)
 }
 
+// Seeded PRNG (mulberry32) — deterministic, same output on server and client
+function seededRng(seed: number) {
+  let s = seed
+  return () => {
+    s |= 0; s = s + 0x6d2b79f5 | 0
+    let t = Math.imul(s ^ s >>> 15, 1 | s)
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t
+    return ((t ^ t >>> 14) >>> 0) / 4294967296
+  }
+}
+
+function strToSeed(str: string): number {
+  let h = 0x811c9dc5
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return h >>> 0
+}
+
 /**
  * Builds a normalised PQRST SVG path for a given canvas size.
- * amplitude: 0–1 scale factor for the R-spike height
- * noise: adds subtle baseline wander
+ * Uses a seeded PRNG so server and client produce identical output.
  */
 function buildEcgPath(
   w: number,
   h: number,
   amplitude: number,
   noise: number,
+  seed: string,
   cycles = 3,
 ): string {
   const SAMPLES = 220
   const mid = h * 0.52
   const scale = h * 0.44
+  const rand = seededRng(strToSeed(seed))
 
   const points: [number, number][] = []
 
@@ -53,7 +74,7 @@ function buildEcgPath(
       v += 0.24 * amplitude * gaussian(t, 0.38, 0.042)   // T
       v += 0.03 * amplitude * gaussian(t, 0.48, 0.028)   // U
 
-      if (noise > 0) v += (Math.random() - 0.5) * noise * 0.035
+      if (noise > 0) v += (rand() - 0.5) * noise * 0.035
 
       const x = ((c * SAMPLES + i) / (cycles * SAMPLES)) * w
       const y = mid - v * scale
@@ -71,7 +92,7 @@ const H = 90
 const CYCLE_S = 2.6  // seconds per full sweep
 
 function EcgStrip({ amplitude, noise, uid }: { amplitude: number; noise: number; uid: string }) {
-  const path = useMemo(() => buildEcgPath(W, H, amplitude, noise), [amplitude, noise])
+  const path = useMemo(() => buildEcgPath(W, H, amplitude, noise, uid), [amplitude, noise, uid])
 
   // Approximate path length — good enough for dasharray trick
   const pathLen = W * 3.2

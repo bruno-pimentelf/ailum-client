@@ -290,7 +290,7 @@ function DraggableCard({ card }: { card: Card }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id })
 
   return (
-    <div ref={setNodeRef} {...listeners} {...attributes}>
+    <div ref={setNodeRef} {...listeners} {...attributes} suppressHydrationWarning>
       <KanbanCard card={card} isDragging={isDragging} />
     </div>
   )
