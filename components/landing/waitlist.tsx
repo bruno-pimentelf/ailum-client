@@ -76,7 +76,7 @@ export function Waitlist() {
                                         </motion.div>
                                     ) : (
                                         <>
-                                            Garantir meu lugar
+                                            Aplicar-se
                                             <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                                         </>
                                     )}

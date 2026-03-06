@@ -28,21 +28,20 @@ export function CTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.33, 1, 0.68, 1] }}
-            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
+            className="mt-8 flex items-center justify-center"
           >
-            <Button size="lg" className="group relative h-11 rounded-lg bg-accent px-8 text-sm font-medium text-accent-foreground hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/20 transition-all duration-300 overflow-hidden">
-              <motion.span
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none"
-                animate={{ x: ['-100%', '200%'] }}
-                transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
-              />
-              <span className="relative z-10 flex items-center">
-                Entrar na lista de espera
-                <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </span>
-            </Button>
-            <Button size="lg" variant="ghost" className="h-11 rounded-lg px-8 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-300">
-              Falar pelo WhatsApp
+            <Button size="lg" asChild className="group relative h-11 rounded-lg bg-accent px-8 text-sm font-medium text-accent-foreground hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/20 transition-all duration-300 overflow-hidden">
+              <a href="#waitlist">
+                <motion.span
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none"
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
+                />
+                <span className="relative z-10 flex items-center">
+                  Aplicar-se
+                  <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </span>
+              </a>
             </Button>
           </motion.div>
         </FadeIn>

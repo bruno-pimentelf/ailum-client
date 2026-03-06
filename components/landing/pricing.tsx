@@ -18,7 +18,7 @@ const plans = [
       "Resumo de conversas",
       "Suporte por chat",
     ],
-    cta: "Comecar agora",
+    cta: "Aplicar-se",
     highlight: false,
   },
   {
@@ -34,7 +34,7 @@ const plans = [
       "Gerente de conta dedicado",
       "Lembretes e follow-up",
     ],
-    cta: "Falar com especialista",
+    cta: "Aplicar-se",
     highlight: true,
   },
   {
@@ -50,7 +50,7 @@ const plans = [
       "Onboarding prioritario",
       "Relatorios avancados",
     ],
-    cta: "Falar com vendas",
+    cta: "Aplicar-se",
     highlight: false,
   },
 ]
@@ -120,12 +120,13 @@ export function Pricing() {
               <p className="mt-2 text-xs text-muted-foreground">{plan.description}</p>
 
               <Button
+                asChild
                 className={`mt-6 w-full rounded-lg text-[13px] font-medium transition-all duration-300 ${plan.highlight
                   ? "bg-accent text-accent-foreground hover:bg-accent/90 hover:shadow-md hover:shadow-accent/20"
                   : "bg-muted text-foreground hover:bg-muted/80"
                   }`}
               >
-                {plan.cta}
+                <a href="#waitlist">{plan.cta}</a>
               </Button>
 
               <ul className="mt-7 flex flex-col gap-3 border-t border-border pt-6">

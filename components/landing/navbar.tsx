@@ -48,16 +48,15 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" size="sm" className="text-[13px] text-muted-foreground hover:text-foreground hover:bg-transparent h-8 transition-all duration-300">
-            Entrar
-          </Button>
-          <Button size="sm" className="group relative h-8 rounded-lg bg-accent px-4 text-[13px] font-medium text-accent-foreground hover:bg-accent/90 transition-all duration-300 overflow-hidden">
-            <motion.span
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
-              animate={{ x: ['-100%', '200%'] }}
-              transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 4, ease: "easeInOut" }}
-            />
-            <span className="relative z-10">Entrar na lista</span>
+          <Button size="sm" asChild className="group relative h-8 rounded-lg bg-accent px-4 text-[13px] font-medium text-accent-foreground hover:bg-accent/90 transition-all duration-300 overflow-hidden">
+            <a href="#waitlist">
+              <motion.span
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 4, ease: "easeInOut" }}
+              />
+              <span className="relative z-10">Aplicar-se</span>
+            </a>
           </Button>
         </div>
 
@@ -96,12 +95,9 @@ export function Navbar() {
                   </Link>
                 </motion.div>
               ))}
-              <div className="flex flex-col gap-2 pt-4 border-t border-border mt-2">
-                <Button variant="ghost" size="sm" className="justify-start text-muted-foreground">
-                  Entrar
-                </Button>
-                <Button size="sm" className="bg-accent text-accent-foreground rounded-lg">
-                  Entrar na lista
+              <div className="pt-4 border-t border-border mt-2">
+                <Button size="sm" asChild className="w-full bg-accent text-accent-foreground rounded-lg">
+                  <a href="#waitlist" onClick={() => setMobileOpen(false)}>Aplicar-se</a>
                 </Button>
               </div>
             </div>
