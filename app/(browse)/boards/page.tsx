@@ -26,6 +26,7 @@ import {
   ArrowRight,
   X,
   FlowArrow,
+  Robot,
 } from "@phosphor-icons/react"
 import { useFunnelStore } from "@/lib/funnel-store"
 
@@ -63,6 +64,7 @@ type Flow = {
   id: string
   name: string
   description: string
+  agentCount: number   // how many agents are configured in this funnel
   columns: Column[]
 }
 
@@ -73,6 +75,7 @@ const FLOWS: Flow[] = [
     id: "flow-consulta",
     name: "Consulta Particular",
     description: "Do primeiro contato à consulta paga",
+    agentCount: 5,
     columns: [
       {
         id: "fc1-1",
@@ -139,6 +142,7 @@ const FLOWS: Flow[] = [
     id: "flow-retorno",
     name: "Retorno",
     description: "Acompanhamento pós-consulta",
+    agentCount: 3,
     columns: [
       {
         id: "fr-1",
@@ -192,6 +196,7 @@ const FLOWS: Flow[] = [
     id: "flow-plano",
     name: "Convênio",
     description: "Atendimentos via plano de saúde",
+    agentCount: 4,
     columns: [
       {
         id: "fp-1",
@@ -375,21 +380,20 @@ function KanbanColumn({
   isOver: boolean
 }) {
   const { setNodeRef } = useDroppable({ id: column.id })
-
   const total = column.cards.reduce((s, c) => s + parseValue(c.value), 0)
 
   return (
     <div className="flex flex-col h-full">
-      {/* Column header — colored pill style */}
+      {/* Column header */}
       <div className={`flex items-center justify-between rounded-xl border px-3 py-2 mb-2.5 shrink-0 ${column.headerBg}`}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${column.dotColor}`} />
-          <span className={`text-[12px] font-semibold ${column.color}`}>{column.title}</span>
+          <span className={`text-[12px] font-semibold truncate ${column.color}`}>{column.title}</span>
           <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
             {column.cards.length}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {total > 0 && (
             <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-400/70 tabular-nums">
               <CurrencyDollar className="h-2.5 w-2.5" />
@@ -550,6 +554,8 @@ export default function BoardsPage() {
   const [overId, setOverId] = useState<string | null>(null)
   const dndId = useId()
   const openBuilder = useFunnelStore((s) => s.openBuilder)
+  const globalActiveFlowId = useFunnelStore((s) => s.globalActiveFlowId)
+  const setGlobalActiveFlow = useFunnelStore((s) => s.setGlobalActiveFlow)
 
   const columns = flowData[activeFlowId] ?? []
   const activeFlow = FLOWS.find((f) => f.id === activeFlowId)!
@@ -606,33 +612,59 @@ export default function BoardsPage() {
 
         {/* Flow tabs — left side */}
         <div className="flex items-stretch gap-0 pl-4 overflow-x-auto scrollbar-none">
-          {FLOWS.map((flow) => (
-            <button
-              key={flow.id}
-              onClick={() => setActiveFlowId(flow.id)}
-              className={`relative shrink-0 flex items-center px-4 h-full text-[12px] font-bold transition-colors duration-150 ${
-                activeFlowId === flow.id
-                  ? "text-white/90"
-                  : "text-white/25 hover:text-white/60"
-              }`}
-            >
-              {activeFlowId === flow.id && (
-                <motion.div
-                  layoutId="flow-tab-indicator"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
-                  transition={{ duration: 0.22, ease }}
-                />
-              )}
-              <span className="relative">{flow.name}</span>
-            </button>
-          ))}
-          <button className="shrink-0 flex items-center px-3 h-full text-[11px] text-white/15 hover:text-white/40 transition-colors duration-150 gap-1">
+          {FLOWS.map((flow) => {
+            const isGlobalActive = globalActiveFlowId === flow.id
+            return (
+              <button
+                key={flow.id}
+                onClick={() => setActiveFlowId(flow.id)}
+                className={`relative shrink-0 flex items-center gap-2 px-4 h-full text-[12px] font-bold transition-colors duration-150 cursor-pointer ${
+                  activeFlowId === flow.id
+                    ? "text-white/90"
+                    : "text-white/25 hover:text-white/60"
+                }`}
+              >
+                {activeFlowId === flow.id && (
+                  <motion.div
+                    layoutId="flow-tab-indicator"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
+                    transition={{ duration: 0.22, ease }}
+                  />
+                )}
+                {isGlobalActive && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" title="Fluxo ativo" />
+                )}
+                <span className="relative">{flow.name}</span>
+                {flow.agentCount > 0 && (
+                  <span className="relative flex items-center gap-0.5 text-[9px] font-bold text-violet-400/60">
+                    <Robot className="h-2.5 w-2.5" />
+                    {flow.agentCount}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+          <button className="shrink-0 flex items-center px-3 h-full text-[11px] text-white/15 hover:text-white/40 transition-colors duration-150 gap-1 cursor-pointer">
             <Plus className="h-3 w-3" />
           </button>
         </div>
 
         {/* Actions — right side */}
         <div className="flex items-center gap-2 pr-4 shrink-0">
+          {/* Active flow toggle */}
+          {globalActiveFlowId === activeFlowId ? (
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-2.5 h-7">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-400">Fluxo ativo</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setGlobalActiveFlow(activeFlowId)}
+              className="flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 text-[10px] font-semibold text-white/30 hover:border-emerald-500/30 hover:bg-emerald-500/[0.06] hover:text-emerald-400 transition-all duration-200"
+            >
+              Definir como ativo
+            </button>
+          )}
           <button
             onClick={() => openBuilder(activeFlowId, activeFlow.name)}
             className="flex h-7 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/[0.06] px-2.5 text-[12px] font-semibold text-accent/80 hover:text-accent hover:bg-accent/10 hover:border-accent/40 transition-colors duration-150"

@@ -1,16 +1,26 @@
 import { Node, Edge } from "@xyflow/react"
+import type { Agent } from "./funnel-store"
 
 // ─── Status Node ──────────────────────────────────────────────────────────────
 
 export interface StatusNodeData extends Record<string, unknown> {
   label: string
-  color: string       // tailwind color key e.g. "slate" | "amber" | "cyan" | "emerald" | "violet"
+  color: string
   description?: string
   isStart?: boolean
   isEnd?: boolean
+  agents?: Agent[]    // agents assigned to handle leads at this status
 }
 
 export type StatusNode = Node<StatusNodeData, "status">
+
+// ─── Agent Node ───────────────────────────────────────────────────────────────
+
+export interface AgentNodeData extends Record<string, unknown> {
+  agent: Agent
+}
+
+export type AgentNode = Node<AgentNodeData, "agent">
 
 // ─── Trigger Node ─────────────────────────────────────────────────────────────
 
@@ -34,7 +44,7 @@ export type TriggerNode = Node<TriggerNodeData, "trigger">
 
 // ─── Union types ──────────────────────────────────────────────────────────────
 
-export type FunnelNode = StatusNode | TriggerNode
+export type FunnelNode = StatusNode | TriggerNode | AgentNode
 export type FunnelEdge = Edge
 
 // ─── Color map ────────────────────────────────────────────────────────────────
@@ -48,6 +58,61 @@ export const STATUS_COLORS: Record<string, { bg: string; border: string; dot: st
   rose:    { bg: "bg-rose-500/10",    border: "border-rose-500/30",    dot: "bg-rose-400",    text: "text-rose-300",    accent: "#fb7185" },
   blue:    { bg: "bg-blue-500/10",    border: "border-blue-500/30",    dot: "bg-blue-400",    text: "text-blue-300",    accent: "#60a5fa" },
 }
+
+export const AGENT_COLORS: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+  violet:  { bg: "bg-violet-500/10",  border: "border-violet-500/25",  text: "text-violet-300",  dot: "bg-violet-400"  },
+  amber:   { bg: "bg-amber-500/10",   border: "border-amber-500/25",   text: "text-amber-300",   dot: "bg-amber-400"   },
+  cyan:    { bg: "bg-cyan-500/10",    border: "border-cyan-500/25",    text: "text-cyan-300",    dot: "bg-cyan-400"    },
+  emerald: { bg: "bg-emerald-500/10", border: "border-emerald-500/25", text: "text-emerald-300", dot: "bg-emerald-400" },
+  rose:    { bg: "bg-rose-500/10",    border: "border-rose-500/25",    text: "text-rose-300",    dot: "bg-rose-400"    },
+  blue:    { bg: "bg-blue-500/10",    border: "border-blue-500/25",    text: "text-blue-300",    dot: "bg-blue-400"    },
+  slate:   { bg: "bg-white/[0.04]",   border: "border-white/[0.10]",   text: "text-white/50",    dot: "bg-white/30"    },
+}
+
+// ─── Default agents ───────────────────────────────────────────────────────────
+
+export const DEFAULT_AGENTS: Agent[] = [
+  {
+    id: "agent-recep",
+    name: "Ailum",
+    role: "Recepcionista",
+    prompt: "Você é a Ailum, recepcionista da clínica. Recepcione o paciente com simpatia, entenda sua necessidade e colete os dados básicos (nome, telefone, motivo da consulta).",
+    color: "slate",
+    emoji: "👋",
+  },
+  {
+    id: "agent-qual",
+    name: "Ailum",
+    role: "Qualificador",
+    prompt: "Você é a Ailum. Após a recepção, qualifique o lead entendendo se tem plano de saúde, se é particular, qual especialidade busca e urgência. Guie para o próximo passo.",
+    color: "amber",
+    emoji: "🔍",
+  },
+  {
+    id: "agent-cobranca",
+    name: "Ailum",
+    role: "Cobrança",
+    prompt: "Você é a Ailum. Envie o Pix, explique o valor e as formas de pagamento, tire dúvidas sobre o pagamento e confirme o recebimento antes de prosseguir.",
+    color: "cyan",
+    emoji: "💳",
+  },
+  {
+    id: "agent-agenda",
+    name: "Ailum",
+    role: "Agendamento",
+    prompt: "Você é a Ailum. Com o pagamento confirmado, agende a consulta oferecendo as datas disponíveis, confirme o horário e envie as instruções de como chegar ou acessar a consulta.",
+    color: "emerald",
+    emoji: "📅",
+  },
+  {
+    id: "agent-followup",
+    name: "Ailum",
+    role: "Follow-up",
+    prompt: "Você é a Ailum. Após a consulta, envie uma mensagem de acompanhamento, pergunte sobre a experiência, ofereça retorno e incentive novos agendamentos ou indicações.",
+    color: "violet",
+    emoji: "✨",
+  },
+]
 
 // ─── Trigger label/icon map ───────────────────────────────────────────────────
 

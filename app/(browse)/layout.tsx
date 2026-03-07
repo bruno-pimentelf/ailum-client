@@ -26,7 +26,12 @@ export default function BrowseLayout({ children }: { children: React.ReactNode }
       {/* Below header: sidebar + content */}
       <div className="flex flex-1 overflow-hidden pt-14">
         <div className="hidden md:flex">
-          <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+          <AppSidebar
+            collapsed={collapsed}
+            onToggle={() => setCollapsed((v) => !v)}
+            accountManagerName="Maria Silva"
+            accountManagerPhone="(11) 98765-4321"
+          />
         </div>
 
         <motion.main
