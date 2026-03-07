@@ -1,10 +1,13 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import {
   Gear,
+  Buildings,
   Users,
   Microphone,
   MagnifyingGlass,
@@ -31,10 +34,11 @@ const ease = [0.33, 1, 0.68, 1] as const
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
-type TabId = "geral" | "conexoes" | "servicos" | "membros" | "voz"
+type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "voz"
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "geral", label: "Geral", icon: Gear },
+  { id: "perfil", label: "Meu Perfil", icon: User },
   { id: "conexoes", label: "Conexões", icon: PlugsConnected },
   { id: "servicos", label: "Serviços", icon: Storefront },
   { id: "membros", label: "Membros", icon: Users },
@@ -119,7 +123,7 @@ function MembersTab() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-md">
           <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..." className="cursor-text w-full h-8 pl-8 pr-3 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/90 placeholder:text-white/22 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-all" />
         </div>
@@ -141,7 +145,7 @@ function MembersTab() {
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
         {filtered.length > 0 ? filtered.map((m, i) => <MemberCard key={m.id} member={m} index={i} onEdit={() => {}} />) : (
           <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.05] bg-white/[0.02] mb-3">
@@ -188,14 +192,14 @@ function VoiceCard({ voice, isActive, onSetActive, index }: { voice: Voice; isAc
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.04, ease }}
       onClick={isActive ? undefined : onSetActive}
-      className={`group flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all duration-150 cursor-pointer ${isActive ? "border-accent/30 bg-accent/8" : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"}`}
+      className={`group flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all duration-150 cursor-pointer ${isActive ? "border-accent/30 bg-accent/8" : "border-border/50 bg-card/30 hover:border-border hover:bg-muted/20"}`}
     >
-      <div className="flex items-center justify-center w-9 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] shrink-0 overflow-hidden px-1">
+      <div className="flex items-center justify-center w-9 h-9 rounded-lg border border-border/50 bg-muted/20 shrink-0 overflow-hidden px-1">
         <RecordingBars active={isActive} intensity={0.8} compact />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-bold text-white/90 truncate">{voice.name}</p>
-        <p className="text-[10px] text-white/40">{isActive ? "Voz ativa" : "Clique para ativar"}</p>
+        <p className="text-[12px] font-bold text-foreground truncate">{voice.name}</p>
+        <p className="text-[10px] text-muted-foreground/70">{isActive ? "Voz ativa" : "Clique para ativar"}</p>
       </div>
       <AnimatePresence mode="wait">
         {isActive ? (
@@ -204,7 +208,7 @@ function VoiceCard({ voice, isActive, onSetActive, index }: { voice: Voice; isAc
             <span className="text-[9px] font-bold text-accent">Ativo</span>
           </motion.div>
         ) : (
-          <motion.div key="b" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="flex items-center justify-center w-6 h-6 rounded border border-white/[0.08] text-white/25 group-hover:text-white/50 group-hover:border-white/[0.15] transition-all">
+          <motion.div key="b" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="flex items-center justify-center w-6 h-6 rounded border border-border/50 text-muted-foreground/50 group-hover:text-foreground/70 group-hover:border-border transition-all">
             <CaretRight className="h-3 w-3" weight="fill" />
           </motion.div>
         )}
@@ -244,12 +248,12 @@ function RecordSection() {
     setTimeout(() => { setUploading(false); setRecorded(false) }, 2000)
   }
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease }} className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-5">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease }} className="rounded-xl border border-border/50 bg-card/30 p-5 xl:p-6 min-w-0">
       <div className="flex items-center gap-2 mb-4">
         <Waveform className="h-3.5 w-3.5 text-accent" weight="fill" />
-        <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Treinar clone de voz</span>
+        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Treinar clone de voz</span>
       </div>
-      <p className="text-[12px] text-white/70 leading-relaxed mb-4">Grave um áudio para treinar a IA com sua voz. Fale de forma natural, como se estivesse atendendo um paciente.</p>
+      <p className="text-[12px] text-foreground/80 leading-relaxed mb-4">Grave um áudio para treinar a IA com sua voz. Fale de forma natural, como se estivesse atendendo um paciente.</p>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <motion.button onClick={handleRecord} disabled={uploading} className={`cursor-pointer relative flex items-center justify-center w-16 h-16 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${recording ? "border-rose-500/50 bg-rose-500/20" : "border-accent/40 bg-accent/10 hover:bg-accent/20 hover:border-accent/60"} ${uploading ? "opacity-50 pointer-events-none" : ""}`} whileTap={{ scale: 0.95 }} whileHover={!recording && !uploading ? { scale: 1.02 } : {}}>
           {recording && <motion.div className="absolute inset-0 bg-rose-500/20" animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }} />}
@@ -257,7 +261,7 @@ function RecordSection() {
         </motion.button>
         <div className="flex-1 w-full min-w-0 flex flex-col gap-2">
           <div className="h-8 flex items-center"><RecordingBars active={recording || recorded} intensity={recording ? 1 : 0.5} /></div>
-          <p className="text-[10px] text-white/35">{recording ? "Gravando..." : recorded ? "Áudio gravado." : "Clique no microfone."}</p>
+          <p className="text-[10px] text-muted-foreground/50">{recording ? "Gravando..." : recorded ? "Áudio gravado." : "Clique no microfone."}</p>
         </div>
         <AnimatePresence mode="wait">
           {recorded && (
@@ -274,19 +278,19 @@ function RecordSection() {
 function VozTab() {
   const [activeVoiceId, setActiveVoiceId] = useState("1")
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="grid grid-cols-1 xl:grid-cols-[1fr_320px] 2xl:grid-cols-[1fr_360px] gap-6 xl:gap-8 items-start w-full">
       <RecordSection />
-      <div>
+      <div className="min-w-0">
         <div className="flex items-center gap-2 mb-3">
           <span className="h-1 w-1 rounded-full bg-accent" />
-          <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Vozes treinadas</span>
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Vozes treinadas</span>
         </div>
         <div className="space-y-1.5">
           {VOICES.map((v, i) => (
             <VoiceCard key={v.id} voice={v} isActive={activeVoiceId === v.id} onSetActive={() => setActiveVoiceId(v.id)} index={i} />
           ))}
         </div>
-        <p className="text-[10px] text-white/30 mt-3">A voz ativa é usada em todos os atendimentos.</p>
+        <p className="text-[10px] text-muted-foreground/40 mt-3">A voz ativa é usada em todos os atendimentos.</p>
       </div>
     </motion.div>
   )
@@ -482,7 +486,7 @@ function ServicosTab() {
           <Plus className="h-3 w-3" weight="bold" /> Novo serviço
         </button>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-w-3xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 w-full">
         {servicos.map((s, i) => (
           <ServiceCard key={s.id} servico={s} index={i} onEdit={() => setEditing(s)} onDelete={() => handleDelete(s.id)} />
         ))}
@@ -512,11 +516,114 @@ function ServicosTab() {
   )
 }
 
+// ─── Meu Perfil tab ───────────────────────────────────────────────────────────
+
+type PerfilInfo = {
+  nome: string
+  email: string
+  telefone: string
+  fotoUrl: string
+}
+
+const PERFIL_INITIAL: PerfilInfo = {
+  nome: "Bruno Pimentel",
+  email: "bruno@clinica.com",
+  telefone: "(11) 98765-4321",
+  fotoUrl: "",
+}
+
+function PerfilTab() {
+  const [form, setForm] = useState<PerfilInfo>(PERFIL_INITIAL)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="space-y-6 w-full"
+    >
+      {/* Foto + Dados — grid em telas grandes */}
+      <div className="grid grid-cols-1 xl:grid-cols-[200px_1fr] gap-6 items-start">
+        {/* Foto */}
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <User className="h-4 w-4 text-muted-foreground" weight="duotone" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Foto</span>
+          </div>
+          <label className="cursor-pointer flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-muted/20 hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden mx-auto">
+            {form.fotoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={form.fotoUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-10 w-10 text-muted-foreground/50" weight="duotone" />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) setForm((prev) => ({ ...prev, fotoUrl: URL.createObjectURL(f) }))
+                e.target.value = ""
+              }}
+            />
+          </label>
+          <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">200×200px</p>
+        </div>
+
+        {/* Dados pessoais */}
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4 min-w-0">
+          <div className="flex items-center gap-2 mb-3">
+            <IdentificationCard className="h-4 w-4 text-muted-foreground" weight="duotone" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dados pessoais</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Nome</label>
+              <input
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                placeholder="Seu nome"
+                className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">E-mail</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="seu@email.com"
+                className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Telefone</label>
+              <input
+                value={form.telefone}
+                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                placeholder="(11) 98765-4321"
+                className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end pt-2">
+        <button className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[13px] font-bold text-accent-foreground hover:bg-accent/90 transition-colors">
+          <Check className="h-4 w-4" weight="bold" /> Salvar alterações
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Conexões tab ────────────────────────────────────────────────────────────
 
 function ConexoesTab() {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-2xl">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
       <motion.a href="#" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="flex items-center gap-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 transition-all hover:border-emerald-500/30 hover:bg-emerald-500/5 cursor-pointer">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 overflow-hidden">
           <WhatsappLogo className="h-5 w-5 text-emerald-400" weight="fill" />
@@ -550,10 +657,237 @@ function ConexoesTab() {
 
 // ─── Geral tab ────────────────────────────────────────────────────────────────
 
+type ClinicaInfo = {
+  nome: string
+  descricao: string
+  fotoUrl: string
+  endereco: {
+    logradouro: string
+    numero: string
+    complemento: string
+    bairro: string
+    cidade: string
+    estado: string
+    cep: string
+  }
+  telefone: string
+  email: string
+  website: string
+}
+
+const CLINICA_INITIAL: ClinicaInfo = {
+  nome: "Clínica Harmonia",
+  descricao: "Clínica especializada em saúde integrativa, oferecendo atendimento humanizado e tratamentos personalizados.",
+  fotoUrl: "",
+  endereco: {
+    logradouro: "Rua das Flores",
+    numero: "123",
+    complemento: "Sala 201",
+    bairro: "Centro",
+    cidade: "São Paulo",
+    estado: "SP",
+    cep: "01310-100",
+  },
+  telefone: "(11) 3456-7890",
+  email: "contato@clinicaharmonia.com.br",
+  website: "https://clinicaharmonia.com.br",
+}
+
 function GeralTab() {
+  const [form, setForm] = useState<ClinicaInfo>(CLINICA_INITIAL)
+
+  const updateForm = (updates: Partial<ClinicaInfo>) => setForm((prev) => ({ ...prev, ...updates }))
+  const updateEndereco = (updates: Partial<ClinicaInfo["endereco"]>) =>
+    setForm((prev) => ({ ...prev, endereco: { ...prev.endereco, ...updates } }))
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-6 max-w-md">
-      <p className="text-[12px] text-white/60">Configurações gerais da clínica em breve.</p>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="space-y-6 w-full"
+    >
+      {/* Foto + Nome + Descrição — grid em telas grandes */}
+      <div className="grid grid-cols-1 xl:grid-cols-[200px_1fr] gap-6 items-start">
+        {/* Foto / Logo */}
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <ImageIcon className="h-4 w-4 text-muted-foreground" weight="duotone" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Logo</span>
+          </div>
+          <label className="cursor-pointer flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20 hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden mx-auto">
+            {form.fotoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={form.fotoUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) setForm((prev) => ({ ...prev, fotoUrl: URL.createObjectURL(f) }))
+                e.target.value = ""
+              }}
+            />
+          </label>
+          <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">256×256px</p>
+        </div>
+
+        {/* Nome e Descrição */}
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4 min-w-0">
+        <div className="flex items-center gap-2 mb-3">
+          <Buildings className="h-4 w-4 text-muted-foreground" weight="duotone" />
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Identificação</span>
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Nome</label>
+          <input
+            value={form.nome}
+            onChange={(e) => updateForm({ nome: e.target.value })}
+            placeholder="Nome da clínica"
+            className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Descrição</label>
+          <textarea
+            value={form.descricao}
+            onChange={(e) => updateForm({ descricao: e.target.value })}
+            placeholder="Breve descrição da clínica..."
+            rows={3}
+            className="w-full rounded-lg border border-border bg-muted/20 px-3 py-2 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 resize-none"
+          />
+        </div>
+        </div>
+      </div>
+
+      {/* Endereço + Contato — 2 colunas em telas grandes */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {/* Endereço */}
+      <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-3">
+          <IdentificationCard className="h-4 w-4 text-muted-foreground" weight="duotone" />
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Endereço</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="sm:col-span-2">
+            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Logradouro</label>
+            <input
+              value={form.endereco.logradouro}
+              onChange={(e) => updateEndereco({ logradouro: e.target.value })}
+              placeholder="Rua, avenida..."
+              className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Número</label>
+            <input
+              value={form.endereco.numero}
+              onChange={(e) => updateEndereco({ numero: e.target.value })}
+              placeholder="123"
+              className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Complemento</label>
+          <input
+            value={form.endereco.complemento}
+            onChange={(e) => updateEndereco({ complemento: e.target.value })}
+            placeholder="Sala, andar, bloco..."
+            className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Bairro</label>
+            <input
+              value={form.endereco.bairro}
+              onChange={(e) => updateEndereco({ bairro: e.target.value })}
+              placeholder="Bairro"
+              className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Cidade</label>
+            <input
+              value={form.endereco.cidade}
+              onChange={(e) => updateEndereco({ cidade: e.target.value })}
+              placeholder="Cidade"
+              className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Estado</label>
+              <input
+                value={form.endereco.estado}
+                onChange={(e) => updateEndereco({ estado: e.target.value.toUpperCase().slice(0, 2) })}
+                placeholder="SP"
+                className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">CEP</label>
+              <input
+                value={form.endereco.cep}
+                onChange={(e) => updateEndereco({ cep: e.target.value.replace(/\D/g, "").replace(/(\d{5})(\d)/, "$1-$2").slice(0, 9) })}
+                placeholder="00000-000"
+                className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contato */}
+      <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Storefront className="h-4 w-4 text-muted-foreground" weight="duotone" />
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Contato</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Telefone</label>
+            <input
+              value={form.telefone}
+              onChange={(e) => updateForm({ telefone: e.target.value })}
+              placeholder="(11) 3456-7890"
+              className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">E-mail</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => updateForm({ email: e.target.value })}
+              placeholder="contato@clinica.com.br"
+              className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Website</label>
+          <input
+            type="url"
+            value={form.website}
+            onChange={(e) => updateForm({ website: e.target.value })}
+            placeholder="https://..."
+            className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+          />
+        </div>
+      </div>
+      </div>
+
+      <div className="flex justify-end pt-2">
+        <button className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[13px] font-bold text-accent-foreground hover:bg-accent/90 transition-colors">
+          <Check className="h-4 w-4" weight="bold" /> Salvar alterações
+        </button>
+      </div>
     </motion.div>
   )
 }
@@ -561,13 +895,24 @@ function GeralTab() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("geral")
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab") as TabId | null
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    const valid: TabId[] = ["geral", "perfil", "conexoes", "servicos", "membros", "voz"]
+    return tabParam && valid.includes(tabParam) ? tabParam : "geral"
+  })
+
+  useEffect(() => {
+    if (tabParam && ["geral", "perfil", "conexoes", "servicos", "membros", "voz"].includes(tabParam)) {
+      setActiveTab(tabParam as TabId)
+    }
+  }, [tabParam])
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Header with tabs — same style as boards */}
-      <div className="flex items-stretch justify-between border-b border-border/50 shrink-0 h-11">
-        <div className="flex items-stretch gap-0 pl-4 overflow-x-auto scrollbar-none">
+      {/* Header with tabs */}
+      <div className="flex items-stretch justify-center border-b border-border/50 shrink-0 h-11">
+        <div className="flex items-stretch gap-0 px-6 overflow-x-auto scrollbar-none w-full max-w-6xl">
           {TABS.map((tab) => {
             const Icon = tab.icon
             return (
@@ -590,10 +935,11 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto px-5 py-5">
-        <div className="w-full max-w-4xl mx-auto">
+      <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="w-full max-w-4xl mx-auto lg:max-w-5xl xl:max-w-6xl">
           <AnimatePresence mode="wait">
             {activeTab === "geral" && <GeralTab key="geral" />}
+            {activeTab === "perfil" && <PerfilTab key="perfil" />}
             {activeTab === "conexoes" && <ConexoesTab key="conexoes" />}
             {activeTab === "servicos" && <ServicosTab key="servicos" />}
             {activeTab === "membros" && <MembersTab key="membros" />}

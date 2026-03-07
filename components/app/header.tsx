@@ -10,7 +10,9 @@ import {
   User,
   Buildings,
   CaretUpDown,
+  CaretDown,
   Check,
+  SignOut,
 } from "@phosphor-icons/react"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -25,9 +27,11 @@ export function AppHeader() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchValue, setSearchValue] = useState("")
   const [clinicOpen, setClinicOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const [selectedClinic, setSelectedClinic] = useState(clinics[0])
   const [clinicSearch, setClinicSearch] = useState("")
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const profileDropdownRef = useRef<HTMLDivElement>(null)
 
   const filtered = clinics.filter((c) =>
     c.name.toLowerCase().includes(clinicSearch.toLowerCase())
@@ -35,9 +39,13 @@ export function AppHeader() {
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setClinicOpen(false)
         setClinicSearch("")
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(target)) {
+        setProfileOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClick)
@@ -65,7 +73,7 @@ export function AppHeader() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => { setClinicOpen((v) => !v); setClinicSearch("") }}
-            className="flex h-8 items-center gap-2 rounded-lg border border-border bg-card/50 px-3 text-[13px] text-foreground hover:bg-muted/40 transition-colors duration-200"
+            className="flex h-8 items-center gap-2 rounded-lg border border-border bg-card/50 px-3 text-[13px] text-foreground hover:bg-muted/40 transition-colors duration-200 cursor-pointer"
           >
             <Buildings className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <span className="max-w-[160px] truncate font-medium">{selectedClinic.name}</span>
@@ -189,15 +197,57 @@ export function AppHeader() {
         {/* Divider */}
         <div className="mx-1 h-5 w-px bg-border" />
 
-        {/* Avatar */}
-        <button className="flex h-8 items-center gap-2 rounded-lg px-2 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/15 border border-accent/20 shrink-0">
-            <User className="h-3.5 w-3.5 text-accent" weight="fill" />
-          </div>
-          <span className="hidden md:block text-[13px] font-medium text-foreground max-w-[120px] truncate">
-            Bruno Pimentel
-          </span>
-        </button>
+        {/* Profile dropdown */}
+        <div className="relative" ref={profileDropdownRef}>
+          <button
+            onClick={() => setProfileOpen((v) => !v)}
+            className="flex h-8 items-center gap-2 rounded-lg px-2 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200 cursor-pointer"
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 border border-accent/20 shrink-0">
+              <User className="h-3.5 w-3.5 text-accent" weight="fill" />
+            </div>
+            <span className="hidden md:block text-[13px] font-medium text-foreground max-w-[140px] truncate">
+              Bruno Pimentel
+            </span>
+            <CaretDown
+              className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          <AnimatePresence>
+            {profileOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                transition={{ duration: 0.2, ease }}
+                className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+              >
+                <div className="p-2 border-b border-border">
+                  <p className="text-[12px] font-semibold text-foreground truncate">Bruno Pimentel</p>
+                  <p className="text-[11px] text-muted-foreground truncate">bruno@clinica.com</p>
+                </div>
+                <div className="p-1.5">
+                  <Link
+                    href="/settings?tab=perfil"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
+                  >
+                    <User className="h-4 w-4 shrink-0" weight="regular" />
+                    Meu Perfil
+                  </Link>
+                  <a
+                    href="/login"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[13px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                  >
+                    <SignOut className="h-4 w-4 shrink-0" weight="regular" />
+                    Sair
+                  </a>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </header>
   )
