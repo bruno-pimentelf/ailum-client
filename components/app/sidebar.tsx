@@ -18,6 +18,7 @@ import {
   CaretDown,
   ArrowLineLeft,
   ArrowLineRight,
+  CalendarBlank,
 } from "@phosphor-icons/react"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -54,7 +55,8 @@ const navigation: NavEntry[] = [
     children: [
       { label: "Conversas", href: "/chats", icon: ChatCircleText },
       { label: "Contatos", href: "/contacts", icon: AddressBook },
-      { label: "Painéis", href: "/boards", icon: Kanban },
+      { label: "Fluxos", href: "/boards", icon: Kanban },
+      { label: "Calendário", href: "/calendar", icon: CalendarBlank },
     ],
   },
   { label: "Fluxos", href: "/flows", icon: GitBranch },

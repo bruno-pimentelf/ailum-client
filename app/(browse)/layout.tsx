@@ -1,14 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { AppSidebar } from "@/components/app/sidebar"
 import { AppHeader } from "@/components/app/header"
+import { useFunnelStore } from "@/lib/funnel-store"
+import dynamic from "next/dynamic"
+
+const FunnelBuilderOverlay = dynamic(
+  () => import("@/components/funnel/FunnelBuilderOverlay"),
+  { ssr: false }
+)
 
 const ease = [0.33, 1, 0.68, 1] as const
 
 export default function BrowseLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
+  const isBuilderOpen = useFunnelStore((s) => s.isBuilderOpen)
 
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden">
@@ -29,6 +37,11 @@ export default function BrowseLayout({ children }: { children: React.ReactNode }
           {children}
         </motion.main>
       </div>
+
+      {/* Funnel builder — full-screen overlay */}
+      <AnimatePresence>
+        {isBuilderOpen && <FunnelBuilderOverlay />}
+      </AnimatePresence>
     </div>
   )
 }
