@@ -12,15 +12,18 @@ const PUBLIC_ROUTES = [
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Landing page is always public
+  if (pathname === "/") return NextResponse.next()
+
+  // Auth pages are always public
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
-  const sessionCookie =
-    request.cookies.get("ailum_session") ??
-    request.cookies.get("better-auth.session_token") // fallback dev
+  if (isPublic) return NextResponse.next()
 
-  if (!sessionCookie && !isPublic) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
-
+  // In cross-origin deployments (ailum.io → api.ailum.io), the session cookie
+  // lives on api.ailum.io and is never sent to ailum.io. Auth protection is
+  // handled client-side by SessionProvider, which calls getSession() directly
+  // against the API with credentials: 'include'.
   return NextResponse.next()
 }
 
