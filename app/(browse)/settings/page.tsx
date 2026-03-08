@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -894,7 +894,7 @@ function GeralTab() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SettingsPage() {
+function SettingsContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab") as TabId | null
   const [activeTab, setActiveTab] = useState<TabId>(() => {
@@ -948,5 +948,20 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col h-full min-h-0">
+        <div className="h-11 border-b border-border/50" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      </div>
+    }>
+      <SettingsContent />
+    </Suspense>
   )
 }
