@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   MagnifyingGlass,
@@ -14,26 +15,26 @@ import {
   Check,
   SignOut,
 } from "@phosphor-icons/react"
+import { authClient } from "@/lib/auth-client"
+import { useAuthStore } from "@/lib/auth-store"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-const clinics = [
-  { id: "1", name: "Clínica Central" },
-  { id: "2", name: "Unidade Norte" },
-  { id: "3", name: "Unidade Sul" },
-]
-
 export function AppHeader() {
+  const router = useRouter()
+  const { user, orgs, activeOrgId, setOrgs, setActiveOrgId } = useAuthStore()
+
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchValue, setSearchValue] = useState("")
   const [clinicOpen, setClinicOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [selectedClinic, setSelectedClinic] = useState(clinics[0])
   const [clinicSearch, setClinicSearch] = useState("")
   const dropdownRef = useRef<HTMLDivElement>(null)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
 
-  const filtered = clinics.filter((c) =>
+  const selectedClinic = orgs.find((o) => o.id === activeOrgId) ?? orgs[0] ?? null
+
+  const filtered = orgs.filter((c) =>
     c.name.toLowerCase().includes(clinicSearch.toLowerCase())
   )
 
@@ -51,6 +52,21 @@ export function AppHeader() {
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [])
+
+  const handleSwitchOrg = useCallback(async (orgId: string) => {
+    const { error } = await authClient.organization.setActive({ organizationId: orgId })
+    if (!error) {
+      setActiveOrgId(orgId)
+    }
+    setClinicOpen(false)
+    setClinicSearch("")
+  }, [setActiveOrgId])
+
+  const handleLogout = useCallback(async () => {
+    await authClient.signOut()
+    useAuthStore.getState().clear()
+    router.push("/login")
+  }, [router])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between border-b border-border bg-background/90 backdrop-blur-xl px-5">
@@ -76,7 +92,9 @@ export function AppHeader() {
             className="flex h-8 items-center gap-2 rounded-lg border border-border bg-card/50 px-3 text-[13px] text-foreground hover:bg-muted/40 transition-colors duration-200 cursor-pointer"
           >
             <Buildings className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="max-w-[160px] truncate font-medium">{selectedClinic.name}</span>
+            <span className="max-w-[160px] truncate font-medium">
+              {selectedClinic?.name ?? "Selecionar clínica"}
+            </span>
             <CaretUpDown className="h-3 w-3 text-muted-foreground shrink-0" />
           </button>
 
@@ -105,19 +123,17 @@ export function AppHeader() {
 
                 {/* List */}
                 <div className="p-1.5">
-                  <p className="px-2 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/50">
-                    Clínicas
-                  </p>
+                  {orgs.length > 0 && (
+                    <p className="px-2 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/50">
+                      Clínicas
+                    </p>
+                  )}
                   {filtered.map((clinic) => {
-                    const active = clinic.id === selectedClinic.id
+                    const active = clinic.id === activeOrgId
                     return (
                       <button
                         key={clinic.id}
-                        onClick={() => {
-                          setSelectedClinic(clinic)
-                          setClinicOpen(false)
-                          setClinicSearch("")
-                        }}
+                        onClick={() => handleSwitchOrg(clinic.id)}
                         className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-colors duration-150 ${
                           active
                             ? "bg-accent/10 text-foreground font-medium"
@@ -135,6 +151,18 @@ export function AppHeader() {
                       Nenhuma clínica encontrada
                     </p>
                   )}
+                </div>
+
+                {/* Create new */}
+                <div className="p-2 border-t border-border">
+                  <Link
+                    href="/select-org"
+                    onClick={() => setClinicOpen(false)}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
+                  >
+                    <Buildings className="h-3.5 w-3.5 shrink-0" weight="regular" />
+                    Gerenciar clínicas
+                  </Link>
                 </div>
               </motion.div>
             )}
@@ -207,7 +235,7 @@ export function AppHeader() {
               <User className="h-3.5 w-3.5 text-accent" weight="fill" />
             </div>
             <span className="hidden md:block text-[13px] font-medium text-foreground max-w-[140px] truncate">
-              Bruno Pimentel
+              {user?.name ?? "Perfil"}
             </span>
             <CaretDown
               className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
@@ -224,8 +252,8 @@ export function AppHeader() {
                 className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
               >
                 <div className="p-2 border-b border-border">
-                  <p className="text-[12px] font-semibold text-foreground truncate">Bruno Pimentel</p>
-                  <p className="text-[11px] text-muted-foreground truncate">bruno@clinica.com</p>
+                  <p className="text-[12px] font-semibold text-foreground truncate">{user?.name ?? "—"}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{user?.email ?? "—"}</p>
                 </div>
                 <div className="p-1.5">
                   <Link
@@ -236,13 +264,13 @@ export function AppHeader() {
                     <User className="h-4 w-4 shrink-0" weight="regular" />
                     Meu Perfil
                   </Link>
-                  <a
-                    href="/login"
+                  <button
+                    onClick={handleLogout}
                     className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[13px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-150"
                   >
                     <SignOut className="h-4 w-4 shrink-0" weight="regular" />
                     Sair
-                  </a>
+                  </button>
                 </div>
               </motion.div>
             )}

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { AppSidebar } from "@/components/app/sidebar"
 import { AppHeader } from "@/components/app/header"
+import { SessionProvider } from "@/components/app/session-provider"
 import { useFunnelStore } from "@/lib/funnel-store"
 import dynamic from "next/dynamic"
 
@@ -19,6 +20,7 @@ export default function BrowseLayout({ children }: { children: React.ReactNode }
   const isBuilderOpen = useFunnelStore((s) => s.isBuilderOpen)
 
   return (
+    <SessionProvider>
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* Full-width header */}
       <AppHeader />
@@ -48,5 +50,6 @@ export default function BrowseLayout({ children }: { children: React.ReactNode }
         {isBuilderOpen && <FunnelBuilderOverlay />}
       </AnimatePresence>
     </div>
+    </SessionProvider>
   )
 }
