@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Eye, EyeSlash, Sparkle, CheckCircle } from "@phosphor-icons/react"
@@ -11,8 +10,6 @@ import { authClient } from "@/lib/auth-client"
 const ease = [0.33, 1, 0.68, 1] as const
 
 export default function LoginPage() {
-  const router = useRouter()
-
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -43,18 +40,20 @@ export default function LoginPage() {
     const { data: orgs } = await authClient.organization.list()
 
     if (!orgs || orgs.length === 0) {
-      router.push("/select-org")
+      window.location.href = "/select-org?new=1"
       return
     }
 
     if (orgs.length === 1) {
       await authClient.organization.setActive({ organizationId: orgs[0].id })
-      router.push("/dashboard")
+      // Hard navigate — gives the browser time to commit the Set-Cookie
+      // before the next request, avoiding race conditions in production
+      window.location.href = "/dashboard"
       return
     }
 
     // Multiple orgs → let user choose
-    router.push("/select-org")
+    window.location.href = "/select-org"
   }
 
   const handleForgot = async (e: React.FormEvent) => {

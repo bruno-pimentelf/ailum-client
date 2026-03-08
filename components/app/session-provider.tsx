@@ -14,7 +14,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       const { data: session } = await authClient.getSession()
 
       if (!session?.user) {
-        router.push("/login")
+        window.location.href = "/login"
         return
       }
 
@@ -37,19 +37,33 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         )
       }
 
-      const activeOrgId = (session.session as { activeOrganizationId?: string | null })
-        ?.activeOrganizationId ?? null
+      const activeOrgId =
+        (session.session as { activeOrganizationId?: string | null })
+          ?.activeOrganizationId ?? null
 
       if (activeOrgId) {
+        // Session already has an active org — all good
         setActiveOrgId(activeOrgId)
-      } else if (orgs && orgs.length === 1) {
-        await authClient.organization.setActive({ organizationId: orgs[0].id })
-        setActiveOrgId(orgs[0].id)
-      } else if (orgs && orgs.length > 1) {
-        router.push("/select-org")
-      } else {
-        router.push("/select-org?new=1")
+        return
       }
+
+      // No active org in session — try to auto-activate
+      if (orgs && orgs.length === 1) {
+        const { error } = await authClient.organization.setActive({
+          organizationId: orgs[0].id,
+        })
+        if (!error) {
+          setActiveOrgId(orgs[0].id)
+          // Hard navigate so the browser commits Set-Cookie before next request
+          window.location.href = window.location.pathname
+        } else {
+          window.location.href = "/select-org"
+        }
+        return
+      }
+
+      // Multiple orgs or none — let user pick / create
+      window.location.href = orgs && orgs.length > 1 ? "/select-org" : "/select-org?new=1"
     }
 
     hydrate()
