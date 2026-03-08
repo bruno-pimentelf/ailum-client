@@ -13,7 +13,9 @@ const PUBLIC_ROUTES = [
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
-  const sessionCookie = request.cookies.get("better-auth.session_token")
+  const sessionCookie =
+    request.cookies.get("ailum_session") ??
+    request.cookies.get("better-auth.session_token") // fallback dev
 
   if (!sessionCookie && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url))
