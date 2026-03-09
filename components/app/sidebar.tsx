@@ -16,6 +16,7 @@ import {
   VideoCamera,
   User,
   Phone,
+  Robot,
 } from "@phosphor-icons/react"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -43,6 +44,7 @@ const navigation: NavEntry[] = [
       { label: "Conversas", href: "/chats", icon: ChatCircleText },
       { label: "Fluxos", href: "/boards", icon: Kanban },
       { label: "Contatos", href: "/contacts", icon: AddressBook },
+      { label: "Playground", href: "/playground", icon: Robot },
     ],
   },
   { label: "Calendário", href: "/calendar", icon: CalendarBlank },

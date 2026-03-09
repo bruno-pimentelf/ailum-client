@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useId, useMemo } from "react"
+import { useState, useId, useMemo, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   DndContext,
@@ -29,8 +29,9 @@ import {
   Warning,
   PencilSimple,
 } from "@phosphor-icons/react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useFunnelStore } from "@/lib/funnel-store"
-import { useFunnels, useBoard } from "@/hooks/use-board"
+import { useFunnels, useBoard, useFunnelMutations } from "@/hooks/use-board"
 import { FunnelModal } from "@/components/app/funnel-modal"
 import { SelectContactModal } from "@/components/app/select-contact-modal"
 import type { BoardContact, BoardStage, FunnelListItem } from "@/lib/api/funnels"
@@ -225,15 +226,44 @@ function KanbanColumn({
   isOver,
   funnelId,
   onAddContact,
+  onUpdateStageName,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
   isOver: boolean
   funnelId: string
   onAddContact: (stage: BoardStage) => void
+  onUpdateStageName: (stage: BoardStage, name: string) => void
 }) {
   const { setNodeRef } = useDroppable({ id: stage.id })
   const style = stageStyle(stage.color)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(stage.name)
+  const [optimisticName, setOptimisticName] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const displayName = optimisticName ?? stage.name
+
+  useEffect(() => {
+    if (editing) {
+      setDraft(displayName)
+      setOptimisticName(null)
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editing])
+
+  useEffect(() => {
+    if (optimisticName !== null && stage.name === optimisticName) setOptimisticName(null)
+  }, [stage.name, optimisticName])
+
+  function handleBlur() {
+    const trimmed = draft.trim()
+    if (trimmed && trimmed !== displayName) {
+      setOptimisticName(trimmed)
+      onUpdateStageName(stage, trimmed)
+    }
+    setEditing(false)
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -244,9 +274,32 @@ function KanbanColumn({
       >
         <div className="flex items-center gap-2 min-w-0">
           <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: style.dot }} />
-          <span className="text-[12px] font-semibold truncate" style={{ color: stage.color }}>
-            {stage.name}
-          </span>
+          {editing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={handleBlur}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+                if (e.key === "Escape") { setDraft(displayName); setEditing(false) }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1 min-w-0 rounded-md px-2 py-0.5 text-[12px] font-semibold bg-black/30 border border-white/[0.08] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 selection:bg-accent/60 selection:text-white"
+              style={{ color: stage.color }}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setEditing(true) }}
+              className="cursor-pointer text-left flex-1 min-w-0 truncate text-[12px] font-semibold hover:underline decoration-white/30"
+              style={{ color: stage.color }}
+              title="Clique para editar"
+            >
+              {displayName}
+            </button>
+          )}
           <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
             {contacts.length}
           </span>
@@ -346,14 +399,43 @@ function MobileColumn({
   contacts,
   funnelId,
   onAddContact,
+  onUpdateStageName,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
   funnelId: string
   onAddContact: (stage: BoardStage) => void
+  onUpdateStageName?: (stage: BoardStage, name: string) => void
 }) {
   const [open, setOpen] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(stage.name)
+  const [optimisticName, setOptimisticName] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const style = stageStyle(stage.color)
+  const displayName = optimisticName ?? stage.name
+
+  useEffect(() => {
+    if (editing) {
+      setDraft(displayName)
+      setOptimisticName(null)
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editing])
+
+  useEffect(() => {
+    if (optimisticName !== null && stage.name === optimisticName) setOptimisticName(null)
+  }, [stage.name, optimisticName])
+
+  function handleBlur() {
+    const trimmed = draft.trim()
+    if (trimmed && trimmed !== displayName && onUpdateStageName) {
+      setOptimisticName(trimmed)
+      onUpdateStageName(stage, trimmed)
+    }
+    setEditing(false)
+  }
 
   return (
     <div className="rounded-xl border border-border/40 overflow-hidden">
@@ -367,7 +449,33 @@ function MobileColumn({
           className="cursor-pointer flex-1 flex items-center gap-2 text-left min-w-0"
         >
           <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: style.dot }} />
-          <span className="text-[12px] font-semibold truncate" style={{ color: stage.color }}>{stage.name}</span>
+          {editing && onUpdateStageName ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={handleBlur}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+                if (e.key === "Escape") { setDraft(displayName); setEditing(false) }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1 min-w-0 rounded-md px-2 py-0.5 text-[12px] font-semibold bg-black/30 border border-white/[0.08] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 selection:bg-accent/60 selection:text-white"
+              style={{ color: stage.color }}
+            />
+          ) : (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); onUpdateStageName && setEditing(true) }}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onUpdateStageName && setEditing(true) } }}
+              className="text-left flex-1 min-w-0 truncate text-[12px] font-semibold hover:underline decoration-white/30 cursor-pointer"
+              style={{ color: stage.color }}
+            >
+              {displayName}
+            </span>
+          )}
           <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
             {contacts.length}
           </span>
@@ -441,6 +549,67 @@ export default function BoardsPage() {
     selectedFunnelId,
     { search: debouncedSearch || undefined },
   )
+
+  const queryClient = useQueryClient()
+  const boardKey = ["board", selectedFunnelId, debouncedSearch || undefined] as const
+
+  const { createStage, updateStage } = useFunnelMutations()
+
+  function handleUpdateStageName(s: BoardStage, name: string) {
+    if (!selectedFunnelId) return
+    updateStage.mutate(
+      { stageId: s.id, funnelId: selectedFunnelId, body: { name } },
+      {
+        onMutate: async () => {
+          await queryClient.cancelQueries({ queryKey: boardKey })
+          const prev = queryClient.getQueryData(boardKey) as { stages: BoardStage[]; [k: string]: unknown } | undefined
+          queryClient.setQueryData(boardKey, (old: typeof prev) => {
+            if (!old) return old
+            return {
+              ...old,
+              stages: old.stages.map((st) => (st.id === s.id ? { ...st, name } : st)),
+            }
+          })
+          return { prev }
+        },
+        onError: (_err, _vars, ctx) => {
+          if (ctx?.prev) queryClient.setQueryData(boardKey, ctx.prev)
+        },
+      },
+    )
+  }
+
+  function handleAddStage() {
+    if (!selectedFunnelId) return
+    const newStage: BoardStage = {
+      id: `temp-${Date.now()}`,
+      name: "Nova etapa",
+      color: "#64748b",
+      order: stages.length,
+      contacts: [],
+      isTerminal: false,
+    }
+    createStage.mutate(
+      {
+        funnelId: selectedFunnelId,
+        body: { name: newStage.name, color: newStage.color, order: newStage.order },
+      },
+      {
+        onMutate: async () => {
+          await queryClient.cancelQueries({ queryKey: boardKey })
+          const prev = queryClient.getQueryData(boardKey) as { stages: BoardStage[]; [k: string]: unknown } | undefined
+          queryClient.setQueryData(boardKey, (old: typeof prev) => {
+            if (!old) return old
+            return { ...old, stages: [...old.stages, newStage] }
+          })
+          return { prev }
+        },
+        onError: (_err, _vars, ctx) => {
+          if (ctx?.prev) queryClient.setQueryData(boardKey, ctx.prev)
+        },
+      },
+    )
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -567,6 +736,16 @@ export default function BoardsPage() {
               )
             })
           )}
+          {/* Add funnel — + next to tabs */}
+          {!funnelsLoading && (
+            <button
+              onClick={openCreateModal}
+              className="flex h-full w-9 shrink-0 items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors cursor-pointer"
+              title="Novo funil"
+            >
+              <Plus className="h-4 w-4" weight="bold" />
+            </button>
+          )}
         </div>
 
         {/* Actions */}
@@ -615,13 +794,6 @@ export default function BoardsPage() {
               Construtor
             </button>
           )}
-          <button
-            onClick={openCreateModal}
-            className="flex h-7 items-center gap-1.5 rounded-lg bg-accent px-2.5 text-[12px] font-medium text-accent-foreground hover:bg-accent/90 transition-colors duration-200"
-          >
-            <Plus className="h-3 w-3" />
-            Novo funil
-          </button>
         </div>
       </div>
 
@@ -710,6 +882,7 @@ export default function BoardsPage() {
                       contacts={stageMap[stage.id] ?? []}
                       funnelId={selectedFunnelId!}
                       onAddContact={(s) => setAddContactTarget({ stage: s, funnelId: selectedFunnelId! })}
+                      onUpdateStageName={handleUpdateStageName}
                     />
                   ))}
                 </div>
@@ -727,6 +900,7 @@ export default function BoardsPage() {
                           contacts={stageMap[stage.id] ?? []}
                           funnelId={selectedFunnelId!}
                           onAddContact={(s) => setAddContactTarget({ stage: s, funnelId: selectedFunnelId! })}
+                          onUpdateStageName={handleUpdateStageName}
                           isOver={
                             overId === stage.id ||
                             (stageMap[stage.id] ?? []).some(
@@ -737,9 +911,14 @@ export default function BoardsPage() {
                       </div>
                     </div>
                   ))}
-                  <button className="flex w-[268px] shrink-0 items-center gap-2 rounded-xl border-2 border-dashed border-border/20 px-4 py-3 text-[12px] text-muted-foreground/30 hover:text-muted-foreground/60 hover:border-border/40 transition-all duration-200 self-start mt-8">
+                  <button
+                    type="button"
+                    onClick={handleAddStage}
+                    disabled={createStage.isPending}
+                    className="flex w-[268px] shrink-0 items-center gap-2 rounded-xl border-2 border-dashed border-border/20 px-4 py-3 text-[12px] text-muted-foreground/30 hover:text-muted-foreground/60 hover:border-border/40 transition-all duration-200 self-start mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <Plus className="h-3.5 w-3.5" />
-                    Adicionar etapa
+                    {createStage.isPending ? "Criando..." : "Adicionar etapa"}
                   </button>
                 </div>
               </motion.div>
