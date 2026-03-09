@@ -1,9 +1,13 @@
 "use client"
 
 import { useState, useRef, useEffect, Suspense } from "react"
+import type React from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
+import { useMe } from "@/hooks/use-me"
+import { useMembers, useInviteMember, useUpdateMemberRole, useRemoveMember } from "@/hooks/use-members"
+import type { Member as ApiMember, MemberRole } from "@/lib/api/members"
 import {
   useIntegrations,
   useSaveZapi,
@@ -62,29 +66,238 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 
 // ─── Members tab ──────────────────────────────────────────────────────────────
 
-type Role = "admin" | "profissional" | "secretaria"
-type Member = { id: string; name: string; email: string; role: Role }
+type ApiRoleFilter = MemberRole | "all"
 
-const ROLE_CONFIG: Record<Role, { label: string; icon: React.ElementType; bg: string; border: string; text: string }> = {
-  admin: { label: "Admin", icon: Crown, bg: "bg-violet-500/10", border: "border-violet-500/25", text: "text-violet-300" },
-  profissional: { label: "Profissional", icon: Stethoscope, bg: "bg-cyan-500/10", border: "border-cyan-500/25", text: "text-cyan-300" },
-  secretaria: { label: "Secretária", icon: IdentificationCard, bg: "bg-amber-500/10", border: "border-amber-500/25", text: "text-amber-300" },
+const ROLE_CFG: Record<MemberRole, { label: string; icon: React.ElementType; bg: string; border: string; text: string }> = {
+  ADMIN:        { label: "Admin",         icon: Crown,              bg: "bg-violet-500/10", border: "border-violet-500/25", text: "text-violet-300" },
+  PROFESSIONAL: { label: "Profissional",  icon: Stethoscope,        bg: "bg-cyan-500/10",   border: "border-cyan-500/25",   text: "text-cyan-300"   },
+  SECRETARY:    { label: "Secretária",    icon: IdentificationCard, bg: "bg-amber-500/10",  border: "border-amber-500/25",  text: "text-amber-300"  },
 }
 
-const MEMBERS: Member[] = [
-  { id: "1", name: "Marina Silva", email: "marina@clinica.com", role: "admin" },
-  { id: "2", name: "Carlos Mendes", email: "carlos@clinica.com", role: "profissional" },
-  { id: "3", name: "Fernanda Costa", email: "fernanda@clinica.com", role: "secretaria" },
-  { id: "4", name: "Roberto Almeida", email: "roberto@clinica.com", role: "profissional" },
-  { id: "5", name: "Juliana Oliveira", email: "juliana@clinica.com", role: "secretaria" },
-]
+// ── Invite Modal ──────────────────────────────────────────────────────────────
 
-const BADGE_WIDTH = "w-[100px]"
+function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [email, setEmail] = useState("")
+  const [role, setRole] = useState<MemberRole>("SECRETARY")
+  const [error, setError] = useState<string | null>(null)
+  const invite = useInviteMember()
 
-function MemberCard({ member, index, onEdit }: { member: Member; index: number; onEdit: () => void }) {
+  useEffect(() => {
+    if (open) { setEmail(""); setRole("SECRETARY"); setError(null) }
+  }, [open])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim()) { setError("Informe o e-mail."); return }
+    setError(null)
+    try {
+      await invite.mutateAsync({ email: email.trim(), role })
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar convite")
+    }
+  }
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div key="bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }} onClick={onClose}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
+          <motion.div key="panel" initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }} transition={{ duration: 0.24, ease }}
+            className="fixed inset-x-4 top-[20vh] z-50 mx-auto max-w-md rounded-2xl border border-border/60 bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+          >
+            <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                  <Users className="h-4 w-4 text-accent" weight="duotone" />
+                </div>
+                <h2 className="text-[14px] font-semibold text-foreground">Convidar membro</h2>
+              </div>
+              <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">E-mail *</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="colaborador@clinica.com"
+                  autoFocus
+                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Perfil *</label>
+                <div className="flex gap-2">
+                  {(Object.keys(ROLE_CFG) as MemberRole[]).map((r) => {
+                    const cfg = ROLE_CFG[r]
+                    const Icon = cfg.icon
+                    const active = role === r
+                    return (
+                      <button key={r} type="button" onClick={() => setRole(r)}
+                        className={`cursor-pointer flex-1 flex flex-col items-center gap-1 rounded-xl border py-2.5 transition-all duration-150 ${
+                          active ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "border-border/40 bg-muted/10 text-muted-foreground/50 hover:border-border hover:text-muted-foreground"
+                        }`}>
+                        <Icon className="h-4 w-4" weight={active ? "fill" : "regular"} />
+                        <span className="text-[10px] font-bold">{cfg.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {error && (
+                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="flex items-center gap-2 rounded-xl border border-rose-500/25 bg-rose-500/[0.08] px-3.5 py-2.5">
+                    <Warning className="h-4 w-4 text-rose-400 shrink-0" weight="fill" />
+                    <p className="text-[12px] text-rose-400">{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button type="button" onClick={onClose} className="cursor-pointer flex-1 rounded-xl border border-border/60 py-2 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={invite.isPending}
+                  className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-60">
+                  {invite.isPending
+                    ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} className="h-3.5 w-3.5 rounded-full border-2 border-accent-foreground/30 border-t-accent-foreground" />
+                    : <Check className="h-3.5 w-3.5" weight="bold" />}
+                  {invite.isPending ? "Enviando..." : "Enviar convite"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// ── Edit Role Modal ───────────────────────────────────────────────────────────
+
+function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; open: boolean; onClose: () => void }) {
+  const [role, setRole] = useState<MemberRole>("SECRETARY")
+  const [error, setError] = useState<string | null>(null)
+  const updateRole = useUpdateMemberRole()
+
+  useEffect(() => {
+    if (member) { setRole(member.role); setError(null) }
+  }, [member])
+
+  async function handleSave() {
+    if (!member) return
+    setError(null)
+    try {
+      await updateRole.mutateAsync({ memberId: member.id, body: { role } })
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao alterar perfil")
+    }
+  }
+
+  return (
+    <AnimatePresence>
+      {open && member && (
+        <>
+          <motion.div key="bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }} onClick={onClose}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
+          <motion.div key="panel" initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }} transition={{ duration: 0.24, ease }}
+            className="fixed inset-x-4 top-[22vh] z-50 mx-auto max-w-sm rounded-2xl border border-border/60 bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+          >
+            <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
+              <h2 className="text-[14px] font-semibold text-foreground">Alterar perfil</h2>
+              <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 flex flex-col gap-4">
+              <p className="text-[12px] text-muted-foreground/60">
+                Membro ID: <span className="font-mono text-muted-foreground/40">{member.id}</span>
+              </p>
+
+              <div className="flex gap-2">
+                {(Object.keys(ROLE_CFG) as MemberRole[]).map((r) => {
+                  const cfg = ROLE_CFG[r]
+                  const Icon = cfg.icon
+                  const active = role === r
+                  return (
+                    <button key={r} type="button" onClick={() => setRole(r)}
+                      className={`cursor-pointer flex-1 flex flex-col items-center gap-1 rounded-xl border py-2.5 transition-all duration-150 ${
+                        active ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "border-border/40 bg-muted/10 text-muted-foreground/50 hover:border-border hover:text-muted-foreground"
+                      }`}>
+                      <Icon className="h-4 w-4" weight={active ? "fill" : "regular"} />
+                      <span className="text-[10px] font-bold">{cfg.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <AnimatePresence>
+                {error && (
+                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="flex items-center gap-2 rounded-xl border border-rose-500/25 bg-rose-500/[0.08] px-3.5 py-2.5">
+                    <Warning className="h-4 w-4 text-rose-400 shrink-0" weight="fill" />
+                    <p className="text-[12px] text-rose-400">{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex gap-2 pt-1">
+                <button onClick={onClose} className="cursor-pointer flex-1 rounded-xl border border-border/60 py-2 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
+                  Cancelar
+                </button>
+                <button onClick={handleSave} disabled={updateRole.isPending || role === member.role}
+                  className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50">
+                  {updateRole.isPending
+                    ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} className="h-3.5 w-3.5 rounded-full border-2 border-accent-foreground/30 border-t-accent-foreground" />
+                    : <Check className="h-3.5 w-3.5" weight="bold" />}
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// ── Member card ───────────────────────────────────────────────────────────────
+
+function MemberCard({ member, index, onEdit, onRemove }: { member: ApiMember; index: number; onEdit: () => void; onRemove: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const config = ROLE_CONFIG[member.role]
-  const Icon = config.icon
+  const [removeConfirm, setRemoveConfirm] = useState(false)
+  const removeMember = useRemoveMember()
+
+  const cfg = ROLE_CFG[member.role]
+  const Icon = cfg.icon
+
+  // Display name: prefer user.name → professional.fullName → email → userId
+  const displayName = member.user?.name ?? member.professional?.fullName ?? member.user?.email ?? member.userId
+  const displaySub  = member.user?.email ?? (member.professional?.specialty ?? null)
+  const initials = displayName.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase()
+
+  async function handleRemove() {
+    try {
+      await removeMember.mutateAsync(member.id)
+      onRemove()
+    } catch { /* handled silently — list refetches */ }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -92,17 +305,33 @@ function MemberCard({ member, index, onEdit }: { member: Member; index: number; 
       transition={{ duration: 0.3, delay: index * 0.03, ease }}
       className="group relative flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition-all duration-150 hover:border-white/[0.10] hover:bg-white/[0.04]"
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04]">
-        <User className="h-3.5 w-3.5 text-white/35" weight="fill" />
-      </div>
+      {/* Avatar — photo if available, else initials */}
+      {member.user?.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={member.user.image} alt={displayName}
+          className="h-8 w-8 shrink-0 rounded-full object-cover border border-white/[0.08]" />
+      ) : (
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${cfg.bg} ${cfg.border} ${cfg.text}`}>
+          {initials}
+        </div>
+      )}
+
+      {/* Info */}
       <div className="flex-1 min-w-0 py-0.5">
-        <p className="text-[12px] font-bold text-white/90 truncate">{member.name}</p>
-        <p className="text-[11px] text-white/40 truncate">{member.email}</p>
+        <p className="text-[12px] font-bold text-white/90 truncate">{displayName}</p>
+        {displaySub && <p className="text-[11px] text-white/40 truncate">{displaySub}</p>}
+        {!member.isActive && (
+          <span className="text-[9px] font-bold text-amber-400/70 uppercase tracking-wider">convite pendente</span>
+        )}
       </div>
-      <div className={`flex items-center justify-center gap-1 rounded-md border px-2 py-0.5 shrink-0 ${BADGE_WIDTH} ${config.bg} ${config.border} ${config.text}`}>
+
+      {/* Role badge */}
+      <div className={`flex items-center gap-1 rounded-md border px-2 py-0.5 shrink-0 ${cfg.bg} ${cfg.border} ${cfg.text}`}>
         <Icon className="h-3 w-3" weight="fill" />
-        <span className="text-[10px] font-bold truncate">{config.label}</span>
+        <span className="text-[10px] font-bold">{cfg.label}</span>
       </div>
+
+      {/* Context menu */}
       <div className="relative shrink-0 w-6 flex justify-end">
         <button onClick={() => setMenuOpen((v) => !v)} className="cursor-pointer flex h-6 w-6 items-center justify-center rounded text-white/20 opacity-0 group-hover:opacity-100 hover:bg-white/[0.06] hover:text-white/45 transition-all duration-150">
           <DotsThree className="h-3.5 w-3.5" weight="bold" />
@@ -110,14 +339,25 @@ function MemberCard({ member, index, onEdit }: { member: Member; index: number; 
         <AnimatePresence>
           {menuOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} aria-hidden />
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: -2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -2 }} transition={{ duration: 0.12, ease }} className="absolute right-0 top-full mt-1 z-20 w-32 rounded-lg border border-white/[0.08] bg-[oklch(0.16_0.02_263)] py-0.5 shadow-lg shadow-black/30">
-                <button onClick={() => { onEdit(); setMenuOpen(false) }} className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/70 hover:bg-white/[0.06] hover:text-white/90 transition-colors">
-                  <Pencil className="h-3 w-3" /> Editar
+              <div className="fixed inset-0 z-10" onClick={() => { setMenuOpen(false); setRemoveConfirm(false) }} aria-hidden />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: -2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -2 }}
+                transition={{ duration: 0.12, ease }}
+                className="absolute right-0 top-full mt-1 z-20 w-36 rounded-lg border border-white/[0.08] bg-[oklch(0.16_0.02_263)] py-0.5 shadow-lg shadow-black/30">
+                <button onClick={() => { onEdit(); setMenuOpen(false) }}
+                  className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/70 hover:bg-white/[0.06] hover:text-white/90 transition-colors">
+                  <Pencil className="h-3 w-3" /> Alterar perfil
                 </button>
-                <button onClick={() => setMenuOpen(false)} className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/40 hover:bg-rose-500/[0.08] hover:text-rose-400 transition-colors">
-                  <Trash className="h-3 w-3" /> Remover
-                </button>
+                {!removeConfirm ? (
+                  <button onClick={() => setRemoveConfirm(true)}
+                    className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/40 hover:bg-rose-500/[0.08] hover:text-rose-400 transition-colors">
+                    <Trash className="h-3 w-3" /> Remover
+                  </button>
+                ) : (
+                  <button onClick={handleRemove} disabled={removeMember.isPending}
+                    className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-bold text-rose-400 bg-rose-500/[0.08] hover:bg-rose-500/[0.14] transition-colors disabled:opacity-50">
+                    <Check className="h-3 w-3" /> Confirmar
+                  </button>
+                )}
               </motion.div>
             </>
           )}
@@ -127,50 +367,110 @@ function MemberCard({ member, index, onEdit }: { member: Member; index: number; 
   )
 }
 
+// ── MembersTab ────────────────────────────────────────────────────────────────
+
 function MembersTab() {
+  const { data: members, isLoading, error, refetch } = useMembers()
   const [search, setSearch] = useState("")
-  const [roleFilter, setRoleFilter] = useState<Role | "all">("all")
-  const filtered = MEMBERS.filter((m) => {
-    const matchSearch = !search.trim() || m.name.toLowerCase().includes(search.toLowerCase()) || m.email.toLowerCase().includes(search.toLowerCase())
+  const [roleFilter, setRoleFilter] = useState<ApiRoleFilter>("all")
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [editMember, setEditMember] = useState<ApiMember | null>(null)
+
+  const filtered = (members ?? []).filter((m) => {
+    const name = m.professional?.fullName ?? ""
+    const matchSearch = !search.trim()
+      || name.toLowerCase().includes(search.toLowerCase())
+      || m.userId.toLowerCase().includes(search.toLowerCase())
     const matchRole = roleFilter === "all" || m.role === roleFilter
     return matchSearch && matchRole
   })
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-md">
-          <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..." className="cursor-text w-full h-8 pl-8 pr-3 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/90 placeholder:text-white/22 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-all" />
+    <>
+      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <EditRoleModal member={editMember} open={!!editMember} onClose={() => setEditMember(null)} />
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col gap-4">
+
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
+            <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..."
+              className="cursor-text w-full h-8 pl-8 pr-3 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/90 placeholder:text-white/22 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-all" />
+          </div>
+          <div className="flex items-center gap-1 flex-wrap">
+            {(["all", ...Object.keys(ROLE_CFG)] as ApiRoleFilter[]).map((r) => {
+              const cfg = r === "all" ? null : ROLE_CFG[r as MemberRole]
+              const Icon = cfg?.icon
+              const label = r === "all" ? "Todos" : cfg!.label
+              const active = roleFilter === r
+              return (
+                <button key={r} onClick={() => setRoleFilter(r)}
+                  className={`cursor-pointer flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold transition-all duration-150 ${
+                    active
+                      ? cfg ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "bg-white/[0.08] border-white/[0.12] text-white/85"
+                      : "border-white/[0.05] bg-white/[0.02] text-white/35 hover:border-white/[0.08] hover:text-white/50"
+                  }`}>
+                  {Icon && <Icon className="h-3 w-3" weight={active ? "fill" : "regular"} />}
+                  {label}
+                </button>
+              )
+            })}
+            <button onClick={() => setInviteOpen(true)}
+              className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-2.5 py-1.5 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all duration-150">
+              <Plus className="h-3 w-3" weight="bold" /> Convidar
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-1 flex-wrap">
-          {(["all", "admin", "profissional", "secretaria"] as const).map((r) => {
-            const config = r === "all" ? null : ROLE_CONFIG[r]
-            const Icon = config?.icon
-            const label = r === "all" ? "Todos" : config!.label
-            const active = roleFilter === r
-            return (
-              <button key={r} onClick={() => setRoleFilter(r)} className={`cursor-pointer flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold transition-all duration-150 ${active ? (config ? `${config.bg} ${config.border} ${config.text}` : "bg-white/[0.08] border-white/[0.12] text-white/85") : "border-white/[0.05] bg-white/[0.02] text-white/35 hover:border-white/[0.08] hover:text-white/50"}`}>
-                {Icon && <Icon className="h-3 w-3" weight={active ? "fill" : "regular"} />}
-                {label}
-              </button>
-            )
-          })}
-          <button className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-2.5 py-1.5 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all duration-150">
-            <Plus className="h-3 w-3" weight="bold" /> Convidar
-          </button>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
-        {filtered.length > 0 ? filtered.map((m, i) => <MemberCard key={m.id} member={m} index={i} onEdit={() => {}} />) : (
-          <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.05] bg-white/[0.02] mb-3">
-              <Users className="h-4 w-4 text-white/18" weight="duotone" />
-            </div>
-            <p className="text-[12px] font-bold text-white/40">Nenhum membro encontrado</p>
+
+        {/* Loading */}
+        {isLoading && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-12 rounded-lg border border-white/[0.04] bg-white/[0.02] animate-pulse" />
+            ))}
           </div>
         )}
-      </div>
-    </motion.div>
+
+        {/* Error */}
+        {error && !isLoading && (
+          <div className="flex flex-col items-center gap-2 py-10">
+            <Warning className="h-7 w-7 text-rose-400/50" weight="duotone" />
+            <p className="text-[12px] text-muted-foreground/40">Erro ao carregar membros</p>
+            <button onClick={() => refetch()} className="cursor-pointer flex items-center gap-1.5 text-[11px] text-accent/60 hover:text-accent transition-colors">
+              <ArrowsClockwise className="h-3.5 w-3.5" /> Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {/* List */}
+        {!isLoading && !error && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
+            {filtered.length > 0 ? (
+              filtered.map((m, i) => (
+                <MemberCard
+                  key={m.id}
+                  member={m}
+                  index={i}
+                  onEdit={() => setEditMember(m)}
+                  onRemove={() => {}}
+                />
+              ))
+            ) : (
+              <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.05] bg-white/[0.02] mb-3">
+                  <Users className="h-4 w-4 text-white/18" weight="duotone" />
+                </div>
+                <p className="text-[12px] font-bold text-white/40">
+                  {search ? "Nenhum membro encontrado" : "Nenhum membro ainda"}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </motion.div>
+    </>
   )
 }
 
@@ -533,103 +833,136 @@ function ServicosTab() {
 
 // ─── Meu Perfil tab ───────────────────────────────────────────────────────────
 
-type PerfilInfo = {
-  nome: string
-  email: string
-  telefone: string
-  fotoUrl: string
-}
-
-const PERFIL_INITIAL: PerfilInfo = {
-  nome: "Bruno Pimentel",
-  email: "bruno@clinica.com",
-  telefone: "(11) 98765-4321",
-  fotoUrl: "",
-}
-
 function PerfilTab() {
-  const [form, setForm] = useState<PerfilInfo>(PERFIL_INITIAL)
+  return <PerfilTabContent />
+}
+
+function PerfilTabContent() {
+  const { data: me, isLoading, error } = useMe()
+
+  const ROLE_LABEL: Record<string, { label: string; icon: React.ElementType; bg: string; border: string; text: string }> = {
+    ADMIN: { label: "Admin", icon: Crown, bg: "bg-violet-500/10", border: "border-violet-500/25", text: "text-violet-300" },
+    PROFESSIONAL: { label: "Profissional", icon: Stethoscope, bg: "bg-cyan-500/10", border: "border-cyan-500/25", text: "text-cyan-300" },
+    SECRETARY: { label: "Secretária", icon: IdentificationCard, bg: "bg-amber-500/10", border: "border-amber-500/25", text: "text-amber-300" },
+  }
+
+  // Avatar initials fallback
+  const initials = (me?.name ?? me?.email ?? "?")
+    .split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase()
+
+  const roleConfig = me?.role ? ROLE_LABEL[me.role] : null
+  const RoleIcon = roleConfig?.icon
+
+  if (isLoading) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+        {[1, 2].map((i) => (
+          <div key={i} className="rounded-xl border border-border/50 bg-card/30 p-5 h-32 animate-pulse" />
+        ))}
+      </motion.div>
+    )
+  }
+
+  if (error) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center gap-3 py-16">
+        <Warning className="h-8 w-8 text-rose-400/50" weight="duotone" />
+        <p className="text-[13px] text-muted-foreground/50">Não foi possível carregar seu perfil</p>
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="space-y-6 w-full"
+      className="space-y-5 w-full"
     >
-      {/* Foto + Dados — grid em telas grandes */}
-      <div className="grid grid-cols-1 xl:grid-cols-[200px_1fr] gap-6 items-start">
-        {/* Foto */}
-        <div className="rounded-xl border border-border/50 bg-card/30 p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <User className="h-4 w-4 text-muted-foreground" weight="duotone" />
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Foto</span>
-          </div>
-          <label className="cursor-pointer flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-muted/20 hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden mx-auto">
-            {form.fotoUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={form.fotoUrl} alt="" className="w-full h-full object-cover" />
+      {/* Avatar + identidade */}
+      <div className="grid grid-cols-1 xl:grid-cols-[200px_1fr] gap-5 items-start">
+        {/* Avatar */}
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5 flex flex-col items-center gap-3">
+          <div className="h-20 w-20 rounded-full border-2 border-border/60 overflow-hidden flex items-center justify-center bg-accent/10 shrink-0">
+            {me?.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={me.image} alt={me.name ?? ""} className="w-full h-full object-cover" />
             ) : (
-              <User className="h-10 w-10 text-muted-foreground/50" weight="duotone" />
+              <span className="text-[22px] font-bold text-accent/70">{initials}</span>
             )}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) setForm((prev) => ({ ...prev, fotoUrl: URL.createObjectURL(f) }))
-                e.target.value = ""
-              }}
-            />
-          </label>
-          <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">200×200px</p>
+          </div>
+          {roleConfig && RoleIcon && (
+            <div className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-bold ${roleConfig.bg} ${roleConfig.border} ${roleConfig.text}`}>
+              <RoleIcon className="h-3 w-3" weight="fill" />
+              {roleConfig.label}
+            </div>
+          )}
+          <p className="text-[10px] text-muted-foreground/40 text-center">
+            Membro desde {me?.createdAt ? new Date(me.createdAt).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) : "—"}
+          </p>
         </div>
 
-        {/* Dados pessoais */}
+        {/* Dados pessoais — read-only, vindos da API */}
         <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4 min-w-0">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-1">
             <IdentificationCard className="h-4 w-4 text-muted-foreground" weight="duotone" />
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dados pessoais</span>
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dados da conta</span>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Nome</label>
-              <input
-                value={form.nome}
-                onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                placeholder="Seu nome"
-                className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
-              />
+              <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Nome</label>
+              <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[13px] text-foreground/80">
+                {me?.name ?? <span className="text-muted-foreground/30">—</span>}
+              </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">E-mail</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="seu@email.com"
-                className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
-              />
+              <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">E-mail</label>
+              <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[13px] text-foreground/80 font-mono text-[12px]">
+                {me?.email ?? <span className="text-muted-foreground/30">—</span>}
+              </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Telefone</label>
-              <input
-                value={form.telefone}
-                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-                placeholder="(11) 98765-4321"
-                className="w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
-              />
+              <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">ID do membro</label>
+              <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[11px] text-muted-foreground/50 font-mono truncate">
+                {me?.memberId ?? "—"}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end pt-2">
-        <button className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[13px] font-bold text-accent-foreground hover:bg-accent/90 transition-colors">
-          <Check className="h-4 w-4" weight="bold" /> Salvar alterações
-        </button>
+      {/* Clínica vinculada */}
+      <div className="rounded-xl border border-border/50 bg-card/30 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Buildings className="h-4 w-4 text-muted-foreground" weight="duotone" />
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Clínica vinculada</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Nome</label>
+            <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[13px] text-foreground/80">
+              {me?.tenant.name ?? "—"}
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Slug</label>
+            <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[12px] text-foreground/70 font-mono">
+              {me?.tenant.slug ?? "—"}
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Tenant ID</label>
+            <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[11px] text-muted-foreground/50 font-mono truncate">
+              {me?.tenant.id ?? "—"}
+            </div>
+          </div>
+        </div>
       </div>
+
+      <p className="text-[11px] text-muted-foreground/30 text-right">
+        Para alterar nome ou e-mail, entre em contato com o suporte.
+      </p>
     </motion.div>
   )
 }
