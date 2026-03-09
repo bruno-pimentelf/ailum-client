@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import {
   collection,
   doc,
@@ -128,8 +128,10 @@ export function useMessages(tenantId: string | null, contactId: string | null) {
     }
   }
 
-  const ts = (m: FirestoreMessage) => m.createdAt?.toDate?.()?.getTime() ?? 0
-  const allMessages = [...olderMessages, ...messages].sort((a, b) => ts(a) - ts(b))
+  const allMessages = useMemo(() => {
+    const ts = (m: FirestoreMessage) => m.createdAt?.toDate?.()?.getTime() ?? 0
+    return [...olderMessages, ...messages].sort((a, b) => ts(a) - ts(b))
+  }, [olderMessages, messages])
 
   return {
     messages: allMessages,
