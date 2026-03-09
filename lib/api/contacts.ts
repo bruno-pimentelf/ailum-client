@@ -39,6 +39,34 @@ export interface ContactsParams {
   limit?: number
 }
 
+export interface CreateContactInput {
+  phone: string
+  name?: string
+  email?: string
+  notes?: string
+  funnelId?: string
+  stageId?: string
+  assignedProfessionalId?: string
+}
+
+export interface CreateContactResponse {
+  id: string
+  tenantId: string
+  phone: string
+  name: string | null
+  email: string | null
+  notes: string | null
+  currentFunnelId: string | null
+  currentStageId: string | null
+  status: string
+  stageEnteredAt: string | null
+  lastMessageAt: string | null
+  assignedProfessionalId: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export const contactsApi = {
   list: (params: ContactsParams = {}) => {
     const qs = new URLSearchParams()
@@ -51,4 +79,7 @@ export const contactsApi = {
     const q = qs.toString()
     return apiFetch<ContactsResponse>(`/contacts${q ? `?${q}` : ""}`)
   },
+
+  create: (body: CreateContactInput) =>
+    apiFetch<CreateContactResponse>("/contacts", { method: "POST", body }),
 }

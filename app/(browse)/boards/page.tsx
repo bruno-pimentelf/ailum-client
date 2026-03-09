@@ -23,6 +23,7 @@ import {
   FlowArrow,
   Robot,
   MagnifyingGlass,
+  CaretDown,
   ArrowRight,
   ArrowsClockwise,
   Warning,
@@ -31,6 +32,7 @@ import {
 import { useFunnelStore } from "@/lib/funnel-store"
 import { useFunnels, useBoard } from "@/hooks/use-board"
 import { FunnelModal } from "@/components/app/funnel-modal"
+import { SelectContactModal } from "@/components/app/select-contact-modal"
 import type { BoardContact, BoardStage, FunnelListItem } from "@/lib/api/funnels"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -221,10 +223,14 @@ function KanbanColumn({
   stage,
   contacts,
   isOver,
+  funnelId,
+  onAddContact,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
   isOver: boolean
+  funnelId: string
+  onAddContact: (stage: BoardStage) => void
 }) {
   const { setNodeRef } = useDroppable({ id: stage.id })
   const style = stageStyle(stage.color)
@@ -248,7 +254,12 @@ function KanbanColumn({
             <span className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-wider">final</span>
           )}
         </div>
-        <button className="flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onAddContact(stage) }}
+          className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
+          title="Adicionar contato"
+        >
           <Plus className="h-3 w-3" />
         </button>
       </div>
@@ -330,28 +341,51 @@ function KanbanColumn({
 
 // ─── Mobile column ────────────────────────────────────────────────────────────
 
-function MobileColumn({ stage, contacts }: { stage: BoardStage; contacts: BoardContact[] }) {
+function MobileColumn({
+  stage,
+  contacts,
+  funnelId,
+  onAddContact,
+}: {
+  stage: BoardStage
+  contacts: BoardContact[]
+  funnelId: string
+  onAddContact: (stage: BoardStage) => void
+}) {
   const [open, setOpen] = useState(true)
   const style = stageStyle(stage.color)
 
   return (
     <div className="rounded-xl border border-border/40 overflow-hidden">
-      <button
-        onClick={() => setOpen((v) => !v)}
+      <div
         className="w-full flex items-center justify-between px-3 py-2.5 border-b border-border/30"
         style={{ background: style.headerBg }}
       >
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="cursor-pointer flex-1 flex items-center gap-2 text-left min-w-0"
+        >
           <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: style.dot }} />
-          <span className="text-[12px] font-semibold" style={{ color: stage.color }}>{stage.name}</span>
+          <span className="text-[12px] font-semibold truncate" style={{ color: stage.color }}>{stage.name}</span>
           <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
             {contacts.length}
           </span>
+        </button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => onAddContact(stage)}
+            className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
+            title="Adicionar contato"
+          >
+            <Plus className="h-3.5 w-3.5" weight="bold" />
+          </button>
+          <motion.div animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }} className="flex h-6 w-6 items-center justify-center">
+            <CaretDown className="h-3.5 w-3.5 text-white/30" weight="bold" />
+          </motion.div>
         </div>
-        <motion.div animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }}>
-          <Plus className="h-3.5 w-3.5 text-white/30 rotate-45" />
-        </motion.div>
-      </button>
+      </div>
 
       <AnimatePresence initial={false}>
         {open && (
@@ -391,6 +425,7 @@ export default function BoardsPage() {
   const [overId, setOverId] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingFunnel, setEditingFunnel] = useState<FunnelListItem | undefined>(undefined)
+  const [addContactTarget, setAddContactTarget] = useState<{ stage: BoardStage; funnelId: string } | null>(null)
   const dndId = useId()
 
   const openBuilder = useFunnelStore((s) => s.openBuilder)
@@ -475,6 +510,15 @@ export default function BoardsPage() {
       onClose={() => setModalOpen(false)}
       funnel={editingFunnel}
     />
+    {addContactTarget && (
+      <SelectContactModal
+        open={!!addContactTarget}
+        onClose={() => setAddContactTarget(null)}
+        stage={addContactTarget.stage}
+        funnelId={addContactTarget.funnelId}
+        contactsInStage={(stageMap[addContactTarget.stage.id] ?? []).map((c) => c.id)}
+      />
+    )}
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Header ── */}
       <div className="flex items-stretch justify-between border-b border-border/50 shrink-0 h-11">
@@ -664,6 +708,8 @@ export default function BoardsPage() {
                       key={stage.id}
                       stage={stage}
                       contacts={stageMap[stage.id] ?? []}
+                      funnelId={selectedFunnelId!}
+                      onAddContact={(s) => setAddContactTarget({ stage: s, funnelId: selectedFunnelId! })}
                     />
                   ))}
                 </div>
@@ -679,6 +725,8 @@ export default function BoardsPage() {
                         <KanbanColumn
                           stage={stage}
                           contacts={stageMap[stage.id] ?? []}
+                          funnelId={selectedFunnelId!}
+                          onAddContact={(s) => setAddContactTarget({ stage: s, funnelId: selectedFunnelId! })}
                           isOver={
                             overId === stage.id ||
                             (stageMap[stage.id] ?? []).some(

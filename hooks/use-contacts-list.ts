@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
-import { contactsApi, type ContactsParams, type ContactsResponse } from "@/lib/api/contacts"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { contactsApi, type ContactsParams, type ContactsResponse, type CreateContactInput } from "@/lib/api/contacts"
 
 export function useContactsList(params: ContactsParams = {}) {
   return useQuery<ContactsResponse>({
@@ -7,5 +7,18 @@ export function useContactsList(params: ContactsParams = {}) {
     queryFn: () => contactsApi.list(params),
     staleTime: 30_000,
     placeholderData: (prev) => prev, // keep previous data while fetching next page
+  })
+}
+
+export function useCreateContact() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreateContactInput) => contactsApi.create(body),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["contacts-list"] })
+      if (variables.funnelId) {
+        qc.invalidateQueries({ queryKey: ["board", variables.funnelId] })
+      }
+    },
   })
 }

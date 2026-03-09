@@ -13,6 +13,7 @@ import {
   Warning,
 } from "@phosphor-icons/react"
 import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
+import { uploadTenantLogo } from "@/lib/firebase"
 
 const inputCls = "w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-colors disabled:opacity-50"
 const labelCls = "block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
@@ -23,6 +24,7 @@ export function GeralTab() {
 
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
 
   const [form, setForm] = useState({
     name: "", description: "", logoUrl: "",
@@ -52,6 +54,30 @@ export function GeralTab() {
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((prev) => ({ ...prev, [k]: e.target.value }))
+
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file || !tenant) return
+    const ok = ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)
+    if (!ok) {
+      setSaveError("Use JPG, PNG ou WebP.")
+      return
+    }
+    setSaveError(null)
+    setLogoUploading(true)
+    try {
+      const url = await uploadTenantLogo(tenant.id, file)
+      await update.mutateAsync({ logoUrl: url })
+      setForm((prev) => ({ ...prev, logoUrl: url }))
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erro ao enviar logo")
+    } finally {
+      setLogoUploading(false)
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -117,21 +143,26 @@ export function GeralTab() {
               <ImageIcon className="h-4 w-4 text-muted-foreground" weight="duotone" />
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Logo</span>
             </div>
-            <label className="cursor-pointer flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20 hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden mx-auto group">
-              {form.logoUrl ? (
+            <label className={`cursor-pointer flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/20 hover:border-accent/40 hover:bg-accent/5 transition-all overflow-hidden mx-auto group ${logoUploading ? "opacity-60 pointer-events-none" : ""}`}>
+              {logoUploading ? (
+                <ArrowsClockwise className="h-9 w-9 text-accent animate-spin" />
+              ) : form.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={form.logoUrl} alt="" className="w-full h-full object-cover" />
+                <img src={form.logoUrl} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 <ImageIcon className="h-9 w-9 text-muted-foreground/30 group-hover:text-accent/50 transition-colors" />
               )}
-              <input type="file" accept="image/*" className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) setForm((p) => ({ ...p, logoUrl: URL.createObjectURL(f) }))
-                  e.target.value = ""
-                }} />
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={handleLogoChange}
+                disabled={logoUploading}
+              />
             </label>
-            <p className="text-[10px] text-muted-foreground/40 mt-2 text-center">256×256px recomendado</p>
+            <p className="text-[10px] text-muted-foreground/40 mt-2 text-center">
+              JPG, PNG ou WebP. 256×256px recomendado
+            </p>
           </div>
 
           <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4 min-w-0">
