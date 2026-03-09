@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useId } from "react"
+import { useState, useId, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   DndContext,
@@ -17,273 +17,109 @@ import {
 import {
   Plus,
   DotsThree,
-  User,
   Clock,
-  Tag,
   WhatsappLogo,
   CurrencyDollar,
-  CalendarBlank,
-  ArrowRight,
-  X,
   FlowArrow,
   Robot,
+  MagnifyingGlass,
+  ArrowRight,
+  ArrowsClockwise,
+  Warning,
+  PencilSimple,
 } from "@phosphor-icons/react"
 import { useFunnelStore } from "@/lib/funnel-store"
+import { useFunnels, useBoard } from "@/hooks/use-board"
+import { FunnelModal } from "@/components/app/funnel-modal"
+import type { BoardContact, BoardStage, FunnelListItem } from "@/lib/api/funnels"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type CardTag = { label: string; color: string }
-
-type Card = {
-  id: string
-  name: string
-  phone: string
-  preview: string
-  time: string
-  tags: CardTag[]
-  value?: string
-  paid?: boolean
-  hasWhatsapp?: boolean
-}
-
-type Column = {
-  id: string
-  title: string
-  color: string        // text color class
-  accent: string       // raw CSS color for glow/border
-  headerBg: string     // header background class
-  dotColor: string     // dot indicator class
-  cards: Card[]
-}
-
-// ─── Flow type ────────────────────────────────────────────────────────────────
-
-type Flow = {
-  id: string
-  name: string
-  description: string
-  agentCount: number   // how many agents are configured in this funnel
-  columns: Column[]
-}
-
-// ─── Flow data ────────────────────────────────────────────────────────────────
-
-const FLOWS: Flow[] = [
-  {
-    id: "flow-consulta",
-    name: "Consulta Particular",
-    description: "Do primeiro contato à consulta paga",
-    agentCount: 5,
-    columns: [
-      {
-        id: "fc1-1",
-        title: "Novo contato",
-        color: "text-slate-300",
-        accent: "oklch(0.65 0.02 263)",
-        headerBg: "bg-slate-500/10 border-slate-500/20",
-        dotColor: "bg-slate-400",
-        cards: [
-          { id: "fc1-c1", name: "Ana Costa",     phone: "•••• 0164", preview: "Vim pelo Instagram, quero saber mais", time: "agora",  tags: [{ label: "Instagram", color: "bg-pink-500/15 text-pink-400 border-pink-500/20" }], hasWhatsapp: true },
-          { id: "fc1-c2", name: "Thyago Medici", phone: "•••• 0888", preview: "Atende plano de saúde?",               time: "22min", tags: [{ label: "Indicação", color: "bg-violet-500/15 text-violet-400 border-violet-500/20" }], hasWhatsapp: true },
-          { id: "fc1-c3", name: "Mariana Lopes", phone: "•••• 2241", preview: "Boa tarde, gostaria de informações",   time: "1h",    tags: [], hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fc1-2",
-        title: "Qualificando",
-        color: "text-amber-300",
-        accent: "oklch(0.75 0.15 85)",
-        headerBg: "bg-amber-500/10 border-amber-500/20",
-        dotColor: "bg-amber-400",
-        cards: [
-          { id: "fc1-c4", name: "João Magalhães",  phone: "•••• 4207", preview: "Preciso remarcar para semana que vem", time: "23min", tags: [{ label: "Retorno",   color: "bg-amber-500/15 text-amber-400 border-amber-500/20" }], hasWhatsapp: true },
-          { id: "fc1-c5", name: "Gabriel Bonanni", phone: "•••• 5974", preview: "Quero agendar avaliação inicial",     time: "1h",    tags: [{ label: "Avaliação", color: "bg-blue-500/15 text-blue-400 border-blue-500/20" }], value: "R$ 250", hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fc1-3",
-        title: "Aguardando Pix",
-        color: "text-cyan-300",
-        accent: "oklch(0.712 0.126 215.9)",
-        headerBg: "bg-cyan-500/10 border-cyan-500/20",
-        dotColor: "bg-cyan-400",
-        cards: [
-          { id: "fc1-c6", name: "Leonardo Ferreira", phone: "•••• 3129", preview: "Pix enviado, aguardando confirmação", time: "3h", tags: [{ label: "Pix pendente", color: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20" }], value: "R$ 180", paid: false, hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fc1-4",
-        title: "Agendado",
-        color: "text-emerald-300",
-        accent: "oklch(0.70 0.17 162)",
-        headerBg: "bg-emerald-500/10 border-emerald-500/20",
-        dotColor: "bg-emerald-400",
-        cards: [
-          { id: "fc1-c7", name: "Bruno Ita",      phone: "•••• 9661", preview: "Consulta confirmada para segunda",     time: "5h",    tags: [{ label: "Confirmado", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" }], value: "R$ 300", paid: true,  hasWhatsapp: true },
-          { id: "fc1-c8", name: "Fernanda Reis",  phone: "•••• 7712", preview: "Tudo certo para quinta-feira às 14h", time: "ontem", tags: [{ label: "Confirmado", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" }], value: "R$ 220", paid: false, hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fc1-5",
-        title: "Concluído",
-        color: "text-violet-300",
-        accent: "oklch(0.65 0.18 290)",
-        headerBg: "bg-violet-500/10 border-violet-500/20",
-        dotColor: "bg-violet-400",
-        cards: [
-          { id: "fc1-c9", name: "Rafael Trindade", phone: "•••• 3301", preview: "Consulta realizada com sucesso", time: "ontem", tags: [{ label: "Pago", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" }], value: "R$ 350", paid: true, hasWhatsapp: false },
-        ],
-      },
-    ],
-  },
-  {
-    id: "flow-retorno",
-    name: "Retorno",
-    description: "Acompanhamento pós-consulta",
-    agentCount: 3,
-    columns: [
-      {
-        id: "fr-1",
-        title: "Pós-consulta",
-        color: "text-slate-300",
-        accent: "oklch(0.65 0.02 263)",
-        headerBg: "bg-slate-500/10 border-slate-500/20",
-        dotColor: "bg-slate-400",
-        cards: [
-          { id: "fr-c1", name: "Paula Mendes",   phone: "•••• 1122", preview: "Consulta realizada ontem, aguardando orientações", time: "1h",    tags: [{ label: "Novo retorno", color: "bg-slate-500/15 text-slate-400 border-slate-500/20" }], hasWhatsapp: true },
-          { id: "fr-c2", name: "Carlos Brito",   phone: "•••• 3344", preview: "Ficou com dúvidas sobre a medicação",              time: "3h",    tags: [{ label: "Dúvida",       color: "bg-amber-500/15 text-amber-400 border-amber-500/20"  }], hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fr-2",
-        title: "Em acompanhamento",
-        color: "text-blue-300",
-        accent: "oklch(0.68 0.15 245)",
-        headerBg: "bg-blue-500/10 border-blue-500/20",
-        dotColor: "bg-blue-400",
-        cards: [
-          { id: "fr-c3", name: "Lívia Santos",  phone: "•••• 5566", preview: "Seguindo o tratamento, retorno em 15 dias", time: "ontem", tags: [{ label: "Em tratamento", color: "bg-blue-500/15 text-blue-400 border-blue-500/20" }], hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fr-3",
-        title: "Reagendando",
-        color: "text-amber-300",
-        accent: "oklch(0.75 0.15 85)",
-        headerBg: "bg-amber-500/10 border-amber-500/20",
-        dotColor: "bg-amber-400",
-        cards: [
-          { id: "fr-c4", name: "Diego Fonseca", phone: "•••• 7788", preview: "Solicitou remarcar para próxima semana", time: "2h", tags: [{ label: "Remarcando", color: "bg-amber-500/15 text-amber-400 border-amber-500/20" }], value: "R$ 180", hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fr-4",
-        title: "Alta",
-        color: "text-emerald-300",
-        accent: "oklch(0.70 0.17 162)",
-        headerBg: "bg-emerald-500/10 border-emerald-500/20",
-        dotColor: "bg-emerald-400",
-        cards: [
-          { id: "fr-c5", name: "Tânia Rocha",  phone: "•••• 9900", preview: "Tratamento concluído com sucesso",         time: "ontem", tags: [{ label: "Alta",          color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" }], value: "R$ 200", paid: true, hasWhatsapp: false },
-          { id: "fr-c6", name: "Marcus Alves", phone: "•••• 1234", preview: "Paciente liberado, exames dentro do normal", time: "2d",   tags: [{ label: "Alta",          color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" }], value: "R$ 180", paid: true, hasWhatsapp: false },
-        ],
-      },
-    ],
-  },
-  {
-    id: "flow-plano",
-    name: "Convênio",
-    description: "Atendimentos via plano de saúde",
-    agentCount: 4,
-    columns: [
-      {
-        id: "fp-1",
-        title: "Solicitação",
-        color: "text-slate-300",
-        accent: "oklch(0.65 0.02 263)",
-        headerBg: "bg-slate-500/10 border-slate-500/20",
-        dotColor: "bg-slate-400",
-        cards: [
-          { id: "fp-c1", name: "Beatriz Lima",  phone: "•••• 2233", preview: "Tem Unimed, precisa de encaminhamento", time: "10min", tags: [{ label: "Unimed",   color: "bg-blue-500/15 text-blue-400 border-blue-500/20"   }], hasWhatsapp: true },
-          { id: "fp-c2", name: "Renato Costa",  phone: "•••• 4455", preview: "Plano SulAmérica, consulta de rotina",  time: "1h",   tags: [{ label: "SulAmérica", color: "bg-rose-500/15 text-rose-400 border-rose-500/20" }], hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fp-2",
-        title: "Validando plano",
-        color: "text-amber-300",
-        accent: "oklch(0.75 0.15 85)",
-        headerBg: "bg-amber-500/10 border-amber-500/20",
-        dotColor: "bg-amber-400",
-        cards: [
-          { id: "fp-c3", name: "Sônia Barros",  phone: "•••• 6677", preview: "Aguardando confirmação de cobertura", time: "4h", tags: [{ label: "Verificando", color: "bg-amber-500/15 text-amber-400 border-amber-500/20" }], hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fp-3",
-        title: "Agendado",
-        color: "text-emerald-300",
-        accent: "oklch(0.70 0.17 162)",
-        headerBg: "bg-emerald-500/10 border-emerald-500/20",
-        dotColor: "bg-emerald-400",
-        cards: [
-          { id: "fp-c4", name: "Jorge Pinheiro", phone: "•••• 8899", preview: "Consulta marcada para amanhã 10h", time: "ontem", tags: [{ label: "Confirmado", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" }], hasWhatsapp: true },
-        ],
-      },
-      {
-        id: "fp-4",
-        title: "Concluído",
-        color: "text-violet-300",
-        accent: "oklch(0.65 0.18 290)",
-        headerBg: "bg-violet-500/10 border-violet-500/20",
-        dotColor: "bg-violet-400",
-        cards: [
-          { id: "fp-c5", name: "Helena Cruz",  phone: "•••• 0011", preview: "Atendimento realizado, TISS enviado", time: "ontem", tags: [{ label: "TISS enviado", color: "bg-violet-500/15 text-violet-400 border-violet-500/20" }], hasWhatsapp: false },
-        ],
-      },
-    ],
-  },
-]
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function parseValue(v: string | undefined): number {
-  if (!v) return 0
-  return parseFloat(v.replace(/[^\d,]/g, "").replace(",", ".")) || 0
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return ""
+  try {
+    const date = new Date(iso)
+    const diffMs = Date.now() - date.getTime()
+    const diffMin = Math.floor(diffMs / 60_000)
+    const diffH = Math.floor(diffMs / 3_600_000)
+    const diffD = Math.floor(diffMs / 86_400_000)
+    if (diffMin < 1) return "agora"
+    if (diffMin < 60) return `${diffMin}min`
+    if (diffH < 24) return `${diffH}h`
+    if (diffD === 1) return "ontem"
+    if (diffD < 7) return `${diffD}d`
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+  } catch {
+    return ""
+  }
 }
 
-function formatBRL(n: number): string {
-  return "R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+// Derive a stable accent color from the stage hex color
+function stageStyle(hexColor: string) {
+  return {
+    accent: hexColor,
+    headerBg: `${hexColor}18`,
+    headerBorder: `${hexColor}30`,
+    dot: hexColor,
+  }
 }
 
-// ─── Card component ───────────────────────────────────────────────────────────
+// ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function KanbanCard({
-  card,
-  isDragging = false,
-  overlay = false,
-}: {
-  card: Card
-  isDragging?: boolean
-  overlay?: boolean
-}) {
-  const initials = card.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
-  const avatarColors = [
+function Avatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) {
+  const initials = (name || "?").split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
+  const colors = [
     "bg-accent/20 text-accent",
     "bg-violet-500/20 text-violet-400",
     "bg-emerald-500/20 text-emerald-400",
     "bg-rose-500/20 text-rose-400",
     "bg-amber-500/20 text-amber-400",
   ]
-  const avatarColor = avatarColors[card.name.charCodeAt(0) % avatarColors.length]
+  const color = colors[(name || "").charCodeAt(0) % colors.length]
+
+  if (photoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={photoUrl}
+        alt={name}
+        className="h-7 w-7 shrink-0 rounded-full object-cover border border-white/5"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+      />
+    )
+  }
+
+  return (
+    <div className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[11px] font-semibold border border-white/5 ${color}`}>
+      {initials}
+    </div>
+  )
+}
+
+// ─── Card component ───────────────────────────────────────────────────────────
+
+function KanbanCard({
+  contact,
+  stageColor,
+  isDragging = false,
+  overlay = false,
+}: {
+  contact: BoardContact
+  stageColor: string
+  isDragging?: boolean
+  overlay?: boolean
+}) {
+  const name = contact.name ?? contact.phone
+  const lastMsg = contact.messages[0]
+  const time = formatRelativeTime(contact.lastMessageAt ?? contact.messages[0]?.createdAt ?? null)
 
   return (
     <div
       className={`group rounded-xl border bg-card px-3.5 py-3 flex flex-col gap-2.5 cursor-grab active:cursor-grabbing select-none transition-all duration-200 ${
         overlay
-          ? "border-accent/40 shadow-[0_8px_40px_0_oklch(0.712_0.126_215.9_/_0.25),0_2px_12px_0_rgba(0,0,0,0.5)] rotate-[1.5deg] scale-[1.04] opacity-98 ring-1 ring-accent/20"
+          ? "border-accent/40 shadow-[0_8px_40px_0_oklch(0.712_0.126_215.9_/_0.25),0_2px_12px_0_rgba(0,0,0,0.5)] rotate-[1.5deg] scale-[1.04] ring-1 ring-accent/20"
           : isDragging
           ? "border-border/10 opacity-20 scale-[0.98]"
           : "border-border/60 hover:border-border hover:shadow-lg hover:shadow-black/20"
@@ -292,12 +128,10 @@ function KanbanCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[11px] font-semibold border border-white/5 ${avatarColor}`}>
-            {initials}
-          </div>
+          <Avatar name={name} photoUrl={contact.photoUrl} />
           <div className="min-w-0">
-            <p className="text-[13px] font-medium text-foreground truncate leading-tight">{card.name}</p>
-            <p className="text-[10px] text-muted-foreground/40 font-mono">{card.phone}</p>
+            <p className="text-[13px] font-medium text-foreground truncate leading-tight">{name}</p>
+            <p className="text-[10px] text-muted-foreground/40 font-mono">{contact.phone}</p>
           </div>
         </div>
         <button
@@ -308,48 +142,59 @@ function KanbanCard({
         </button>
       </div>
 
-      {/* Preview */}
-      <p className="text-[12px] text-muted-foreground/70 leading-snug line-clamp-2">{card.preview}</p>
-
-      {/* Tags */}
-      {card.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {card.tags.map((tag) => (
-            <span
-              key={tag.label}
-              className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${tag.color}`}
-            >
-              {tag.label}
+      {/* Last message preview */}
+      {lastMsg && (
+        <p className="text-[12px] text-muted-foreground/70 leading-snug line-clamp-2">
+          {lastMsg.role !== "CONTACT" && (
+            <span className="text-muted-foreground/40 mr-1">
+              {lastMsg.role === "AGENT" ? "Agente:" : "Você:"}
             </span>
-          ))}
-        </div>
+          )}
+          {lastMsg.content}
+        </p>
       )}
+
+      {/* Status tag */}
+      <div className="flex flex-wrap gap-1">
+        <span
+          className="inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium"
+          style={{
+            background: `${stageColor}18`,
+            borderColor: `${stageColor}30`,
+            color: stageColor,
+          }}
+        >
+          {contact.status.replace(/_/g, " ")}
+        </span>
+        {contact.assignedProfessional && (
+          <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 text-[10px] text-muted-foreground/60">
+            {contact.assignedProfessional.fullName.split(" ")[0]}
+          </span>
+        )}
+      </div>
 
       {/* Footer */}
       <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-border/40">
         <div className="flex items-center gap-2">
-          {card.hasWhatsapp && (
-            <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400/60" weight="fill" />
+          <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400/60" weight="fill" />
+          {time && (
+            <div className="flex items-center gap-1 text-muted-foreground/40">
+              <Clock className="h-3 w-3" />
+              <span className="text-[10px]">{time}</span>
+            </div>
           )}
-          <div className="flex items-center gap-1 text-muted-foreground/40">
-            <Clock className="h-3 w-3" />
-            <span className="text-[10px]">{card.time}</span>
-          </div>
         </div>
-        {card.value && (
+        {contact.lastPaymentStatus && (
           <div className="flex items-center gap-1.5">
-            {card.paid !== undefined && (
-              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${
-                card.paid
-                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400/70"
-                  : "bg-white/[0.03] border-white/[0.08] text-white/20"
-              }`}>
-                {card.paid ? "Pago" : "Pendente"}
-              </span>
-            )}
+            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${
+              contact.lastPaymentStatus === "PAID"
+                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400/70"
+                : "bg-white/[0.03] border-white/[0.08] text-white/20"
+            }`}>
+              {contact.lastPaymentStatus === "PAID" ? "Pago" : "Pendente"}
+            </span>
             <div className="flex items-center gap-1 text-emerald-400/80">
               <CurrencyDollar className="h-3 w-3" />
-              <span className="text-[10px] font-medium tabular-nums">{card.value.replace("R$ ", "")}</span>
             </div>
           </div>
         )}
@@ -360,12 +205,12 @@ function KanbanCard({
 
 // ─── Draggable card wrapper ───────────────────────────────────────────────────
 
-function DraggableCard({ card }: { card: Card }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id })
+function DraggableCard({ contact, stageColor }: { contact: BoardContact; stageColor: string }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: contact.id })
 
   return (
     <div ref={setNodeRef} {...listeners} {...attributes} suppressHydrationWarning>
-      <KanbanCard card={card} isDragging={isDragging} />
+      <KanbanCard contact={contact} stageColor={stageColor} isDragging={isDragging} />
     </div>
   )
 }
@@ -373,53 +218,54 @@ function DraggableCard({ card }: { card: Card }) {
 // ─── Droppable column ─────────────────────────────────────────────────────────
 
 function KanbanColumn({
-  column,
+  stage,
+  contacts,
   isOver,
 }: {
-  column: Column
+  stage: BoardStage
+  contacts: BoardContact[]
   isOver: boolean
 }) {
-  const { setNodeRef } = useDroppable({ id: column.id })
-  const total = column.cards.reduce((s, c) => s + parseValue(c.value), 0)
+  const { setNodeRef } = useDroppable({ id: stage.id })
+  const style = stageStyle(stage.color)
 
   return (
     <div className="flex flex-col h-full">
       {/* Column header */}
-      <div className={`flex items-center justify-between rounded-xl border px-3 py-2 mb-2.5 shrink-0 ${column.headerBg}`}>
+      <div
+        className="flex items-center justify-between rounded-xl border px-3 py-2 mb-2.5 shrink-0"
+        style={{ background: style.headerBg, borderColor: style.headerBorder }}
+      >
         <div className="flex items-center gap-2 min-w-0">
-          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${column.dotColor}`} />
-          <span className={`text-[12px] font-semibold truncate ${column.color}`}>{column.title}</span>
-          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
-            {column.cards.length}
+          <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: style.dot }} />
+          <span className="text-[12px] font-semibold truncate" style={{ color: stage.color }}>
+            {stage.name}
           </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {total > 0 && (
-            <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-400/70 tabular-nums">
-              <CurrencyDollar className="h-2.5 w-2.5" />
-              {formatBRL(total).replace("R$ ", "")}
-            </span>
+          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
+            {contacts.length}
+          </span>
+          {stage.isTerminal && (
+            <span className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-wider">final</span>
           )}
-          <button className="flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150">
-            <Plus className="h-3 w-3" />
-          </button>
         </div>
+        <button className="flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150">
+          <Plus className="h-3 w-3" />
+        </button>
       </div>
 
-      {/* Drop zone wrapper — overflow visible so scale+glow can bleed out */}
+      {/* Drop zone */}
       <div className="flex-1 overflow-y-auto overflow-x-visible min-h-0">
         <motion.div
           ref={setNodeRef}
           animate={isOver ? { scale: 1.02 } : { scale: 1 }}
           transition={{ duration: 0.2, ease }}
           style={isOver ? {
-            boxShadow: `0 0 0 2px ${column.accent}55, 0 0 32px 0 ${column.accent}30`,
+            boxShadow: `0 0 0 2px ${stage.color}55, 0 0 32px 0 ${stage.color}30`,
           } : {}}
           className={`flex flex-col gap-2.5 rounded-xl p-2 pb-3 min-h-[80px] relative transition-colors duration-200 ${
             isOver ? "bg-white/[0.03]" : "bg-muted/[0.06]"
           }`}
         >
-          {/* Pulsing tinted overlay */}
           <AnimatePresence>
             {isOver && (
               <motion.div
@@ -429,35 +275,34 @@ function KanbanColumn({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
                 className="pointer-events-none absolute inset-0 rounded-xl"
-                style={{ background: `${column.accent}0d` }}
+                style={{ background: `${stage.color}0d` }}
               />
             )}
           </AnimatePresence>
 
           <AnimatePresence initial={false}>
-            {column.cards.map((card) => (
+            {contacts.map((contact) => (
               <motion.div
-                key={card.id}
+                key={contact.id}
                 layout
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.2, ease }}
               >
-                <DraggableCard card={card} />
+                <DraggableCard contact={contact} stageColor={stage.color} />
               </motion.div>
             ))}
           </AnimatePresence>
 
-          {/* Empty drop hint */}
-          {column.cards.length === 0 && (
+          {contacts.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed py-10 transition-colors duration-200"
               style={isOver ? {
-                borderColor: `${column.accent}80`,
-                background: `${column.accent}08`,
+                borderColor: `${stage.color}80`,
+                background: `${stage.color}08`,
               } : { borderColor: "oklch(1 0 0 / 8%)" }}
             >
               <motion.div
@@ -466,11 +311,13 @@ function KanbanColumn({
               >
                 <ArrowRight
                   className="h-4 w-4 transition-colors duration-200"
-                  style={{ color: isOver ? column.accent : "oklch(1 0 0 / 20%)" }}
+                  style={{ color: isOver ? stage.color : "oklch(1 0 0 / 20%)" }}
                 />
               </motion.div>
-              <p className="text-[11px] transition-colors duration-200"
-                style={{ color: isOver ? `${column.accent}99` : "oklch(1 0 0 / 20%)" }}>
+              <p
+                className="text-[11px] transition-colors duration-200"
+                style={{ color: isOver ? `${stage.color}99` : "oklch(1 0 0 / 20%)" }}
+              >
                 Solte aqui
               </p>
             </motion.div>
@@ -481,41 +328,31 @@ function KanbanColumn({
   )
 }
 
-// ─── Mobile column (accordion, no drag) ──────────────────────────────────────
+// ─── Mobile column ────────────────────────────────────────────────────────────
 
-function MobileColumn({ column, isOver }: { column: Column; isOver: boolean }) {
+function MobileColumn({ stage, contacts }: { stage: BoardStage; contacts: BoardContact[] }) {
   const [open, setOpen] = useState(true)
-  const total = column.cards.reduce((s, c) => s + parseValue(c.value), 0)
+  const style = stageStyle(stage.color)
 
   return (
     <div className="rounded-xl border border-border/40 overflow-hidden">
-      {/* Header */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center justify-between px-3 py-2.5 border-b border-border/30 ${column.headerBg}`}
+        className="w-full flex items-center justify-between px-3 py-2.5 border-b border-border/30"
+        style={{ background: style.headerBg }}
       >
         <div className="flex items-center gap-2">
-          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${column.dotColor}`} />
-          <span className={`text-[12px] font-semibold ${column.color}`}>{column.title}</span>
+          <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: style.dot }} />
+          <span className="text-[12px] font-semibold" style={{ color: stage.color }}>{stage.name}</span>
           <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
-            {column.cards.length}
+            {contacts.length}
           </span>
-          {total > 0 && (
-            <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-400/70 tabular-nums">
-              <CurrencyDollar className="h-2.5 w-2.5" />
-              {formatBRL(total).replace("R$ ", "")}
-            </span>
-          )}
         </div>
-        <motion.div
-          animate={{ rotate: open ? 0 : -90 }}
-          transition={{ duration: 0.2 }}
-        >
+        <motion.div animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }}>
           <Plus className="h-3.5 w-3.5 text-white/30 rotate-45" />
         </motion.div>
       </button>
 
-      {/* Cards */}
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
@@ -526,13 +363,13 @@ function MobileColumn({ column, isOver }: { column: Column; isOver: boolean }) {
             className="overflow-hidden"
           >
             <div className="flex flex-col gap-2.5 p-3">
-              {column.cards.length === 0 ? (
+              {contacts.length === 0 ? (
                 <p className="text-center text-[11px] text-muted-foreground/30 py-4">
                   Nenhum contato nesta etapa
                 </p>
               ) : (
-                column.cards.map((card) => (
-                  <KanbanCard key={card.id} card={card} />
+                contacts.map((c) => (
+                  <KanbanCard key={c.id} contact={c} stageColor={stage.color} />
                 ))
               )}
             </div>
@@ -546,32 +383,63 @@ function MobileColumn({ column, isOver }: { column: Column; isOver: boolean }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function BoardsPage() {
-  const [activeFlowId, setActiveFlowId] = useState(FLOWS[0].id)
-  const [flowData, setFlowData] = useState<Record<string, Column[]>>(
-    () => Object.fromEntries(FLOWS.map((f) => [f.id, f.columns]))
-  )
-  const [activeCard, setActiveCard] = useState<Card | null>(null)
+  const [activeFunnelId, setActiveFunnelId] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [activeContact, setActiveContact] = useState<BoardContact | null>(null)
+  const [activeStageColor, setActiveStageColor] = useState("#888")
   const [overId, setOverId] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingFunnel, setEditingFunnel] = useState<FunnelListItem | undefined>(undefined)
   const dndId = useId()
+
   const openBuilder = useFunnelStore((s) => s.openBuilder)
   const globalActiveFlowId = useFunnelStore((s) => s.globalActiveFlowId)
   const setGlobalActiveFlow = useFunnelStore((s) => s.setGlobalActiveFlow)
 
-  const columns = flowData[activeFlowId] ?? []
-  const activeFlow = FLOWS.find((f) => f.id === activeFlowId)!
+  const { data: funnels, isLoading: funnelsLoading } = useFunnels()
+
+  // Default to first funnel once loaded
+  const selectedFunnelId = activeFunnelId ?? funnels?.[0]?.id ?? null
+
+  const { funnel, stages, stageMap, loading: boardLoading, error: boardError, moveContact, refetch } = useBoard(
+    selectedFunnelId,
+    { search: debouncedSearch || undefined },
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   )
 
-  function findColumnOfCard(cardId: string): Column | undefined {
-    return columns.find((col) => col.cards.some((c) => c.id === cardId))
+  function openCreateModal() {
+    setEditingFunnel(undefined)
+    setModalOpen(true)
+  }
+
+  function openEditModal(f: FunnelListItem) {
+    setEditingFunnel(f)
+    setModalOpen(true)
+  }
+
+  // Debounce search → trigger refetch
+  const handleSearch = (v: string) => {
+    setSearch(v)
+    clearTimeout((handleSearch as unknown as { _t: ReturnType<typeof setTimeout> })._t)
+    ;(handleSearch as unknown as { _t: ReturnType<typeof setTimeout> })._t = setTimeout(() => {
+      setDebouncedSearch(v)
+    }, 350)
+  }
+
+  function findStageOfContact(contactId: string): string | undefined {
+    return stages.find((s) => stageMap[s.id]?.some((c) => c.id === contactId))?.id
   }
 
   function handleDragStart({ active }: DragStartEvent) {
-    const col = findColumnOfCard(String(active.id))
-    const card = col?.cards.find((c) => c.id === active.id)
-    setActiveCard(card ?? null)
+    const stageId = findStageOfContact(String(active.id))
+    const card = stageId ? stageMap[stageId]?.find((c) => c.id === active.id) : undefined
+    const color = stages.find((s) => s.id === stageId)?.color ?? "#888"
+    setActiveContact(card ?? null)
+    setActiveStageColor(color)
   }
 
   function handleDragOver({ over }: DragOverEvent) {
@@ -579,167 +447,265 @@ export default function BoardsPage() {
   }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
-    setActiveCard(null)
+    setActiveContact(null)
     setOverId(null)
     if (!over) return
 
-    const sourceCol = findColumnOfCard(String(active.id))
-    if (!sourceCol) return
+    const fromStageId = findStageOfContact(String(active.id))
+    if (!fromStageId) return
 
-    const targetColId = columns.find((c) => c.id === over.id)
+    // over.id can be a stage id or a card id — resolve to stage
+    const toStageId = stages.find((s) => s.id === over.id)
       ? String(over.id)
-      : findColumnOfCard(String(over.id))?.id
+      : findStageOfContact(String(over.id))
 
-    if (!targetColId || sourceCol.id === targetColId) return
+    if (!toStageId || fromStageId === toStageId) return
 
-    setFlowData((prev) => ({
-      ...prev,
-      [activeFlowId]: prev[activeFlowId].map((col) => {
-        if (col.id === sourceCol.id) return { ...col, cards: col.cards.filter((c) => c.id !== active.id) }
-        if (col.id === targetColId) {
-          const card = sourceCol.cards.find((c) => c.id === active.id)!
-          return { ...col, cards: [...col.cards, card] }
-        }
-        return col
-      }),
-    }))
+    moveContact(String(active.id), fromStageId, toStageId)
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const isLoading = funnelsLoading || boardLoading
+
   return (
+    <>
+    <FunnelModal
+      open={modalOpen}
+      onClose={() => setModalOpen(false)}
+      funnel={editingFunnel}
+    />
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Page header — single row */}
+      {/* ── Header ── */}
       <div className="flex items-stretch justify-between border-b border-border/50 shrink-0 h-11">
 
-        {/* Flow tabs — left side */}
+        {/* Funnel tabs */}
         <div className="flex items-stretch gap-0 pl-4 overflow-x-auto scrollbar-none">
-          {FLOWS.map((flow) => {
-            const isGlobalActive = globalActiveFlowId === flow.id
-            return (
-              <button
-                key={flow.id}
-                onClick={() => setActiveFlowId(flow.id)}
-                className={`relative shrink-0 flex items-center gap-2 px-4 h-full text-[12px] font-bold transition-colors duration-150 cursor-pointer ${
-                  activeFlowId === flow.id
-                    ? "text-white/90"
-                    : "text-white/25 hover:text-white/60"
-                }`}
-              >
-                {activeFlowId === flow.id && (
-                  <motion.div
-                    layoutId="flow-tab-indicator"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
-                    transition={{ duration: 0.22, ease }}
-                  />
-                )}
-                {isGlobalActive && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" title="Fluxo ativo" />
-                )}
-                <span className="relative">{flow.name}</span>
-                {flow.agentCount > 0 && (
-                  <span className="relative flex items-center gap-0.5 text-[9px] font-bold text-violet-400/60">
-                    <Robot className="h-2.5 w-2.5" />
-                    {flow.agentCount}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-          <button className="shrink-0 flex items-center px-3 h-full text-[11px] text-white/15 hover:text-white/40 transition-colors duration-150 gap-1 cursor-pointer">
-            <Plus className="h-3 w-3" />
-          </button>
+          {funnelsLoading ? (
+            <div className="flex items-center px-4 gap-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-3 w-20 rounded bg-muted/30 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            funnels?.map((f) => {
+              const isGlobalActive = globalActiveFlowId === f.id
+              const isActive = selectedFunnelId === f.id
+              return (
+                <div key={f.id} className="group relative flex items-stretch">
+                  <button
+                    onClick={() => setActiveFunnelId(f.id)}
+                    className={`relative flex items-center gap-2 px-4 h-full text-[12px] font-bold transition-colors duration-150 cursor-pointer ${
+                      isActive ? "text-white/90" : "text-white/25 hover:text-white/60"
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="flow-tab-indicator"
+                        className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
+                        transition={{ duration: 0.22, ease }}
+                      />
+                    )}
+                    {isGlobalActive && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" title="Fluxo ativo" />
+                    )}
+                    <span className="relative">{f.name}</span>
+                  </button>
+                  {/* Edit button — appears on hover */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEditModal(f) }}
+                    className="hidden group-hover:flex h-4 w-4 self-center mr-1 items-center justify-center rounded text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors cursor-pointer"
+                    title="Editar funil"
+                  >
+                    <DotsThree className="h-3.5 w-3.5" weight="bold" />
+                  </button>
+                </div>
+              )
+            })
+          )}
         </div>
 
-        {/* Actions — right side */}
+        {/* Actions */}
         <div className="flex items-center gap-2 pr-4 shrink-0">
+          {/* Search */}
+          <div className="relative hidden sm:block">
+            <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/40 pointer-events-none" />
+            <input
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Buscar contato..."
+              className="h-7 w-36 rounded-lg bg-muted/30 pl-7 pr-2 text-[11px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:w-48 transition-all duration-300"
+            />
+          </div>
+
+          {/* Refresh */}
+          <button
+            onClick={() => refetch()}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/40 hover:text-foreground hover:bg-muted/40 transition-colors"
+            title="Atualizar"
+          >
+            <ArrowsClockwise className="h-3.5 w-3.5" />
+          </button>
+
           {/* Active flow toggle */}
-          {globalActiveFlowId === activeFlowId ? (
+          {selectedFunnelId && (globalActiveFlowId === selectedFunnelId ? (
             <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-2.5 h-7">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] font-bold text-emerald-400">Fluxo ativo</span>
             </div>
           ) : (
             <button
-              onClick={() => setGlobalActiveFlow(activeFlowId)}
+              onClick={() => selectedFunnelId && setGlobalActiveFlow(selectedFunnelId)}
               className="flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 text-[10px] font-semibold text-white/30 hover:border-emerald-500/30 hover:bg-emerald-500/[0.06] hover:text-emerald-400 transition-all duration-200"
             >
               Definir como ativo
             </button>
+          ))}
+
+          {funnel && (
+            <button
+              onClick={() => openBuilder(funnel.id, funnel.name)}
+              className="flex h-7 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/[0.06] px-2.5 text-[12px] font-semibold text-accent/80 hover:text-accent hover:bg-accent/10 hover:border-accent/40 transition-colors duration-150"
+            >
+              <FlowArrow className="h-3.5 w-3.5" />
+              Construtor
+            </button>
           )}
           <button
-            onClick={() => openBuilder(activeFlowId, activeFlow.name)}
-            className="flex h-7 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/[0.06] px-2.5 text-[12px] font-semibold text-accent/80 hover:text-accent hover:bg-accent/10 hover:border-accent/40 transition-colors duration-150"
+            onClick={openCreateModal}
+            className="flex h-7 items-center gap-1.5 rounded-lg bg-accent px-2.5 text-[12px] font-medium text-accent-foreground hover:bg-accent/90 transition-colors duration-200"
           >
-            <FlowArrow className="h-3.5 w-3.5" />
-            Construtor
-          </button>
-          <button className="flex h-7 items-center gap-1.5 rounded-lg border border-border bg-card/50 px-2.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200">
-            <Tag className="h-3 w-3" />
-            Filtrar
-          </button>
-          <button className="flex h-7 items-center gap-1.5 rounded-lg bg-accent px-2.5 text-[12px] font-medium text-accent-foreground hover:bg-accent/90 transition-colors duration-200">
             <Plus className="h-3 w-3" />
-            Novo fluxo
+            Novo funil
           </button>
         </div>
       </div>
 
-      {/* Board — Mobile: vertical stack | Desktop: horizontal kanban */}
+      {/* ── Board body ── */}
       <div className="flex-1 overflow-y-auto md:overflow-x-auto md:overflow-y-hidden">
-        <DndContext
-          id={dndId}
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeFlowId}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.22, ease }}
-              className="h-full"
+
+        {/* Loading skeleton */}
+        {isLoading && (
+          <div className="hidden md:flex gap-0 px-5 pt-4 pb-4 h-full">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex shrink-0 h-full overflow-visible">
+                {i > 1 && <div className="w-px shrink-0 mx-3 self-stretch bg-gradient-to-b from-transparent via-border to-transparent" />}
+                <div className="w-[268px] flex flex-col gap-3">
+                  <div className="h-9 rounded-xl bg-muted/20 animate-pulse" />
+                  {[1, 2, 3].slice(0, i % 2 === 0 ? 2 : 3).map((j) => (
+                    <div key={j} className="h-24 rounded-xl bg-muted/10 animate-pulse" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error */}
+        {boardError && !isLoading && (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <Warning className="h-8 w-8 text-rose-400/50" weight="duotone" />
+            <p className="text-[13px] text-muted-foreground/50">Erro ao carregar o board</p>
+            <button
+              onClick={() => refetch()}
+              className="flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
             >
-              {/* Mobile layout */}
-              <div className="flex flex-col gap-5 px-4 py-4 md:hidden">
-                {columns.map((col) => (
-                  <MobileColumn
-                    key={col.id}
-                    column={col}
-                    isOver={overId === col.id || col.cards.some((c) => c.id === overId && overId !== activeCard?.id)}
-                  />
-                ))}
-              </div>
+              <ArrowsClockwise className="h-3.5 w-3.5" />
+              Tentar novamente
+            </button>
+          </div>
+        )}
 
-              {/* Desktop layout */}
-              <div className="hidden md:flex gap-0 px-5 pt-4 pb-4 h-full min-w-max">
-                {columns.map((col, i) => (
-                  <div key={col.id} className="flex shrink-0 h-full overflow-visible">
-                    {i > 0 && (
-                      <div className="w-px shrink-0 mx-3 self-stretch bg-gradient-to-b from-transparent via-border to-transparent" />
-                    )}
-                    <div className="w-[268px] flex flex-col h-full overflow-visible">
-                      <KanbanColumn
-                        column={col}
-                        isOver={overId === col.id || col.cards.some((c) => c.id === overId && overId !== activeCard?.id)}
-                      />
+        {/* Empty (no funnels) */}
+        {!isLoading && !boardError && funnels?.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 border border-accent/20">
+              <FlowArrow className="h-8 w-8 text-accent/50" weight="duotone" />
+            </div>
+            <div>
+              <h3 className="text-[15px] font-semibold text-foreground">Nenhum funil criado ainda</h3>
+              <p className="mt-1.5 text-[13px] text-muted-foreground/50 max-w-[280px] leading-relaxed">
+                Crie um funil de vendas para organizar seus contatos por etapas e acompanhar o progresso de cada atendimento.
+              </p>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={openCreateModal}
+              className="cursor-pointer flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Criar primeiro funil
+            </motion.button>
+          </div>
+        )}
+
+        {/* Board */}
+        {!isLoading && !boardError && stages.length > 0 && (
+          <DndContext
+            id={dndId}
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedFunnelId}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.22, ease }}
+                className="h-full"
+              >
+                {/* Mobile */}
+                <div className="flex flex-col gap-5 px-4 py-4 md:hidden">
+                  {stages.map((stage) => (
+                    <MobileColumn
+                      key={stage.id}
+                      stage={stage}
+                      contacts={stageMap[stage.id] ?? []}
+                    />
+                  ))}
+                </div>
+
+                {/* Desktop */}
+                <div className="hidden md:flex gap-0 px-5 pt-4 pb-4 h-full min-w-max">
+                  {stages.map((stage, i) => (
+                    <div key={stage.id} className="flex shrink-0 h-full overflow-visible">
+                      {i > 0 && (
+                        <div className="w-px shrink-0 mx-3 self-stretch bg-gradient-to-b from-transparent via-border to-transparent" />
+                      )}
+                      <div className="w-[268px] flex flex-col h-full overflow-visible">
+                        <KanbanColumn
+                          stage={stage}
+                          contacts={stageMap[stage.id] ?? []}
+                          isOver={
+                            overId === stage.id ||
+                            (stageMap[stage.id] ?? []).some(
+                              (c) => c.id === overId && overId !== activeContact?.id,
+                            )
+                          }
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
-                <button className="flex w-[268px] shrink-0 items-center gap-2 rounded-xl border-2 border-dashed border-border/20 px-4 py-3 text-[12px] text-muted-foreground/30 hover:text-muted-foreground/60 hover:border-border/40 transition-all duration-200 self-start mt-8">
-                  <Plus className="h-3.5 w-3.5" />
-                  Adicionar etapa
-                </button>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+                  ))}
+                  <button className="flex w-[268px] shrink-0 items-center gap-2 rounded-xl border-2 border-dashed border-border/20 px-4 py-3 text-[12px] text-muted-foreground/30 hover:text-muted-foreground/60 hover:border-border/40 transition-all duration-200 self-start mt-8">
+                    <Plus className="h-3.5 w-3.5" />
+                    Adicionar etapa
+                  </button>
+                </div>
+              </motion.div>
+            </AnimatePresence>
 
-          <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.33, 1, 0.68, 1)" }}>
-            {activeCard ? <KanbanCard card={activeCard} overlay /> : null}
-          </DragOverlay>
-        </DndContext>
+            <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.33, 1, 0.68, 1)" }}>
+              {activeContact ? (
+                <KanbanCard contact={activeContact} stageColor={activeStageColor} overlay />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
       </div>
     </div>
+    </>
   )
 }

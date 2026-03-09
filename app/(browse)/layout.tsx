@@ -31,8 +31,8 @@ export default function BrowseLayout({ children }: { children: React.ReactNode }
           <AppSidebar
             collapsed={collapsed}
             onToggle={() => setCollapsed((v) => !v)}
-            accountManagerName="Maria Silva"
-            accountManagerPhone="(11) 98765-4321"
+            accountManagerName="Bruno Pimentel"
+            accountManagerPhone="(27) 99507-2522"
           />
         </div>
 
