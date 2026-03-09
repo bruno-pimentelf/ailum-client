@@ -21,10 +21,30 @@ export interface Member {
   } | null
 }
 
+export type InvitationStatus = "pending" | "accepted" | "expired"
+
+export type InvitationRole = MemberRole | "Membro"
+
+export interface Invitation {
+  id: string
+  email: string
+  role: InvitationRole
+  status: InvitationStatus
+  expiresAt: string
+  createdAt: string
+}
+
 export interface InviteInput {
   email: string
   role: MemberRole
   professionalId?: string
+}
+
+export interface InviteResponse {
+  id: string
+  email: string
+  role: string
+  status: "pending"
 }
 
 export interface UpdateRoleInput {
@@ -35,8 +55,10 @@ export interface UpdateRoleInput {
 export const membersApi = {
   list: () => apiFetch<Member[]>("/members"),
 
+  invitations: () => apiFetch<Invitation[]>("/members/invitations"),
+
   invite: (body: InviteInput) =>
-    apiFetch<void>("/members/invite", { method: "POST", body }),
+    apiFetch<InviteResponse>("/members/invite", { method: "POST", body }),
 
   updateRole: (memberId: string, body: UpdateRoleInput) =>
     apiFetch<Member>(`/members/${memberId}/role`, { method: "PATCH", body }),

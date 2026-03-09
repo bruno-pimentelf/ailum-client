@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Eye, EyeSlash, Sparkle, CheckCircle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
@@ -9,7 +10,17 @@ import { authClient } from "@/lib/auth-client"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-export default function LoginPage() {
+function safeCallbackUrl(url: string | null): string | null {
+  if (!url) return null
+  if (!url.startsWith("/")) return null
+  if (url.startsWith("//")) return null
+  return url
+}
+
+function LoginContent() {
+  const searchParams = useSearchParams()
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"))
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -40,7 +51,7 @@ export default function LoginPage() {
     const { data: orgs } = await authClient.organization.list()
 
     if (!orgs || orgs.length === 0) {
-      window.location.href = "/select-org?new=1"
+      window.location.href = callbackUrl ?? "/select-org?new=1"
       return
     }
 
@@ -48,12 +59,12 @@ export default function LoginPage() {
       await authClient.organization.setActive({ organizationId: orgs[0].id })
       // Hard navigate — gives the browser time to commit the Set-Cookie
       // before the next request, avoiding race conditions in production
-      window.location.href = "/chats"
+      window.location.href = callbackUrl ?? "/chats"
       return
     }
 
-    // Multiple orgs → let user choose
-    window.location.href = "/select-org"
+    // Multiple orgs → let user choose (preserve callbackUrl for after select)
+    window.location.href = callbackUrl ? `/select-org?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/select-org"
   }
 
   const handleForgot = async (e: React.FormEvent) => {
@@ -211,7 +222,10 @@ export default function LoginPage() {
                 {/* Sign up link */}
                 <p className="mt-2 text-center text-[12px] text-muted-foreground">
                   Não tem uma conta?{" "}
-                  <Link href="/sign-up" className="text-accent hover:text-accent/80 font-medium transition-colors duration-200">
+                  <Link
+                    href={callbackUrl ? `/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/sign-up"}
+                    className="text-accent hover:text-accent/80 font-medium transition-colors duration-200"
+                  >
                     Criar conta
                   </Link>
                 </p>
@@ -293,5 +307,17 @@ export default function LoginPage() {
         </AnimatePresence>
       </motion.div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

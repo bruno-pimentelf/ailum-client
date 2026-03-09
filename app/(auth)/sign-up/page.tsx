@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Eye, EyeSlash, Sparkle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
@@ -10,11 +11,21 @@ import { authClient } from "@/lib/auth-client"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-export default function SignUpPage() {
+function safeCallbackUrl(url: string | null): string | null {
+  if (!url) return null
+  if (!url.startsWith("/")) return null
+  if (url.startsWith("//")) return null
+  return url
+}
+
+function SignUpContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"))
+  const emailFromUrl = searchParams.get("email") ?? ""
 
   const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(emailFromUrl)
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -49,8 +60,12 @@ export default function SignUpPage() {
       return
     }
 
-    // New user → create org
-    router.push("/select-org?new=1")
+    // New user: if came from invite, go back to accept; else create org
+    if (callbackUrl) {
+      window.location.href = callbackUrl
+    } else {
+      router.push("/select-org?new=1")
+    }
   }
 
   return (
@@ -196,12 +211,27 @@ export default function SignUpPage() {
 
           <p className="mt-2 text-center text-[12px] text-muted-foreground">
             Já tem uma conta?{" "}
-            <Link href="/login" className="text-accent hover:text-accent/80 font-medium transition-colors duration-200">
+            <Link
+              href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
+              className="text-accent hover:text-accent/80 font-medium transition-colors duration-200"
+            >
               Entrar
             </Link>
           </p>
         </form>
       </motion.div>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+      </div>
+    }>
+      <SignUpContent />
+    </Suspense>
   )
 }

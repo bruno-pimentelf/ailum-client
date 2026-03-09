@@ -79,8 +79,8 @@ function ZapiCard({ integration, open, onToggle }: { integration: Integration | 
   }, [isConfigured])
 
   const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useZapiStatus({
-    enabled: open && isConfigured,
-    refetchInterval: open && isConfigured ? 15_000 : undefined,
+    enabled: isConfigured,
+    refetchInterval: isConfigured ? 15_000 : undefined,
   })
 
   const whatsappConnected = status?.connected === true

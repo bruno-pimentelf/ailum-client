@@ -20,10 +20,18 @@ function slugify(str: string) {
     .replace(/(^-|-$)/g, "")
 }
 
+function safeCallbackUrl(url: string | null): string | null {
+  if (!url) return null
+  if (!url.startsWith("/")) return null
+  if (url.startsWith("//")) return null
+  return url
+}
+
 function SelectOrgContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isNew = searchParams.get("new") === "1"
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"))
 
   const [orgs, setOrgs] = useState<Org[]>([])
   const [loading, setLoading] = useState(!isNew)
@@ -82,7 +90,7 @@ function SelectOrgContent() {
 
     // Activate org — hard navigate so the browser commits the updated cookie
     await authClient.organization.setActive({ organizationId: data.id })
-    window.location.href = "/chats"
+    window.location.href = callbackUrl ?? "/chats"
   }
 
   const handleActivate = async () => {
@@ -101,7 +109,7 @@ function SelectOrgContent() {
     // Hard navigate so the browser commits the updated cookie before the
     // next request hits the server — router.push can race against Set-Cookie
     // in cross-site (ailum.io → api.ailum.io) production environments.
-    window.location.href = "/chats"
+    window.location.href = callbackUrl ?? "/chats"
   }
 
   return (

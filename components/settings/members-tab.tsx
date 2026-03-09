@@ -18,8 +18,8 @@ import {
   ArrowsClockwise,
   X,
 } from "@phosphor-icons/react"
-import { useMembers, useInviteMember, useUpdateMemberRole, useRemoveMember } from "@/hooks/use-members"
-import type { Member as ApiMember, MemberRole } from "@/lib/api/members"
+import { useMembers, useInvitations, useInviteMember, useUpdateMemberRole, useRemoveMember } from "@/hooks/use-members"
+import type { Member as ApiMember, MemberRole, Invitation } from "@/lib/api/members"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -29,6 +29,20 @@ export const ROLE_CFG: Record<MemberRole, { label: string; icon: React.ElementTy
   ADMIN:        { label: "Admin",         icon: Crown,              bg: "bg-violet-500/10", border: "border-violet-500/25", text: "text-violet-300" },
   PROFESSIONAL: { label: "Profissional",  icon: Stethoscope,        bg: "bg-cyan-500/10",   border: "border-cyan-500/25",   text: "text-cyan-300"   },
   SECRETARY:    { label: "Secretária",    icon: IdentificationCard, bg: "bg-amber-500/10",  border: "border-amber-500/25",  text: "text-amber-300"  },
+}
+
+const STATUS_CFG: Record<Invitation["status"], { label: string; bg: string; border: string; text: string }> = {
+  pending:  { label: "Pendente",  bg: "bg-amber-500/10",  border: "border-amber-500/25",  text: "text-amber-400" },
+  accepted: { label: "Aceito",    bg: "bg-emerald-500/10", border: "border-emerald-500/25", text: "text-emerald-400" },
+  expired:  { label: "Expirado",  bg: "bg-white/5",       border: "border-white/10",      text: "text-white/40" },
+}
+
+function roleLabel(r: string): string {
+  return ROLE_CFG[r as MemberRole]?.label ?? r
+}
+
+function roleIcon(r: string): React.ElementType {
+  return ROLE_CFG[r as MemberRole]?.icon ?? IdentificationCard
 }
 
 // ── Invite Modal ───────────────────────────────────────────────────────────────
@@ -318,10 +332,41 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
   )
 }
 
+// ── Invitation Card ────────────────────────────────────────────────────────────
+
+function InvitationCard({ inv, index }: { inv: Invitation; index: number }) {
+  const cfg = ROLE_CFG[inv.role as MemberRole] ?? { bg: "bg-white/5", border: "border-white/10", text: "text-white/50" }
+  const statusCfg = STATUS_CFG[inv.status]
+  const Icon = roleIcon(inv.role)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.03, ease }}
+      className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 opacity-90"
+    >
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${cfg.bg} ${cfg.border} ${cfg.text}`}>
+        <Icon className="h-3.5 w-3.5" weight="regular" />
+      </div>
+      <div className="flex-1 min-w-0 py-0.5">
+        <p className="text-[12px] font-bold text-white/90 truncate">{inv.email}</p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`text-[9px] font-bold rounded px-1.5 py-0.5 border ${statusCfg.bg} ${statusCfg.border} ${statusCfg.text}`}>
+            {statusCfg.label}
+          </span>
+          <span className="text-[10px] text-white/35">{roleLabel(inv.role)}</span>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 // ── MembersTab ─────────────────────────────────────────────────────────────────
 
 export function MembersTab() {
   const { data: members, isLoading, error, refetch } = useMembers()
+  const { data: invitations } = useInvitations()
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<ApiRoleFilter>("all")
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -393,21 +438,39 @@ export function MembersTab() {
         )}
 
         {!isLoading && !error && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
-            {filtered.length > 0 ? (
-              filtered.map((m, i) => (
-                <MemberCard key={m.id} member={m} index={i} onEdit={() => setEditMember(m)} />
-              ))
-            ) : (
-              <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.05] bg-white/[0.02] mb-3">
-                  <Users className="h-4 w-4 text-white/18" weight="duotone" />
+          <div className="flex flex-col gap-6 w-full">
+            {/* Convites */}
+            {invitations && invitations.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-bold text-white/35 uppercase tracking-wider mb-2">Convites</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1">
+                  {invitations.map((inv, i) => (
+                    <InvitationCard key={inv.id} inv={inv} index={i} />
+                  ))}
                 </div>
-                <p className="text-[12px] font-bold text-white/40">
-                  {search ? "Nenhum membro encontrado" : "Nenhum membro ainda"}
-                </p>
               </div>
             )}
+
+            {/* Membros */}
+            <div>
+              <h3 className="text-[11px] font-bold text-white/35 uppercase tracking-wider mb-2">Membros</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
+                {filtered.length > 0 ? (
+                  filtered.map((m, i) => (
+                    <MemberCard key={m.id} member={m} index={i} onEdit={() => setEditMember(m)} />
+                  ))
+                ) : (
+                  <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.05] bg-white/[0.02] mb-3">
+                      <Users className="h-4 w-4 text-white/18" weight="duotone" />
+                    </div>
+                    <p className="text-[12px] font-bold text-white/40">
+                      {search ? "Nenhum membro encontrado" : "Nenhum membro ainda"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </motion.div>
