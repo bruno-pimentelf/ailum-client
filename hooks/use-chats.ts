@@ -104,9 +104,11 @@ export function useTypingStatus(tenantId: string | null, contactId: string | nul
 
 /**
  * Real-time WhatsApp connection status from the tenant root document.
+ * Returns both connected state and optional error message.
  */
 export function useWhatsappStatus(tenantId: string | null) {
   const [whatsappConnected, setWhatsappConnected] = useState<boolean | null>(null)
+  const [whatsappError, setWhatsappError] = useState<string | null>(null)
   const firebaseReady = useAuthStore((s) => s.firebaseReady)
 
   useEffect(() => {
@@ -114,11 +116,13 @@ export function useWhatsappStatus(tenantId: string | null) {
 
     const ref = doc(db, "tenants", tenantId)
     const unsub = onSnapshot(ref, (snap) => {
-      setWhatsappConnected(snap.data()?.whatsappConnected ?? false)
+      const data = snap.data()
+      setWhatsappConnected(data?.whatsappConnected ?? false)
+      setWhatsappError(data?.whatsappError ?? null)
     })
 
     return () => unsub()
   }, [tenantId, firebaseReady])
 
-  return whatsappConnected
+  return { whatsappConnected, whatsappError }
 }

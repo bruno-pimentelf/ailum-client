@@ -1,30 +1,69 @@
 import type { Timestamp } from "firebase/firestore"
 
-export interface FirestoreContact {
-  id: string
-  phone: string
-  name: string | null
-  email: string | null
-  status: string
-  stageId: string | null
-  funnelId: string | null
-  lastMessage: string
-  lastMessageAt: Timestamp
-  unreadCount: number
-  contactTyping: boolean
-  agentTyping: boolean
+// ─── Tenant root ──────────────────────────────────────────────────────────────
+
+export interface FirestoreTenant {
   whatsappConnected: boolean
-  assignedProfessionalId: string | null
+  whatsappError?: string
+  whatsappStatusAt: Timestamp
   updatedAt: Timestamp
 }
+
+// ─── Contact ──────────────────────────────────────────────────────────────────
+//
+// The Firestore doc ID (doc.id) is always the contactId to use in API calls.
+// The optional `id` field (written by syncContact) is the same Postgres UUID.
+//
+// Two sets of name/phone fields may coexist:
+//   - contactName / contactPhone  — written by syncConversationMessage (webhook)
+//   - name / phone                — written by syncContact (CRM sync)
+// Always prefer: contactName ?? name  |  contactPhone ?? phone
+
+export interface FirestoreContact {
+  // Set by Firestore doc ID (always use doc.id as contactId)
+  id?: string
+
+  // Identity — from syncContact
+  phone?: string
+  name?: string | null
+  email?: string | null
+
+  // Identity — from syncConversationMessage
+  contactName?: string | null
+  contactPhone?: string
+
+  // Photo (may be temporary Z-API URL or permanent Firebase Storage URL)
+  photoUrl?: string | null
+
+  // CRM
+  status: string
+  stageId?: string | null
+  funnelId?: string | null
+  assignedProfessionalId?: string | null
+
+  // Conversation preview
+  lastMessage?: string
+  lastMessageAt?: Timestamp | null
+  unreadCount?: number
+
+  // Presence indicators
+  contactTyping?: boolean
+  agentTyping?: boolean
+
+  // Metadata
+  updatedAt: Timestamp
+}
+
+// ─── Message ──────────────────────────────────────────────────────────────────
 
 export interface FirestoreMessage {
   id: string
   role: "CONTACT" | "OPERATOR" | "AGENT"
-  type: "TEXT" | "IMAGE" | "AUDIO" | "DOCUMENT" | "VIDEO" | "STICKER" | "LOCATION" | "CONTACT_CARD" | "REACTION"
+  type: "TEXT" | "IMAGE" | "AUDIO" | "DOCUMENT"
   content: string
   createdAt: Timestamp
   status?: "SENT" | "RECEIVED" | "READ" | "PLAYED"
+  updatedAt?: Timestamp
   metadata?: {
     // IMAGE
     imageUrl?: string
@@ -38,7 +77,7 @@ export interface FirestoreMessage {
     audioUrl?: string
     ptt?: boolean
     seconds?: number
-    // VIDEO / STICKER / LOCATION / CONTACT / TEMPLATE
+    // VIDEO / special
     videoUrl?: string
     mediaKind?: "video" | "sticker" | "location" | "contact" | "template"
     // DOCUMENT
@@ -48,12 +87,45 @@ export interface FirestoreMessage {
     latitude?: string
     longitude?: string
     address?: string
-    // CONTACT (vCard)
+    // CONTACT vCard
     contactName?: string
     contactPhone?: string
     // LINK
     url?: string
+    // BUTTON / LIST response
+    buttonId?: string
+    selectedRowId?: string
+    // TEMPLATE
+    templateId?: string
     // STICKER
     stickerUrl?: string
   }
+}
+
+// ─── Appointment ──────────────────────────────────────────────────────────────
+
+export interface FirestoreAppointment {
+  id: string
+  contactId: string
+  professionalId: string
+  serviceId: string
+  scheduledAt: Timestamp
+  durationMin: number
+  status: string // 'SCHEDULED' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED'
+  notes: string | null
+  updatedAt: Timestamp
+}
+
+// ─── Charge ───────────────────────────────────────────────────────────────────
+
+export interface FirestoreCharge {
+  id: string
+  contactId: string
+  amount: string
+  description: string
+  status: string // 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED'
+  pixCopyPaste: string | null
+  dueAt: Timestamp | null
+  paidAt: Timestamp | null
+  updatedAt: Timestamp
 }

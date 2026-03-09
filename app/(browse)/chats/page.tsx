@@ -19,9 +19,17 @@ import Link from "next/link"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
+// ─── Avatar with photo support ────────────────────────────────────────────────
 
-function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
+function Avatar({
+  name,
+  photoUrl,
+  size = "md",
+}: {
+  name: string
+  photoUrl?: string | null
+  size?: "sm" | "md" | "lg"
+}) {
   const initials = (name || "?").split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
   const colors = [
     "bg-accent/20 text-accent",
@@ -32,6 +40,19 @@ function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg"
   ]
   const color = colors[(name || "").charCodeAt(0) % colors.length]
   const sz = size === "sm" ? "h-8 w-8 text-[11px]" : size === "lg" ? "h-10 w-10 text-[14px]" : "h-9 w-9 text-[12px]"
+
+  if (photoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={photoUrl}
+        alt={name}
+        className={`${sz} shrink-0 rounded-full object-cover border border-white/5`}
+        onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+      />
+    )
+  }
+
   return (
     <div className={`${sz} ${color} shrink-0 rounded-full flex items-center justify-center font-semibold border border-white/5`}>
       {initials}
@@ -90,13 +111,9 @@ function formatRelativeTime(ts: FirestoreContact["lastMessageAt"] | undefined): 
     const diffMs = now.getTime() - date.getTime()
     const diffDays = Math.floor(diffMs / 86_400_000)
 
-    if (diffDays === 0) {
-      return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-    }
+    if (diffDays === 0) return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
     if (diffDays === 1) return "ontem"
-    if (diffDays < 7) {
-      return date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")
-    }
+    if (diffDays < 7) return date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
   } catch {
     return ""
@@ -114,8 +131,10 @@ function ConversationItem({
   active: boolean
   onClick: () => void
 }) {
-  const displayName = contact.name || contact.phone
+  const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
+  const displayPhone = contact.contactPhone ?? contact.phone ?? ""
   const isTyping = contact.contactTyping || contact.agentTyping
+  const unread = contact.unreadCount ?? 0
 
   return (
     <motion.div
@@ -137,7 +156,7 @@ function ConversationItem({
       )}
 
       <div className="relative shrink-0 mt-0.5">
-        <Avatar name={displayName} />
+        <Avatar name={displayName} photoUrl={contact.photoUrl} />
         {isTyping && (
           <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-background animate-pulse" />
         )}
@@ -171,10 +190,10 @@ function ConversationItem({
             </span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <PhoneCopy phone={contact.phone} />
-            {contact.unreadCount > 0 && (
+            {displayPhone && <PhoneCopy phone={displayPhone} />}
+            {unread > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-accent-foreground px-1">
-                {contact.unreadCount > 99 ? "99+" : contact.unreadCount}
+                {unread > 99 ? "99+" : unread}
               </span>
             )}
           </div>
@@ -188,18 +207,19 @@ function ConversationItem({
 
 export default function ChatsPage() {
   const [search, setSearch] = useState("")
+  // Store the full contact object — doc.id is the contactId for API calls
   const [selected, setSelected] = useState<FirestoreContact | null>(null)
 
   const tenantId = useAuthStore((s) => s.tenantId)
   const { contacts, loading } = useContacts(tenantId)
-  const whatsappConnected = useWhatsappStatus(tenantId)
+  const { whatsappConnected, whatsappError } = useWhatsappStatus(tenantId)
 
   const filtered = contacts.filter((c) => {
     if (!search) return true
     const q = search.toLowerCase()
     return (
-      (c.name ?? "").toLowerCase().includes(q) ||
-      (c.phone ?? "").includes(q) ||
+      (c.contactName ?? c.name ?? "").toLowerCase().includes(q) ||
+      (c.contactPhone ?? c.phone ?? "").includes(q) ||
       (c.lastMessage ?? "").toLowerCase().includes(q)
     )
   })
@@ -217,10 +237,12 @@ export default function ChatsPage() {
             className="overflow-hidden shrink-0"
           >
             <div className="flex items-center justify-between gap-3 border-b border-amber-500/20 bg-amber-500/[0.06] px-4 py-2.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <WifiSlash className="h-4 w-4 text-amber-400 shrink-0" />
-                <p className="text-[12px] text-amber-400/90 font-medium">
-                  WhatsApp desconectado — novas mensagens não serão entregues
+                <p className="text-[12px] text-amber-400/90 font-medium truncate">
+                  {whatsappError
+                    ? `WhatsApp desconectado — ${whatsappError}`
+                    : "WhatsApp desconectado — novas mensagens não serão entregues"}
                 </p>
               </div>
               <Link
@@ -263,9 +285,9 @@ export default function ChatsPage() {
 
             {!loading && (
               <AnimatePresence initial={false}>
-                {filtered.map((contact) => (
+                {filtered.map((contact, i) => (
                   <ConversationItem
-                    key={contact.id}
+                    key={contact.id ?? i}
                     contact={contact}
                     active={selected?.id === contact.id}
                     onClick={() => setSelected(contact)}
@@ -289,7 +311,7 @@ export default function ChatsPage() {
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
           <AnimatePresence mode="wait">
             {selected && tenantId ? (
-              <ChatView key={selected.id} contact={selected} tenantId={tenantId} />
+              <ChatView key={selected.id ?? "chat"} contact={selected} tenantId={tenantId} />
             ) : (
               <motion.div
                 key="empty"
