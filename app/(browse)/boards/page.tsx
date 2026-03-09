@@ -34,6 +34,14 @@ import { useFunnelStore } from "@/lib/funnel-store"
 import { useFunnels, useBoard, useFunnelMutations } from "@/hooks/use-board"
 import { FunnelModal } from "@/components/app/funnel-modal"
 import { SelectContactModal } from "@/components/app/select-contact-modal"
+import { StageConfigModal } from "@/components/app/stage-config-modal"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu"
 import type { BoardContact, BoardStage, FunnelListItem } from "@/lib/api/funnels"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -227,6 +235,7 @@ function KanbanColumn({
   funnelId,
   onAddContact,
   onUpdateStageName,
+  onOpenConfig,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
@@ -234,6 +243,7 @@ function KanbanColumn({
   funnelId: string
   onAddContact: (stage: BoardStage) => void
   onUpdateStageName: (stage: BoardStage, name: string) => void
+  onOpenConfig: (stage: BoardStage) => void
 }) {
   const { setNodeRef } = useDroppable({ id: stage.id })
   const style = stageStyle(stage.color)
@@ -307,14 +317,24 @@ function KanbanColumn({
             <span className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-wider">final</span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onAddContact(stage) }}
-          className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
-          title="Adicionar contato"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenConfig(stage) }}
+            className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
+            title="Configurar IA"
+          >
+            <DotsThree className="h-3 w-3" weight="bold" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onAddContact(stage) }}
+            className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
+            title="Adicionar contato"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
       </div>
 
       {/* Drop zone */}
@@ -400,12 +420,14 @@ function MobileColumn({
   funnelId,
   onAddContact,
   onUpdateStageName,
+  onOpenConfig,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
   funnelId: string
   onAddContact: (stage: BoardStage) => void
   onUpdateStageName?: (stage: BoardStage, name: string) => void
+  onOpenConfig: (stage: BoardStage) => void
 }) {
   const [open, setOpen] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -483,6 +505,14 @@ function MobileColumn({
         <div className="flex items-center gap-0.5 shrink-0">
           <button
             type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenConfig(stage) }}
+            className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
+            title="Configurar IA"
+          >
+            <DotsThree className="h-3.5 w-3.5" weight="bold" />
+          </button>
+          <button
+            type="button"
             onClick={() => onAddContact(stage)}
             className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
             title="Adicionar contato"
@@ -534,6 +564,7 @@ export default function BoardsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingFunnel, setEditingFunnel] = useState<FunnelListItem | undefined>(undefined)
   const [addContactTarget, setAddContactTarget] = useState<{ stage: BoardStage; funnelId: string } | null>(null)
+  const [configStage, setConfigStage] = useState<BoardStage | null>(null)
   const dndId = useId()
 
   const openBuilder = useFunnelStore((s) => s.openBuilder)
@@ -553,7 +584,7 @@ export default function BoardsPage() {
   const queryClient = useQueryClient()
   const boardKey = ["board", selectedFunnelId, debouncedSearch || undefined] as const
 
-  const { createStage, updateStage } = useFunnelMutations()
+  const { createStage, updateStage, createDefaultFunnel } = useFunnelMutations()
 
   async function handleUpdateStageName(s: BoardStage, name: string) {
     if (!selectedFunnelId) return
@@ -668,6 +699,11 @@ export default function BoardsPage() {
       onClose={() => setModalOpen(false)}
       funnel={editingFunnel}
     />
+    <StageConfigModal
+      open={!!configStage}
+      onClose={() => setConfigStage(null)}
+      stage={configStage}
+    />
     {addContactTarget && (
       <SelectContactModal
         open={!!addContactTarget}
@@ -725,15 +761,46 @@ export default function BoardsPage() {
               )
             })
           )}
-          {/* Add funnel — + next to tabs */}
+          {/* Add funnel — template picker */}
           {!funnelsLoading && (
-            <button
-              onClick={openCreateModal}
-              className="flex h-full w-9 shrink-0 items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors cursor-pointer"
-              title="Novo funil"
-            >
-              <Plus className="h-4 w-4" weight="bold" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-full w-9 shrink-0 items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                  title="Novo funil"
+                >
+                  <Plus className="h-4 w-4" weight="bold" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={6} className="min-w-[200px]">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Escolha um template
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    const created = await createDefaultFunnel.mutateAsync()
+                    setActiveFunnelId(created.id)
+                  }}
+                  disabled={createDefaultFunnel.isPending}
+                  className="cursor-pointer"
+                >
+                  {createDefaultFunnel.isPending ? (
+                    <ArrowsClockwise className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <FlowArrow className="h-3.5 w-3.5" />
+                  )}
+                  Funil Principal
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={openCreateModal}
+                  className="cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Funil em branco
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
 
@@ -823,24 +890,38 @@ export default function BoardsPage() {
 
         {/* Empty (no funnels) */}
         {!isLoading && !boardError && funnels?.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
+          <div className="flex flex-col items-center justify-center h-full gap-5 px-6 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 border border-accent/20">
               <FlowArrow className="h-8 w-8 text-accent/50" weight="duotone" />
             </div>
             <div>
               <h3 className="text-[15px] font-semibold text-foreground">Nenhum funil criado ainda</h3>
-              <p className="mt-1.5 text-[13px] text-muted-foreground/50 max-w-[280px] leading-relaxed">
-                Crie um funil de vendas para organizar seus contatos por etapas e acompanhar o progresso de cada atendimento.
+              <p className="mt-1.5 text-[13px] text-muted-foreground/50 max-w-[300px] leading-relaxed">
+                Crie um funil para organizar seus contatos por etapas e acompanhar o progresso de cada atendimento.
               </p>
             </div>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={openCreateModal}
-              className="cursor-pointer flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Criar primeiro funil
-            </motion.button>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => createDefaultFunnel.mutate()}
+                disabled={createDefaultFunnel.isPending}
+                className="cursor-pointer flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-60"
+              >
+                {createDefaultFunnel.isPending ? (
+                  <ArrowsClockwise className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                Criar Funil Principal
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={openCreateModal}
+                className="cursor-pointer flex items-center gap-2 rounded-xl border border-border/60 px-5 py-2.5 text-[13px] font-semibold text-foreground/80 hover:bg-white/[0.04] transition-colors"
+              >
+                Criar funil personalizado
+              </motion.button>
+            </div>
           </div>
         )}
 
@@ -872,6 +953,7 @@ export default function BoardsPage() {
                       funnelId={selectedFunnelId!}
                       onAddContact={(s) => setAddContactTarget({ stage: s, funnelId: selectedFunnelId! })}
                       onUpdateStageName={handleUpdateStageName}
+                      onOpenConfig={setConfigStage}
                     />
                   ))}
                 </div>
@@ -890,6 +972,7 @@ export default function BoardsPage() {
                           funnelId={selectedFunnelId!}
                           onAddContact={(s) => setAddContactTarget({ stage: s, funnelId: selectedFunnelId! })}
                           onUpdateStageName={handleUpdateStageName}
+                          onOpenConfig={setConfigStage}
                           isOver={
                             overId === stage.id ||
                             (stageMap[stage.id] ?? []).some(

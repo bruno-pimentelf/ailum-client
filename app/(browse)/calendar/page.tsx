@@ -15,7 +15,14 @@ import {
   DotsThree,
   Funnel,
   MagnifyingGlass,
+  CalendarCheck,
 } from "@phosphor-icons/react"
+import { useProfessionals, useProfessionalsWithAvailability } from "@/hooks/use-professionals"
+import { useAppointments } from "@/hooks/use-appointments"
+import { useMe } from "@/hooks/use-me"
+import { NovoAgendamentoModal } from "@/components/calendar/novo-agendamento-modal"
+import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
+import { toYMD, formatTimeLocal } from "@/lib/date-utils"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -23,7 +30,7 @@ const ease = [0.33, 1, 0.68, 1] as const
 
 type AppointmentStatus = "confirmed" | "pending" | "done" | "cancelled"
 
-type Appointment = {
+type CalendarAppointment = {
   id: string
   patientName: string
   doctorName: string
@@ -39,32 +46,41 @@ type Appointment = {
   color: string
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Helpers: map API → calendar ───────────────────────────────────────────────
+
+function mapApiStatus(api: ApiAppointment["status"]): AppointmentStatus {
+  if (api === "CANCELLED") return "cancelled"
+  if (api === "CONFIRMED") return "confirmed"
+  if (api === "PENDING" || api === "NO_SHOW") return "pending"
+  if (api === "COMPLETED") return "done"
+  return "pending"
+}
+
+function toCalendarAppointment(api: ApiAppointment): CalendarAppointment {
+  const d = new Date(api.scheduledAt)
+  return {
+    id: api.id,
+    patientName: api.contact?.name ?? "—",
+    doctorName: api.professional?.fullName ?? "—",
+    doctorId: api.professionalId,
+    time: formatTimeLocal(api.scheduledAt),
+    duration: api.durationMin ?? api.service?.durationMin ?? 50,
+    type: api.service?.name ?? "Consulta",
+    status: api.status === "CANCELLED" ? "cancelled" : mapApiStatus(api.status),
+    paid: api.charge?.status === "PAID",
+    day: d.getDate(),
+    month: d.getMonth(),
+    year: d.getFullYear(),
+    color: api.professionalId,
+  }
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const TODAY = new Date()
 const THIS_YEAR = TODAY.getFullYear()
 const THIS_MONTH = TODAY.getMonth()
 const TODAY_DAY = TODAY.getDate()
-
-const DOCTORS = [
-  { id: "all",    name: "Todos",       color: "text-white/60" },
-  { id: "marina", name: "Dra. Marina", color: "text-accent" },
-  { id: "carlos", name: "Dr. Carlos",  color: "text-white/60" },
-]
-
-const APPOINTMENTS: Appointment[] = [
-  { id: "a1",  patientName: "Ana Costa",        doctorName: "Dra. Marina", doctorId: "marina", time: "09:00", duration: 50, type: "Consulta",  status: "confirmed", paid: true,  day: TODAY_DAY,     month: THIS_MONTH, year: THIS_YEAR, color: "a" },
-  { id: "a2",  patientName: "João Pereira",      doctorName: "Dr. Carlos",  doctorId: "carlos", time: "10:00", duration: 30, type: "Retorno",   status: "done",      paid: true,  day: TODAY_DAY,     month: THIS_MONTH, year: THIS_YEAR, color: "b" },
-  { id: "a3",  patientName: "Thyago Medici",     doctorName: "Dra. Marina", doctorId: "marina", time: "11:30", duration: 50, type: "Consulta",  status: "pending",   paid: false, day: TODAY_DAY,     month: THIS_MONTH, year: THIS_YEAR, color: "a" },
-  { id: "a4",  patientName: "Leonardo Ferreira", doctorName: "Dr. Carlos",  doctorId: "carlos", time: "14:00", duration: 50, type: "Exame",     status: "confirmed", paid: false, day: TODAY_DAY,     month: THIS_MONTH, year: THIS_YEAR, color: "b" },
-  { id: "a5",  patientName: "Gabriel Bonanni",   doctorName: "Dra. Marina", doctorId: "marina", time: "15:30", duration: 30, type: "Retorno",   status: "confirmed", paid: true,  day: TODAY_DAY,     month: THIS_MONTH, year: THIS_YEAR, color: "a" },
-  { id: "a6",  patientName: "Maria Souza",       doctorName: "Dr. Carlos",  doctorId: "carlos", time: "09:30", duration: 50, type: "Consulta",  status: "confirmed", paid: true,  day: TODAY_DAY + 1, month: THIS_MONTH, year: THIS_YEAR, color: "b" },
-  { id: "a7",  patientName: "Carlos Lima",       doctorName: "Dra. Marina", doctorId: "marina", time: "13:00", duration: 50, type: "Avaliação", status: "pending",   paid: false, day: TODAY_DAY + 1, month: THIS_MONTH, year: THIS_YEAR, color: "a" },
-  { id: "a8",  patientName: "Fernanda Alves",    doctorName: "Dr. Carlos",  doctorId: "carlos", time: "16:00", duration: 30, type: "Retorno",   status: "confirmed", paid: false, day: TODAY_DAY + 2, month: THIS_MONTH, year: THIS_YEAR, color: "b" },
-  { id: "a9",  patientName: "Rafael Mendes",     doctorName: "Dra. Marina", doctorId: "marina", time: "10:30", duration: 50, type: "Consulta",  status: "confirmed", paid: true,  day: TODAY_DAY + 3, month: THIS_MONTH, year: THIS_YEAR, color: "a" },
-  { id: "a10", patientName: "Larissa Torres",    doctorName: "Dr. Carlos",  doctorId: "carlos", time: "08:00", duration: 50, type: "Consulta",  status: "cancelled", paid: false, day: TODAY_DAY - 1, month: THIS_MONTH, year: THIS_YEAR, color: "b" },
-  { id: "a11", patientName: "Bruno Ita",         doctorName: "Dra. Marina", doctorId: "marina", time: "14:30", duration: 30, type: "Retorno",   status: "done",      paid: true,  day: TODAY_DAY - 1, month: THIS_MONTH, year: THIS_YEAR, color: "a" },
-]
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -72,11 +88,44 @@ const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 const MONTHS_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 7)
 
-// Appointment colors — neutral, not accent-heavy
-// color "a" = doctor Marina (teal-tinted neutral), color "b" = dr. Carlos (subtle blue-neutral)
-const APT_COLOR: Record<string, { bg: string; border: string; dot: string; text: string }> = {
-  a: { bg: "bg-white/[0.05]",   border: "border-white/[0.10]", dot: "bg-white/50",       text: "text-white/80" },
-  b: { bg: "bg-white/[0.03]",   border: "border-white/[0.07]", dot: "bg-white/30",       text: "text-white/60" },
+type AptColorStyle = {
+  bg: string
+  border: string
+  dot: string
+  text: string
+}
+
+// Appointment color styles — fallbacks when professional has no calendarColor
+const DEFAULT_PRO_COLORS: AptColorStyle[] = [
+  { bg: "bg-white/[0.05]", border: "border-white/[0.10]", dot: "bg-white/50", text: "text-white/80" },
+  { bg: "bg-white/[0.03]", border: "border-white/[0.07]", dot: "bg-white/30", text: "text-white/60" },
+]
+
+function buildProfessionalColorMap(
+  professionals: { id: string }[] | undefined
+): Record<string, AptColorStyle> {
+  const map: Record<string, AptColorStyle> = {}
+  if (!professionals) return map
+  professionals.forEach((p, i) => {
+    map[p.id] = DEFAULT_PRO_COLORS[i % DEFAULT_PRO_COLORS.length]
+  })
+  return map
+}
+
+function getAptColorStyle(
+  professionalId: string,
+  professionalColorMap: Record<string, AptColorStyle>
+): AptColorStyle {
+  const style = professionalColorMap[professionalId]
+  if (style) return style
+  const idx = Math.abs(hashCode(professionalId)) % DEFAULT_PRO_COLORS.length
+  return DEFAULT_PRO_COLORS[idx] ?? DEFAULT_PRO_COLORS[0]
+}
+
+function hashCode(str: string): number {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = (h << 5) - h + str.charCodeAt(i)
+  return h
 }
 
 const STATUS_CONFIG: Record<AppointmentStatus, { label: string; badge: string }> = {
@@ -117,8 +166,14 @@ function PaidBadge({ paid }: { paid: boolean }) {
 
 // ─── Mini appointment chip (month grid) ──────────────────────────────────────
 
-function MiniApt({ apt }: { apt: Appointment }) {
-  const c = APT_COLOR[apt.color]
+function MiniApt({
+  apt,
+  colorMap,
+}: {
+  apt: CalendarAppointment
+  colorMap: Record<string, AptColorStyle>
+}) {
+  const c = getAptColorStyle(apt.color, colorMap)
   return (
     <div className={`flex items-center gap-1 rounded px-1 py-0.5 text-[8px] font-bold truncate border ${c.bg} ${c.border}
       ${apt.status === "done" ? "opacity-30" : ""}
@@ -132,8 +187,16 @@ function MiniApt({ apt }: { apt: Appointment }) {
 
 // ─── Day appointment card (day view) ─────────────────────────────────────────
 
-function DayAptCard({ apt, index }: { apt: Appointment; index: number }) {
-  const c = APT_COLOR[apt.color]
+function DayAptCard({
+  apt,
+  index,
+  colorMap,
+}: {
+  apt: CalendarAppointment
+  index: number
+  colorMap: Record<string, AptColorStyle>
+}) {
+  const c = getAptColorStyle(apt.color, colorMap)
   const startMin = timeToMinutes(apt.time) - 7 * 60
   const top = (startMin / 60) * 64
   const height = Math.max((apt.duration / 60) * 64 - 4, 32)
@@ -177,9 +240,207 @@ function DayAptCard({ apt, index }: { apt: Appointment; index: number }) {
   )
 }
 
+// ─── Disponibilidade Week View ────────────────────────────────────────────────
+
+interface ProfessionalForAvailability {
+  id: string
+  fullName: string
+  calendarColor: string
+  availability: Array<{ dayOfWeek: number; startTime: string; endTime: string }>
+  availabilityExceptions: Array<{ date: string; isUnavailable: boolean }>
+}
+
+function DisponibilidadeWeekView({
+  selectedDate,
+  setSelectedDate,
+  activeDoctor,
+  professionals,
+}: {
+  selectedDate: Date
+  setSelectedDate: (d: Date | ((prev: Date) => Date)) => void
+  activeDoctor: string
+  professionals: ProfessionalForAvailability[]
+}) {
+  const startOfWeek = new Date(selectedDate)
+  startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay())
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek)
+    d.setDate(startOfWeek.getDate() + i)
+    return d
+  })
+
+  const prosToShow =
+    activeDoctor === "all"
+      ? professionals
+      : professionals.filter((p) => p.id === activeDoctor)
+
+  function isAvailable(pro: ProfessionalForAvailability, d: Date, hour: number) {
+    const dayOfWeek = d.getDay()
+    const dateStr = toYMD(d)
+    const exception = pro.availabilityExceptions?.find(
+      (ex) => (ex.date?.slice(0, 10) ?? ex.date) === dateStr && ex.isUnavailable
+    )
+    if (exception) return false
+
+    const slotsForDay = pro.availability?.filter((s) => s.dayOfWeek === dayOfWeek) ?? []
+    const cellStart = hour * 60
+    const cellEnd = (hour + 1) * 60
+
+    return slotsForDay.some((slot) => {
+      const [sh, sm] = slot.startTime.split(":").map(Number)
+      const [eh, em] = slot.endTime.split(":").map(Number)
+      const startMin = sh * 60 + sm
+      const endMin = eh * 60 + em
+      return cellStart < endMin && cellEnd > startMin
+    })
+  }
+
+  const HOURS_AV = Array.from({ length: 13 }, (_, i) => i + 7)
+
+  if (prosToShow.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <CalendarCheck className="h-12 w-12 text-white/20 mb-3" weight="duotone" />
+        <p className="text-[14px] font-semibold text-white/50">Nenhum profissional</p>
+        <p className="text-[12px] text-white/30 mt-1">
+          Configure profissionais e disponibilidade em Configurações → Disponibilidade.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.05]">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() =>
+              setSelectedDate(
+                (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7)
+              )
+            }
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04]"
+          >
+            <CaretLeft className="h-3 w-3" />
+          </button>
+          <span className="text-[14px] font-black text-white/80">
+            Semana de {weekDays[0]?.getDate()} – {weekDays[6]?.getDate()}{" "}
+            {MONTHS_PT[selectedDate.getMonth()]}
+          </span>
+          <button
+            onClick={() =>
+              setSelectedDate(
+                (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7)
+              )
+            }
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04]"
+          >
+            <CaretRight className="h-3 w-3" />
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          {prosToShow.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08]"
+            >
+              <div
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: p.calendarColor || "#22c55e" }}
+              />
+              <span className="text-[11px] font-semibold text-white/70">{p.fullName}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-8 border-b border-white/[0.05]">
+        <div className="w-14" />
+        {weekDays.map((d, i) => {
+          const today = d.toDateString() === new Date().toDateString()
+          return (
+            <button
+              key={i}
+              onClick={() => setSelectedDate(d)}
+              className="py-2 flex flex-col items-center gap-0.5 hover:bg-white/[0.02]"
+            >
+              <span className="text-[9px] font-extrabold uppercase text-white/20">
+                {WEEKDAYS[d.getDay()]}
+              </span>
+              <span
+                className={`h-6 w-6 flex items-center justify-center rounded-full text-[12px] font-bold ${
+                  today ? "bg-accent text-accent-foreground" : "text-white/50"
+                }`}
+              >
+                {d.getDate()}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {HOURS_AV.map((hour) => (
+          <div
+            key={hour}
+            className="flex border-b border-white/[0.04]"
+            style={{ minHeight: 44 }}
+          >
+            <div className="w-14 shrink-0 flex items-start justify-end pr-2 pt-1">
+              <span className="text-[9px] font-bold text-white/20 font-mono tabular-nums">
+                {String(hour).padStart(2, "0")}:00
+              </span>
+            </div>
+            <div className="flex-1 grid grid-cols-7">
+              {weekDays.map((d, di) => (
+                <div
+                  key={di}
+                  className="border-l border-white/[0.04] p-0.5 flex flex-col gap-0.5"
+                >
+                  {prosToShow.map((p) => {
+                    const avail = isAvailable(p, d, hour)
+                    if (!avail) return null
+                    return (
+                      <div
+                        key={p.id}
+                        className="flex-1 min-h-[20px] rounded-md border border-white/[0.08] flex items-center justify-center"
+                        style={{
+                          backgroundColor: `${p.calendarColor || "#22c55e"}20`,
+                          borderColor: `${p.calendarColor || "#22c55e"}40`,
+                        }}
+                        title={`${p.fullName} — ${String(hour).padStart(2, "0")}:00`}
+                      >
+                        {prosToShow.length === 1 && (
+                          <span className="text-[9px] font-semibold text-white/70">
+                            Disponível
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
 // ─── Side panel ───────────────────────────────────────────────────────────────
 
-function SidePanel({ appointments, selectedDate }: { appointments: Appointment[]; selectedDate: Date }) {
+function SidePanel({
+  appointments,
+  selectedDate,
+  colorMap,
+  onOpenNewAppointment,
+}: {
+  appointments: CalendarAppointment[]
+  selectedDate: Date
+  colorMap: Record<string, AptColorStyle>
+  onOpenNewAppointment: () => void
+}) {
   const dayApts = appointments.filter(
     a => a.day === selectedDate.getDate() && a.month === selectedDate.getMonth() && a.year === selectedDate.getFullYear()
   ).sort((a, b) => a.time.localeCompare(b.time))
@@ -231,7 +492,7 @@ function SidePanel({ appointments, selectedDate }: { appointments: Appointment[]
             </motion.div>
           ) : (
             dayApts.map((apt, i) => {
-              const c = APT_COLOR[apt.color]
+              const c = getAptColorStyle(apt.color, colorMap)
               const cfg = STATUS_CONFIG[apt.status]
               return (
                 <motion.div
@@ -281,7 +542,10 @@ function SidePanel({ appointments, selectedDate }: { appointments: Appointment[]
 
       {/* CTA */}
       <div className="shrink-0 px-4 pb-4">
-        <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-2.5 text-[12px] font-bold text-accent-foreground hover:bg-accent/90 transition-all duration-200 group">
+        <button
+          onClick={onOpenNewAppointment}
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-2.5 text-[12px] font-bold text-accent-foreground hover:bg-accent/90 transition-all duration-200 group"
+        >
           <Plus className="h-3.5 w-3.5 group-hover:rotate-90 transition-transform duration-300" />
           Nova consulta
         </button>
@@ -292,20 +556,80 @@ function SidePanel({ appointments, selectedDate }: { appointments: Appointment[]
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-type ViewMode = "month" | "week" | "day"
+type ViewMode = "month" | "week" | "day" | "disponibilidade"
 
 export default function CalendarPage() {
+  const { data: me } = useMe()
+  const { data: professionals, isLoading: loadingProfessionals } = useProfessionals()
+  const { data: professionalsWithAvailability } = useProfessionalsWithAvailability()
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [currentDate, setCurrentDate] = useState(new Date(THIS_YEAR, THIS_MONTH, 1))
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [activeDoctor, setActiveDoctor] = useState("all")
+  const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false)
+  const [novoAgendamentoDefaultDate, setNovoAgendamentoDefaultDate] = useState<Date | undefined>(undefined)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
 
+  const appointmentsParams = useMemo(() => {
+    const first = new Date(year, month, 1)
+    const last = new Date(year, month + 1, 0)
+    const from = new Date(first)
+    from.setMonth(from.getMonth() - 1)
+    const to = new Date(last)
+    to.setMonth(to.getMonth() + 1)
+    const fromStr = toYMD(from)
+    const toStr = toYMD(to)
+    const role = me?.role
+    const professionalId = me?.professionalId
+    let professionalIdParam: string | undefined
+    if (role === "PROFESSIONAL" && professionalId) {
+      professionalIdParam = professionalId
+    } else if ((role === "ADMIN" || role === "SECRETARY") && activeDoctor !== "all") {
+      professionalIdParam = activeDoctor
+    }
+    return {
+      from: fromStr,
+      to: toStr,
+      professionalId: professionalIdParam,
+      limit: 200,
+    }
+  }, [year, month, me?.role, me?.professionalId, activeDoctor])
+
+  const { data: appointmentsData, isLoading: loadingAppointments } = useAppointments(appointmentsParams)
+
+  const professionalColorMap = useMemo(
+    () => buildProfessionalColorMap(professionals ?? []),
+    [professionals]
+  )
+
+  const allAppointments = useMemo(() => {
+    const raw = appointmentsData?.data ?? []
+    return raw.map(toCalendarAppointment)
+  }, [appointmentsData])
+
+  const doctorsList = useMemo(() => {
+    if (!professionals) return []
+    if (professionals.length === 0) {
+      return [{ id: "all", name: "Todos", color: "text-white/60" }]
+    }
+    return [
+      { id: "all", name: "Todos", color: "text-white/60" },
+      ...professionals.map((p, i) => ({
+        id: p.id,
+        name: p.fullName,
+        color: i === 0 ? "text-accent" : "text-white/60",
+      })),
+    ]
+  }, [professionals])
+
   const filteredApts = useMemo(
-    () => activeDoctor === "all" ? APPOINTMENTS : APPOINTMENTS.filter(a => a.doctorId === activeDoctor),
-    [activeDoctor]
+    () =>
+      activeDoctor === "all"
+        ? allAppointments
+        : allAppointments.filter((a) => a.doctorId === activeDoctor),
+    [activeDoctor, allAppointments]
   )
 
   const daysInMonth = getDaysInMonth(year, month)
@@ -400,7 +724,7 @@ export default function CalendarPage() {
 
             {/* View mode toggle */}
             <div className="flex items-center rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5">
-              {(["month", "week", "day"] as ViewMode[]).map((mode) => (
+              {(["month", "week", "day", "disponibilidade"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
@@ -416,13 +740,19 @@ export default function CalendarPage() {
                     />
                   )}
                   <span className="relative z-10">
-                    {mode === "month" ? "Mês" : mode === "week" ? "Semana" : "Dia"}
+                    {mode === "month" ? "Mês" : mode === "week" ? "Semana" : mode === "day" ? "Dia" : "Disponibilidade"}
                   </span>
                 </button>
               ))}
             </div>
 
-            <button className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-accent text-accent-foreground text-[12px] font-bold hover:bg-accent/90 transition-colors duration-200 group">
+            <button
+              onClick={() => {
+                setNovoAgendamentoDefaultDate(undefined)
+                setNovoAgendamentoOpen(true)
+              }}
+              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-accent text-accent-foreground text-[12px] font-bold hover:bg-accent/90 transition-colors duration-200 group"
+            >
               <Plus className="h-3.5 w-3.5 group-hover:rotate-90 transition-transform duration-300" />
               Agendar
             </button>
@@ -431,29 +761,41 @@ export default function CalendarPage() {
 
           {/* Doctor filter tabs */}
           <div className="flex items-center gap-1 px-6 pb-3">
-            {DOCTORS.map((doc) => (
-              <button
-                key={doc.id}
-                onClick={() => setActiveDoctor(doc.id)}
-                className={`relative px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
-                  activeDoctor === doc.id ? "text-white/90" : "text-white/25 hover:text-white/50"
-                }`}
-              >
-                {activeDoctor === doc.id && (
-                  <motion.div
-                    layoutId="doctor-pill"
-                    className="absolute inset-0 bg-white/[0.06] border border-white/[0.10] rounded-full"
-                    transition={{ duration: 0.22, ease }}
-                  />
-                )}
-                <span className="relative z-10">{doc.name}</span>
-              </button>
-            ))}
+            {loadingProfessionals ? (
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent/30 border-t-accent shrink-0" />
+                <span className="text-[11px] font-medium text-white/40">Carregando profissionais...</span>
+              </div>
+            ) : (
+              doctorsList.map((doc) => (
+                <button
+                  key={doc.id}
+                  onClick={() => setActiveDoctor(doc.id)}
+                  className={`relative px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                    activeDoctor === doc.id ? "text-white/90" : "text-white/25 hover:text-white/50"
+                  }`}
+                >
+                  {activeDoctor === doc.id && (
+                    <motion.div
+                      layoutId="doctor-pill"
+                      className="absolute inset-0 bg-white/[0.06] border border-white/[0.10] rounded-full"
+                      transition={{ duration: 0.22, ease }}
+                    />
+                  )}
+                  <span className="relative z-10">{doc.name}</span>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
         {/* Calendar body */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto relative">
+          {loadingAppointments && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[1px] z-10">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+            </div>
+          )}
           <AnimatePresence mode="wait">
 
             {/* ── Month view ── */}
@@ -516,7 +858,7 @@ export default function CalendarPage() {
                             </div>
                             <div className="flex flex-col gap-0.5">
                               {apts.slice(0, 3).map((apt) => (
-                                <MiniApt key={apt.id} apt={apt} />
+                                <MiniApt key={apt.id} apt={apt} colorMap={professionalColorMap} />
                               ))}
                               {apts.length > 3 && (
                                 <span className="text-[8px] font-semibold text-white/20 pl-1">
@@ -587,7 +929,12 @@ export default function CalendarPage() {
                     <div className="relative h-full pointer-events-auto">
                       <AnimatePresence>
                         {dayViewApts.map((apt, i) => (
-                          <DayAptCard key={apt.id} apt={apt} index={i} />
+                          <DayAptCard
+                            key={apt.id}
+                            apt={apt}
+                            index={i}
+                            colorMap={professionalColorMap}
+                          />
                         ))}
                       </AnimatePresence>
                     </div>
@@ -608,6 +955,25 @@ export default function CalendarPage() {
                     )
                   })()}
                 </div>
+              </motion.div>
+            )}
+
+            {/* ── Disponibilidade view ── */}
+            {viewMode === "disponibilidade" && (
+              <motion.div
+                key="disponibilidade"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease }}
+                className="flex flex-col"
+              >
+                <DisponibilidadeWeekView
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
+                  activeDoctor={activeDoctor}
+                  professionals={professionalsWithAvailability ?? []}
+                />
               </motion.div>
             )}
 
@@ -663,7 +1029,7 @@ export default function CalendarPage() {
                               return (
                                 <div key={di} className="flex-1 border-l border-white/[0.04] relative px-0.5 py-0.5 flex flex-col gap-0.5">
                                   {apts.map((apt) => {
-                                    const c = APT_COLOR[apt.color]
+                                    const c = getAptColorStyle(apt.color, professionalColorMap)
                                     return (
                                       <div key={apt.id} className={`rounded px-1.5 py-0.5 text-[9px] font-bold truncate border ${c.bg} ${c.border} ${c.text} flex items-center gap-1`}>
                                         <span className="truncate">{apt.time} {apt.patientName.split(" ")[0]}</span>
@@ -686,6 +1052,12 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      <NovoAgendamentoModal
+        open={novoAgendamentoOpen}
+        onClose={() => setNovoAgendamentoOpen(false)}
+        defaultDate={novoAgendamentoDefaultDate}
+      />
+
       {/* ── Side panel ── */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
@@ -693,7 +1065,15 @@ export default function CalendarPage() {
         transition={{ duration: 0.4, ease }}
         className="hidden lg:flex w-[260px] shrink-0 flex-col border-l border-white/[0.06] bg-background/50 overflow-hidden"
       >
-        <SidePanel appointments={filteredApts} selectedDate={selectedDate} />
+        <SidePanel
+          appointments={filteredApts}
+          selectedDate={selectedDate}
+          colorMap={professionalColorMap}
+          onOpenNewAppointment={() => {
+            setNovoAgendamentoDefaultDate(selectedDate)
+            setNovoAgendamentoOpen(true)
+          }}
+        />
       </motion.div>
     </div>
   )

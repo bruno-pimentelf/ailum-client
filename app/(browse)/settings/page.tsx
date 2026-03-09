@@ -6,32 +6,34 @@ import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Gear,
-  Buildings,
   Users,
   Microphone,
   User,
   PlugsConnected,
   Storefront,
+  CalendarBlank,
 } from "@phosphor-icons/react"
 
-import { GeralTab }    from "@/components/settings/geral-tab"
-import { PerfilTab }   from "@/components/settings/perfil-tab"
+import { GeralTab }            from "@/components/settings/geral-tab"
+import { PerfilTab }           from "@/components/settings/perfil-tab"
 import { ConexoesTab } from "@/components/settings/conexoes-tab"
 import { ServicosTab } from "@/components/settings/servicos-tab"
-import { MembersTab }  from "@/components/settings/members-tab"
-import { VozTab }      from "@/components/settings/voz-tab"
+import { MembersTab }        from "@/components/settings/members-tab"
+import { VozTab }            from "@/components/settings/voz-tab"
+import { DisponibilidadeTab } from "@/components/settings/disponibilidade-tab"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "voz"
+type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "disponibilidade" | "voz"
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "geral",    label: "Geral",      icon: Gear          },
-  { id: "perfil",   label: "Meu Perfil", icon: User          },
-  { id: "conexoes", label: "Conexões",   icon: PlugsConnected },
-  { id: "servicos", label: "Serviços",   icon: Storefront    },
-  { id: "membros",  label: "Membros",    icon: Users         },
-  { id: "voz",      label: "Voz",        icon: Microphone    },
+  { id: "geral",           label: "Geral",         icon: Gear          },
+  { id: "perfil",          label: "Meu Perfil",    icon: User          },
+  { id: "conexoes",        label: "Conexões",      icon: PlugsConnected },
+  { id: "servicos",        label: "Serviços",      icon: Storefront    },
+  { id: "membros",         label: "Membros",       icon: Users         },
+  { id: "disponibilidade", label: "Disponibilidade", icon: CalendarBlank },
+  { id: "voz",             label: "Voz",           icon: Microphone    },
 ]
 
 const VALID_TABS = TABS.map((t) => t.id)
@@ -84,12 +86,13 @@ function SettingsContent() {
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="w-full max-w-4xl mx-auto lg:max-w-5xl xl:max-w-6xl">
           <AnimatePresence mode="wait">
-            {activeTab === "geral"    && <GeralTab    key="geral"    />}
-            {activeTab === "perfil"   && <PerfilTab   key="perfil"   />}
-            {activeTab === "conexoes" && <ConexoesTab key="conexoes" />}
-            {activeTab === "servicos" && <ServicosTab key="servicos" />}
-            {activeTab === "membros"  && <MembersTab  key="membros"  />}
-            {activeTab === "voz"      && <VozTab      key="voz"      />}
+            {activeTab === "geral"           && <GeralTab           key="geral"           />}
+            {activeTab === "perfil"          && <PerfilTab          key="perfil"          />}
+            {activeTab === "conexoes"        && <ConexoesTab        key="conexoes"        />}
+            {activeTab === "servicos"        && <ServicosTab        key="servicos"        />}
+            {activeTab === "membros"         && <MembersTab         key="membros"         />}
+            {activeTab === "disponibilidade" && <DisponibilidadeTab key="disponibilidade" />}
+            {activeTab === "voz"             && <VozTab             key="voz"             />}
           </AnimatePresence>
         </div>
       </div>

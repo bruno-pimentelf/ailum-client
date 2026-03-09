@@ -76,6 +76,34 @@ export interface StageInput {
   isTerminal?: boolean
 }
 
+export type AllowedTool =
+  | "search_availability"
+  | "create_appointment"
+  | "move_stage"
+  | "send_message"
+  | "notify_operator"
+  | "generate_pix"
+
+export interface StageAgentConfig {
+  id: string
+  stageId: string
+  funnelAgentName: string
+  funnelAgentPersonality: string | null
+  stageContext: string | null
+  allowedTools: AllowedTool[]
+  model: "HAIKU" | "SONNET"
+  temperature: number
+}
+
+export interface StageAgentConfigInput {
+  funnelAgentName?: string
+  funnelAgentPersonality?: string
+  stageContext?: string
+  allowedTools?: AllowedTool[]
+  model?: "HAIKU" | "SONNET"
+  temperature?: number
+}
+
 // ─── API functions ────────────────────────────────────────────────────────────
 
 export const funnelsApi = {
@@ -85,6 +113,10 @@ export const funnelsApi = {
 
   create: (body: FunnelInput) =>
     apiFetch<FunnelListItem>("/funnels", { method: "POST", body }),
+
+  /** Cria o Funil Principal com stages padrão, IA e triggers. Sem body. */
+  createDefault: () =>
+    apiFetch<FunnelListItem>("/funnels/default", { method: "POST" }),
 
   update: (funnelId: string, body: Partial<FunnelInput>) =>
     apiFetch<FunnelListItem>(`/funnels/${funnelId}`, { method: "PATCH", body }),
@@ -115,6 +147,17 @@ export const funnelsApi = {
 
   deleteStage: (stageId: string) =>
     apiFetch<void>(`/funnels/stages/${stageId}`, { method: "DELETE" }),
+
+  // ── Stage Agent Config ────────────────────────────────────────────────────
+
+  getAgentConfig: (stageId: string) =>
+    apiFetch<StageAgentConfig>(`/funnels/stages/${stageId}/agent-config`),
+
+  upsertAgentConfig: (stageId: string, body: StageAgentConfigInput) =>
+    apiFetch<StageAgentConfig>(`/funnels/stages/${stageId}/agent-config`, {
+      method: "PUT",
+      body,
+    }),
 
   // ── Contacts ─────────────────────────────────────────────────────────────
 

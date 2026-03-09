@@ -7,6 +7,7 @@ export interface Service {
   durationMin: number
   price: number
   isActive: boolean
+  isConsultation: boolean
   createdAt: string
 }
 
@@ -15,6 +16,7 @@ export interface ServiceInput {
   description?: string | null
   durationMin?: number
   price: number
+  isConsultation?: boolean
 }
 
 export type ServiceUpdateInput = Partial<ServiceInput>

@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { collection, query, where, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuthStore } from "@/lib/auth-store"
-import { funnelsApi, type BoardContact, type FunnelListItem, type BoardStage, type FunnelInput, type StageInput } from "@/lib/api/funnels"
+import { ApiError } from "@/lib/api"
+import { funnelsApi, type BoardContact, type FunnelListItem, type BoardStage, type FunnelInput, type StageInput, type StageAgentConfig, type StageAgentConfigInput } from "@/lib/api/funnels"
 import type { FirestoreContact } from "@/lib/types/firestore"
 
 // ─── List funnels ─────────────────────────────────────────────────────────────
@@ -165,6 +166,24 @@ export function useBoard(funnelId: string | null, params?: { search?: string }) 
   }
 }
 
+// ─── Stage Agent Config ───────────────────────────────────────────────────────
+
+export function useStageAgentConfig(stageId: string | null) {
+  return useQuery<StageAgentConfig | null>({
+    queryKey: ["stage-agent-config", stageId],
+    queryFn: async () => {
+      if (!stageId) return null
+      try {
+        return await funnelsApi.getAgentConfig(stageId)
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) return null
+        throw e
+      }
+    },
+    enabled: !!stageId,
+  })
+}
+
 // ─── Funnel mutations ─────────────────────────────────────────────────────────
 
 export function useFunnelMutations() {
@@ -175,6 +194,11 @@ export function useFunnelMutations() {
 
   const createFunnel = useMutation({
     mutationFn: (body: FunnelInput) => funnelsApi.create(body),
+    onSuccess: invalidate,
+  })
+
+  const createDefaultFunnel = useMutation({
+    mutationFn: () => funnelsApi.createDefault(),
     onSuccess: invalidate,
   })
 
@@ -216,5 +240,23 @@ export function useFunnelMutations() {
     },
   })
 
-  return { createFunnel, updateFunnel, deleteFunnel, createStage, updateStage, deleteStage }
+  const upsertAgentConfig = useMutation({
+    mutationFn: ({ stageId, body }: { stageId: string; body: StageAgentConfigInput }) =>
+      funnelsApi.upsertAgentConfig(stageId, body),
+    onSuccess: (_, { stageId }) => {
+      queryClient.invalidateQueries({ queryKey: ["stage-agent-config", stageId] })
+      invalidate()
+    },
+  })
+
+  return {
+    createFunnel,
+    createDefaultFunnel,
+    updateFunnel,
+    deleteFunnel,
+    createStage,
+    updateStage,
+    deleteStage,
+    upsertAgentConfig,
+  }
 }

@@ -12,18 +12,33 @@ import {
   CaretRight,
   CheckCircle,
   ArrowsClockwise,
+  Trash,
 } from "@phosphor-icons/react"
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable"
+import { useQueryClient } from "@tanstack/react-query"
 import { usePlaygroundContact, usePlaygroundMessages, usePlaygroundTyping, useAgentAudit } from "@/hooks/use-playground"
-import { sendPlaygroundMessage, confirmPlayground } from "@/lib/api/agent"
+import { sendPlaygroundMessage, confirmPlayground, resetPlayground } from "@/lib/api/agent"
 import type { FirestoreMessage } from "@/lib/types/firestore"
-import type { AgentAuditEntry } from "@/lib/api/agent"
+import type { AgentAuditEntry, AuditDetail, ToolExecution } from "@/lib/api/agent"
 
 const ease = [0.33, 1, 0.68, 1] as const
+
+const TOOL_LABELS: Record<string, string> = {
+  create_appointment: "Agendar consulta",
+  send_message: "Enviar mensagem",
+  notify_operator: "Escalar para humano",
+  move_stage: "Mover etapa",
+  search_availability: "Buscar disponibilidade",
+  generate_pix: "Gerar PIX",
+}
+
+function toolLabel(tool: string) {
+  return TOOL_LABELS[tool] ?? tool
+}
 
 // ─── Typing indicator ─────────────────────────────────────────────────────────
 
@@ -55,6 +70,106 @@ function TypingIndicator() {
   )
 }
 
+// ─── Audit detail block (label + detail + optional tool executions) ────────────
+
+function AuditDetailBlock({ detail, stageAgentToolCalls }: { detail: AuditDetail; stageAgentToolCalls?: number }) {
+  const [showTools, setShowTools] = useState(false)
+  const rawExecutions = detail.data?.toolExecutions ?? (detail.data as { tool_executions?: ToolExecution[] })?.tool_executions ?? []
+  const rawTools = (detail.data?.tools as string[] | undefined) ?? []
+  // Use toolExecutions; else build from tools array; else for "Stage Agent" with count, show placeholder
+  const executions: ToolExecution[] =
+    rawExecutions.length > 0
+      ? rawExecutions
+      : rawTools.map((tool) => ({ tool, success: true }))
+  const hasToolCount = detail.label === "Stage Agent" && (stageAgentToolCalls ?? 0) > 0
+  const showExpand = executions.length > 0 || hasToolCount
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[10px] font-medium text-muted-foreground/80">{detail.label}</span>
+      <span className="text-[11px] text-foreground/90 break-words leading-relaxed">{detail.detail}</span>
+      {showExpand && (
+        <div className="mt-1">
+          <button
+            type="button"
+            onClick={() => setShowTools((v) => !v)}
+            className="flex items-center gap-1.5 text-[10px] font-medium text-accent/90 hover:text-accent transition-colors"
+          >
+            {showTools ? (
+              <CaretDown className="h-3 w-3" weight="bold" />
+            ) : (
+              <CaretRight className="h-3 w-3" weight="bold" />
+            )}
+            {executions.length > 0 ? `${executions.length} tool(s)` : `${stageAgentToolCalls} tool(s)`} — {showTools ? "ocultar" : "expandir"}
+          </button>
+          <AnimatePresence>
+            {showTools && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-col gap-2 pl-4 mt-2 border-l-2 border-accent/20">
+                  {detail.data?.inputTokens != null && detail.data?.outputTokens != null && (
+                    <div className="flex justify-between text-[10px] text-muted-foreground/70 pb-1">
+                      <span>{detail.data.inputTokens} tokens in</span>
+                      <span>{detail.data.outputTokens} tokens out</span>
+                    </div>
+                  )}
+                  {executions.length > 0 ? (
+                    executions.map((ex, i) => (
+                      <ToolExecutionRow key={i} execution={ex} />
+                    ))
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground/70 py-1">
+                      Detalhes das tools serão exibidos quando o backend enviar <code className="text-[9px] bg-muted/40 px-1 rounded">data.toolExecutions</code>.
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ToolExecutionRow({ execution }: { execution: ToolExecution }) {
+  const inputStr =
+    execution.input && Object.keys(execution.input).length > 0
+      ? Object.entries(execution.input)
+          .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+          .join(", ")
+      : null
+
+  return (
+    <div className="flex flex-col gap-0.5 py-1.5">
+      <div className="flex items-center gap-2">
+        <span
+          className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold ${
+            execution.success ? "bg-emerald-500/20 text-emerald-500" : "bg-rose-500/20 text-rose-500"
+          }`}
+        >
+          {execution.success ? "✓" : "✗"}
+        </span>
+        <span className="text-[11px] font-medium text-foreground">{toolLabel(execution.tool)}</span>
+      </div>
+      {inputStr && (
+        <p className="text-[10px] text-muted-foreground/80 pl-6 break-all">{inputStr}</p>
+      )}
+      {execution.summary && (
+        <p className="text-[10px] text-foreground/70 pl-6 italic">{execution.summary}</p>
+      )}
+      {!execution.success && execution.reason && (
+        <p className="text-[10px] text-rose-500/90 pl-6">{execution.reason}</p>
+      )}
+    </div>
+  )
+}
+
 // ─── Audit entry card ─────────────────────────────────────────────────────────
 
 function AuditEntryCard({ entry }: { entry: AgentAuditEntry }) {
@@ -65,11 +180,11 @@ function AuditEntryCard({ entry }: { entry: AgentAuditEntry }) {
   })
 
   return (
-    <div className="rounded-lg border border-border/60 bg-muted/20 overflow-hidden">
+    <div className="rounded-xl border border-border/50 bg-card/50 overflow-hidden shrink-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-3.5 py-3 text-left hover:bg-muted/30 transition-colors"
       >
         <div className="flex items-center gap-2 min-w-0">
           {open ? (
@@ -97,30 +212,26 @@ function AuditEntryCard({ entry }: { entry: AgentAuditEntry }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 pt-0 flex flex-col gap-1.5 border-t border-border/40">
+            <div className="px-3.5 pb-3.5 pt-2 flex flex-col gap-2 border-t border-border/40">
               {entry.durationMs != null && (
-                <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                <div className="flex justify-between text-[11px] text-muted-foreground/70">
                   <span>Duração</span>
                   <span>{entry.durationMs}ms</span>
                 </div>
               )}
               {(entry.totalInputTokens ?? 0) + (entry.totalOutputTokens ?? 0) > 0 && (
-                <div className="flex justify-between text-[10px] text-muted-foreground/60">
+                <div className="flex justify-between text-[11px] text-muted-foreground/70">
                   <span>Tokens</span>
-                  <span>
-                    {(entry.totalInputTokens ?? 0) + (entry.totalOutputTokens ?? 0)} total
-                  </span>
+                  <span>{(entry.totalInputTokens ?? 0) + (entry.totalOutputTokens ?? 0)} total</span>
                 </div>
               )}
-              {entry.auditDetails?.map((d) => (
-                <div
-                  key={d.label}
-                  className="flex flex-col gap-0.5 py-1 border-b border-border/30 last:border-0"
-                >
-                  <span className="text-[10px] font-medium text-muted-foreground/80">{d.label}</span>
-                  <span className="text-[11px] text-foreground/90">{d.detail}</span>
+              {entry.auditDetails && entry.auditDetails.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  {entry.auditDetails.map((d) => (
+                    <AuditDetailBlock key={d.label} detail={d} stageAgentToolCalls={entry.stageAgentToolCalls} />
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </motion.div>
         )}
@@ -175,12 +286,14 @@ function MessageBubble({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PlaygroundPage() {
+  const queryClient = useQueryClient()
   const [inputValue, setInputValue] = useState("")
   const [optimisticMsgs, setOptimisticMsgs] = useState<
     Array<Pick<FirestoreMessage, "id" | "role" | "type" | "content"> & { createdAt: { toDate: () => Date } }>
   >([])
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const sessionIdRef = useRef<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -254,12 +367,27 @@ export default function PlaygroundPage() {
     try {
       await confirmPlayground(contactId)
       refetchAudit()
+      queryClient.invalidateQueries({ queryKey: ["appointments"] })
     } catch {
       setError("Falha ao confirmar.")
     } finally {
       setConfirming(false)
     }
-  }, [contactId, refetchAudit])
+  }, [contactId, refetchAudit, queryClient])
+
+  const handleReset = useCallback(async () => {
+    setResetting(true)
+    setError(null)
+    try {
+      await resetPlayground()
+      setOptimisticMsgs([])
+      refetchAudit()
+    } catch {
+      setError("Falha ao resetar.")
+    } finally {
+      setResetting(false)
+    }
+  }, [refetchAudit])
 
   useEffect(() => {
     if (optimisticMsgs.length > 0) {
@@ -313,6 +441,20 @@ export default function PlaygroundPage() {
           <span className="text-[13px] font-semibold text-foreground">Playground</span>
           <span className="text-[11px] text-muted-foreground/50 hidden sm:inline">— teste a IA sem WhatsApp</span>
         </div>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={!isReady || resetting}
+          className="flex items-center gap-1.5 rounded-lg border border-border/50 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Apagar mensagens e memórias. Começar do zero."
+        >
+          {resetting ? (
+            <ArrowsClockwise className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash className="h-3.5 w-3.5" />
+          )}
+          Resetar
+        </button>
       </div>
 
       {!mounted ? (
@@ -392,9 +534,9 @@ export default function PlaygroundPage() {
 
         <ResizableHandle withHandle className="bg-border/60 hover:bg-border transition-colors data-[resize-handle-state=drag]:bg-accent/30" />
 
-        {/* Audit panel */}
-        <ResizablePanel defaultSize={40} minSize={28} className="flex flex-col min-w-0 border-l border-border/50 bg-muted/[0.03]">
-          <div className="shrink-0 flex items-center justify-between gap-2 p-3 border-b border-border/50">
+        {/* Audit panel — scrollable container */}
+        <ResizablePanel defaultSize={40} minSize={28} className="flex flex-col min-w-0 min-h-0 border-l border-border/50 bg-muted/[0.03]">
+          <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b border-border/50">
             <div className="flex items-center gap-2">
               <ChartLineUp className="h-4 w-4 text-accent" weight="duotone" />
               <span className="text-[12px] font-semibold text-foreground">Detalhes da IA</span>
@@ -419,9 +561,9 @@ export default function PlaygroundPage() {
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 flex flex-col gap-3">
             {audit.length === 0 ? (
-              <p className="text-[12px] text-muted-foreground/50 py-4 text-center">
+              <p className="text-[12px] text-muted-foreground/50 py-8 text-center">
                 Envie mensagens para ver o que a IA fez em cada resposta.
               </p>
             ) : (

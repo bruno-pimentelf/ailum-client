@@ -127,6 +127,7 @@ type FormState = {
   description: string
   durationMin: string
   price: string
+  isConsultation: boolean
 }
 
 function ServiceEditorModal({
@@ -142,10 +143,11 @@ function ServiceEditorModal({
   const isPending = create.isPending || update.isPending
 
   const [form, setForm] = useState<FormState>({
-    name:        service?.name ?? "",
-    description: service?.description ?? "",
-    durationMin: String(service?.durationMin ?? 50),
-    price:       service?.price != null ? String(service.price) : "",
+    name:           service?.name ?? "",
+    description:    service?.description ?? "",
+    durationMin:    String(service?.durationMin ?? 50),
+    price:          service?.price != null ? String(service.price) : "",
+    isConsultation: service?.isConsultation ?? true,
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -153,10 +155,11 @@ function ServiceEditorModal({
   useEffect(() => {
     if (service) {
       setForm({
-        name:        service.name,
-        description: service.description ?? "",
-        durationMin: String(service.durationMin),
-        price:       String(service.price),
+        name:           service.name,
+        description:    service.description ?? "",
+        durationMin:    String(service.durationMin),
+        price:          String(service.price),
+        isConsultation: service.isConsultation ?? true,
       })
     }
   }, [service])
@@ -182,6 +185,7 @@ function ServiceEditorModal({
       description: form.description.trim() || null,
       durationMin: dur,
       price,
+      isConsultation: form.isConsultation,
     }
 
     try {
@@ -282,6 +286,19 @@ function ServiceEditorModal({
               </div>
             </div>
           </div>
+
+          {/* isConsultation */}
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.isConsultation}
+              onChange={(e) => setForm((p) => ({ ...p, isConsultation: e.target.checked }))}
+              className="h-4 w-4 rounded border-white/[0.15] bg-white/[0.04] text-accent focus:ring-accent/30"
+            />
+            <span className="text-[12px] font-medium text-white/70">
+              É consulta (agendável no calendário e na IA)
+            </span>
+          </label>
 
           {/* Error */}
           <AnimatePresence>
