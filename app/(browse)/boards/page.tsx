@@ -555,31 +555,25 @@ export default function BoardsPage() {
 
   const { createStage, updateStage } = useFunnelMutations()
 
-  function handleUpdateStageName(s: BoardStage, name: string) {
+  async function handleUpdateStageName(s: BoardStage, name: string) {
     if (!selectedFunnelId) return
-    updateStage.mutate(
-      { stageId: s.id, funnelId: selectedFunnelId, body: { name } },
-      {
-        onMutate: async () => {
-          await queryClient.cancelQueries({ queryKey: boardKey })
-          const prev = queryClient.getQueryData(boardKey) as { stages: BoardStage[]; [k: string]: unknown } | undefined
-          queryClient.setQueryData(boardKey, (old: typeof prev) => {
-            if (!old) return old
-            return {
-              ...old,
-              stages: old.stages.map((st) => (st.id === s.id ? { ...st, name } : st)),
-            }
-          })
-          return { prev }
-        },
-        onError: (_err, _vars, ctx) => {
-          if (ctx?.prev) queryClient.setQueryData(boardKey, ctx.prev)
-        },
-      },
-    )
+    await queryClient.cancelQueries({ queryKey: boardKey })
+    const prev = queryClient.getQueryData(boardKey) as { stages: BoardStage[]; [k: string]: unknown } | undefined
+    queryClient.setQueryData(boardKey, (old: typeof prev) => {
+      if (!old) return old
+      return {
+        ...old,
+        stages: old.stages.map((st) => (st.id === s.id ? { ...st, name } : st)),
+      }
+    })
+    try {
+      await updateStage.mutateAsync({ stageId: s.id, funnelId: selectedFunnelId, body: { name } })
+    } catch {
+      queryClient.setQueryData(boardKey, prev)
+    }
   }
 
-  function handleAddStage() {
+  async function handleAddStage() {
     if (!selectedFunnelId) return
     const newStage: BoardStage = {
       id: `temp-${Date.now()}`,
@@ -588,27 +582,22 @@ export default function BoardsPage() {
       order: stages.length,
       contacts: [],
       isTerminal: false,
+      _count: { contacts: 0 },
     }
-    createStage.mutate(
-      {
+    await queryClient.cancelQueries({ queryKey: boardKey })
+    const prev = queryClient.getQueryData(boardKey) as { stages: BoardStage[]; [k: string]: unknown } | undefined
+    queryClient.setQueryData(boardKey, (old: typeof prev) => {
+      if (!old) return old
+      return { ...old, stages: [...old.stages, newStage] }
+    })
+    try {
+      await createStage.mutateAsync({
         funnelId: selectedFunnelId,
         body: { name: newStage.name, color: newStage.color, order: newStage.order },
-      },
-      {
-        onMutate: async () => {
-          await queryClient.cancelQueries({ queryKey: boardKey })
-          const prev = queryClient.getQueryData(boardKey) as { stages: BoardStage[]; [k: string]: unknown } | undefined
-          queryClient.setQueryData(boardKey, (old: typeof prev) => {
-            if (!old) return old
-            return { ...old, stages: [...old.stages, newStage] }
-          })
-          return { prev }
-        },
-        onError: (_err, _vars, ctx) => {
-          if (ctx?.prev) queryClient.setQueryData(boardKey, ctx.prev)
-        },
-      },
-    )
+      })
+    } catch {
+      queryClient.setQueryData(boardKey, prev)
+    }
   }
 
   const sensors = useSensors(

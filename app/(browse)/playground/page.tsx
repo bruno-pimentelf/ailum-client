@@ -176,7 +176,9 @@ function MessageBubble({
 
 export default function PlaygroundPage() {
   const [inputValue, setInputValue] = useState("")
-  const [optimisticMsgs, setOptimisticMsgs] = useState<Array<Pick<FirestoreMessage, "id" | "role" | "type" | "content" | "createdAt">>>([])
+  const [optimisticMsgs, setOptimisticMsgs] = useState<
+    Array<Pick<FirestoreMessage, "id" | "role" | "type" | "content"> & { createdAt: { toDate: () => Date } }>
+  >([])
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
   const sessionIdRef = useRef<string | null>(null)
@@ -316,7 +318,7 @@ export default function PlaygroundPage() {
       {!mounted ? (
         <div className="flex-1 min-h-0 overflow-hidden" suppressHydrationWarning />
       ) : (
-      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
+      <ResizablePanelGroup className="flex-1 min-h-0 h-full">
         {/* Chat panel */}
         <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-w-0">
       {/* Chat body */}
