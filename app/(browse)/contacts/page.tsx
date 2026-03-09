@@ -13,12 +13,18 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable"
-import { ChatView } from "@/components/app/chat-view"
-import type { ChatContact, Message } from "@/components/app/chat-view"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Local types ──────────────────────────────────────────────────────────────
+
+type Message = {
+  id: string
+  text: string
+  time: string
+  from: "ai" | "contact"
+  read?: boolean
+}
 
 type Contact = {
   id: string
@@ -71,14 +77,49 @@ const contacts: Contact[] = [
   ]},
 ]
 
-function toChatContact(contact: Contact): ChatContact {
-  return {
-    id: contact.id,
-    name: contact.name,
-    online: contact.online,
-    time: contact.lastContact,
-    messages: contact.messages,
-  }
+// ─── Simple chat preview (contacts page only — not backed by Firestore) ───────
+
+function ContactChatPreview({ contact }: { contact: Contact }) {
+  const [inputValue, setInputValue] = useState("")
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-accent font-semibold text-[11px]">
+          {contact.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+        </div>
+        <div>
+          <p className="text-[13px] font-semibold text-foreground leading-tight">{contact.name}</p>
+          <p className="text-[11px] text-muted-foreground/50 font-mono leading-tight">{contact.phone}</p>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2.5">
+        {contact.messages.map((msg) => {
+          const isAI = msg.from === "ai"
+          return (
+            <div key={msg.id} className={`flex ${isAI ? "justify-start" : "justify-end"}`}>
+              <div className={`max-w-[72%] rounded-2xl px-3.5 py-2 text-[12px] leading-relaxed ${isAI ? "bg-card border border-border/60 rounded-bl-sm" : "bg-accent/15 border border-accent/20 rounded-br-sm"}`}>
+                {msg.text}
+                <p className={`text-[10px] text-muted-foreground/40 mt-0.5 ${isAI ? "text-left" : "text-right"}`}>{msg.time}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="shrink-0 border-t border-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Digite uma mensagem..."
+            className="flex-1 h-9 rounded-xl border border-border bg-card/50 px-4 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+          />
+          <button className={`flex h-9 w-9 cursor-pointer shrink-0 items-center justify-center rounded-xl transition-all ${inputValue.trim() ? "bg-accent text-accent-foreground" : "bg-muted/40 text-muted-foreground/40"}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-4 w-4" fill="currentColor"><path d="M231.87,114l-168-95.89A16,16,0,0,0,40.92,37.34L71.55,128,40.92,218.67A16,16,0,0,0,56,240a15.9,15.9,0,0,0,7.93-2.1l168-95.89A16,16,0,0,0,231.87,114Z" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ─── Avatar ────────────────────────────────────────────────────────────────────
@@ -271,7 +312,7 @@ export default function ContactsPage() {
           </ResizablePanel>
           <ResizableHandle withHandle className="bg-border/60 hover:bg-border transition-colors data-[resize-handle-state=drag]:bg-accent/30" />
           <ResizablePanel defaultSize={45} minSize={30} className="flex flex-col min-w-0 bg-background/50 border-l border-border/30">
-            <ChatView contact={toChatContact(selected)} />
+            <ContactChatPreview contact={selected} />
           </ResizablePanel>
         </ResizablePanelGroup>
       ) : (

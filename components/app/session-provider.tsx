@@ -4,10 +4,11 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { useAuthStore } from "@/lib/auth-store"
+import { signInToFirebase } from "@/lib/firebase-auth"
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { setUser, setOrgs, setActiveOrgId } = useAuthStore()
+  const { setUser, setOrgs, setActiveOrgId, setTenantId, setFirebaseReady } = useAuthStore()
 
   useEffect(() => {
     async function hydrate() {
@@ -42,8 +43,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           ?.activeOrganizationId ?? null
 
       if (activeOrgId) {
-        // Session already has an active org — all good
         setActiveOrgId(activeOrgId)
+        const tenantId = await signInToFirebase()
+        if (tenantId) setTenantId(tenantId)
+        setFirebaseReady(true)
         return
       }
 
@@ -54,6 +57,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         })
         if (!error) {
           setActiveOrgId(orgs[0].id)
+          const tenantId = await signInToFirebase()
+          if (tenantId) setTenantId(tenantId)
+          setFirebaseReady(true)
           // Hard navigate so the browser commits Set-Cookie before next request
           window.location.href = window.location.pathname
         } else {
