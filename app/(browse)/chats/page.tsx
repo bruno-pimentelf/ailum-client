@@ -195,11 +195,12 @@ export default function ChatsPage() {
   const whatsappConnected = useWhatsappStatus(tenantId)
 
   const filtered = contacts.filter((c) => {
+    if (!search) return true
     const q = search.toLowerCase()
     return (
-      (c.name?.toLowerCase().includes(q) ?? false) ||
-      c.phone.includes(q) ||
-      (c.lastMessage?.toLowerCase().includes(q) ?? false)
+      (c.name ?? "").toLowerCase().includes(q) ||
+      (c.phone ?? "").includes(q) ||
+      (c.lastMessage ?? "").toLowerCase().includes(q)
     )
   })
 
