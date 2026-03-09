@@ -233,71 +233,117 @@ function MessageBubble({ msg, animate }: { msg: AnyMessage; animate?: boolean })
   const content = (() => {
     const m = msg.metadata
 
+    // ── IMAGE ──────────────────────────────────────────────────────────────────
+    if (msg.type === "IMAGE") {
+      // Caption: prefer metadata.caption, fallback to msg.content
+      const caption = m?.caption || msg.content || null
+
+      if (m?.imageUrl) {
+        return (
+          <div className="space-y-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={m.imageUrl}
+              alt={caption || "imagem"}
+              className="rounded-xl max-w-[260px] w-full object-cover cursor-pointer"
+              onClick={() => window.open(m.imageUrl, "_blank")}
+            />
+            {caption && <p className="text-[12px] text-foreground/80">{caption}</p>}
+          </div>
+        )
+      }
+
+      // Sent by operator — imageUrl not yet populated by backend
+      return (
+        <div className="space-y-1.5">
+          <div className="flex h-24 w-[200px] items-center justify-center rounded-xl border border-border/40 bg-muted/20">
+            <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+          </div>
+          {caption && <p className="text-[12px] text-foreground/80">{caption}</p>}
+        </div>
+      )
+    }
+
+    // ── AUDIO ──────────────────────────────────────────────────────────────────
+    if (msg.type === "AUDIO") {
+      if (m?.audioUrl) {
+        return (
+          <div className="flex items-center gap-2 min-w-[180px]">
+            <SpeakerHigh className="h-4 w-4 text-muted-foreground/60 shrink-0" />
+            <audio controls src={m.audioUrl} className="h-8 flex-1" />
+            {m.ptt && <span className="text-[10px] text-muted-foreground/40 shrink-0">voz</span>}
+          </div>
+        )
+      }
+      // Sent by operator — audioUrl not yet populated
+      return (
+        <div className="flex items-center gap-2 min-w-[160px]">
+          <SpeakerHigh className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+          <span className="text-[12px] text-muted-foreground/50 italic">Áudio enviado</span>
+        </div>
+      )
+    }
+
+    // ── DOCUMENT ───────────────────────────────────────────────────────────────
+    if (msg.type === "DOCUMENT") {
+      if (m?.mediaKind === "video" && m.videoUrl) {
+        return (
+          <div className="space-y-1">
+            <video controls src={m.videoUrl} className="rounded-xl max-w-[260px]" />
+            {m.caption && <p className="text-[12px] text-foreground/80">{m.caption}</p>}
+          </div>
+        )
+      }
+
+      const fileName = m?.fileName || msg.content || "Documento"
+      if (m?.documentUrl) {
+        return (
+          <a
+            href={m.documentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={m.fileName}
+            className="flex items-center gap-2.5 group"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/30 group-hover:bg-accent/10 transition-colors">
+              <FileDoc className="h-4 w-4 text-muted-foreground/60 group-hover:text-accent transition-colors" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[12px] font-medium truncate max-w-[180px] group-hover:text-accent transition-colors">
+                {fileName}
+              </p>
+              <p className="text-[10px] text-muted-foreground/40">Toque para abrir</p>
+            </div>
+          </a>
+        )
+      }
+
+      // Sent by operator — documentUrl not yet populated
+      return (
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/20">
+            <FileDoc className="h-4 w-4 text-muted-foreground/40" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12px] font-medium truncate max-w-[180px] text-foreground/70">{fileName}</p>
+            <p className="text-[10px] text-muted-foreground/40">Processando...</p>
+          </div>
+        </div>
+      )
+    }
+
+    // ── TEXT ───────────────────────────────────────────────────────────────────
     if (msg.type === "TEXT" && !m?.mediaKind) {
       return <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
     }
 
-    if (msg.type === "IMAGE" && m?.imageUrl) {
-      return (
-        <div className="space-y-1.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={m.imageUrl}
-            alt={m.caption || "imagem"}
-            className="rounded-xl max-w-[260px] w-full object-cover cursor-pointer"
-            onClick={() => window.open(m.imageUrl, "_blank")}
-          />
-          {m.caption && <p className="text-[12px] text-foreground/80">{m.caption}</p>}
-        </div>
-      )
-    }
-
-    if (msg.type === "AUDIO" && m?.audioUrl) {
-      return (
-        <div className="flex items-center gap-2 min-w-[180px]">
-          <SpeakerHigh className="h-4 w-4 text-muted-foreground/60 shrink-0" />
-          <audio controls src={m.audioUrl} className="h-8 flex-1" />
-          {m.ptt && <span className="text-[10px] text-muted-foreground/40 shrink-0">voz</span>}
-        </div>
-      )
-    }
-
-    if (msg.type === "DOCUMENT" && m?.mediaKind === "video" && m.videoUrl) {
-      return (
-        <div className="space-y-1">
-          <video controls src={m.videoUrl} className="rounded-xl max-w-[260px]" />
-          {m.caption && <p className="text-[12px] text-foreground/80">{m.caption}</p>}
-        </div>
-      )
-    }
-
-    if (msg.type === "DOCUMENT" && !m?.mediaKind && m?.documentUrl) {
-      return (
-        <a
-          href={m.documentUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          download={m.fileName}
-          className="flex items-center gap-2.5 group"
-        >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/30 group-hover:bg-accent/10 transition-colors">
-            <FileDoc className="h-4 w-4 text-muted-foreground/60 group-hover:text-accent transition-colors" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[12px] font-medium truncate max-w-[180px] group-hover:text-accent transition-colors">
-              {m.fileName || msg.content || "Documento"}
-            </p>
-            <p className="text-[10px] text-muted-foreground/40">Toque para abrir</p>
-          </div>
-        </a>
-      )
-    }
-
+    // ── STICKER ────────────────────────────────────────────────────────────────
     if (m?.mediaKind === "sticker" && m.stickerUrl) {
       // eslint-disable-next-line @next/next/no-img-element
       return <img src={m.stickerUrl} alt="sticker" className="h-24 w-24 object-contain" />
     }
 
+    // ── LOCATION ───────────────────────────────────────────────────────────────
     if (m?.mediaKind === "location" && m.latitude && m.longitude) {
       return (
         <a
@@ -319,6 +365,7 @@ function MessageBubble({ msg, animate }: { msg: AnyMessage; animate?: boolean })
       )
     }
 
+    // ── CONTACT vCard ──────────────────────────────────────────────────────────
     if (m?.mediaKind === "contact" && m.contactName) {
       return (
         <div className="flex items-center gap-2.5">
@@ -333,7 +380,8 @@ function MessageBubble({ msg, animate }: { msg: AnyMessage; animate?: boolean })
       )
     }
 
-    return <p className="text-[13px] leading-relaxed">{msg.content}</p>
+    // Fallback — render content as plain text
+    return <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
   })()
 
   return (
