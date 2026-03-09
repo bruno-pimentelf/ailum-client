@@ -7,7 +7,10 @@ import {
   query,
   orderBy,
   limit,
+  startAfter,
+  getDocs,
   onSnapshot,
+  type DocumentSnapshot,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuthStore } from "@/lib/auth-store"
@@ -42,20 +45,27 @@ export function useContacts(tenantId: string | null) {
   return { contacts, loading }
 }
 
+const INITIAL_PAGE_SIZE = 50
+const LOAD_MORE_SIZE = 50
+
 /**
  * Real-time messages for a specific contact.
- * Only opens the listener after Firebase Auth is ready.
+ * Fetches the most recent messages first (chat starts at bottom).
+ * Supports loading older messages when scrolling up.
  */
 export function useMessages(tenantId: string | null, contactId: string | null) {
   const [messages, setMessages] = useState<FirestoreMessage[]>([])
+  const [olderMessages, setOlderMessages] = useState<FirestoreMessage[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [oldestSnapshot, setOldestSnapshot] = useState<DocumentSnapshot | null>(null)
+  const [hasMoreOlder, setHasMoreOlder] = useState(true)
   const firebaseReady = useAuthStore((s) => s.firebaseReady)
 
+  // Real-time subscription: most recent INITIAL_PAGE_SIZE messages
   useEffect(() => {
     if (!tenantId || !contactId || !firebaseReady) return
-    setLoading(true)
-
-    const ref = collection(
+    const messagesRef = collection(
       db,
       "tenants",
       tenantId,
@@ -63,19 +73,71 @@ export function useMessages(tenantId: string | null, contactId: string | null) {
       contactId,
       "messages"
     )
-    const q = query(ref, orderBy("createdAt", "asc"), limit(100))
+    setLoading(true)
+    setOlderMessages([])
+    setOldestSnapshot(null)
+
+    const q = query(
+      messagesRef,
+      orderBy("createdAt", "desc"),
+      limit(INITIAL_PAGE_SIZE)
+    )
 
     const unsub = onSnapshot(q, (snap) => {
-      setMessages(
-        snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreMessage))
-      )
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreMessage))
+      setMessages(docs)
+      setOldestSnapshot(snap.docs[snap.docs.length - 1] ?? null)
+      setHasMoreOlder(snap.docs.length >= INITIAL_PAGE_SIZE)
       setLoading(false)
     })
 
     return () => unsub()
   }, [tenantId, contactId, firebaseReady])
 
-  return { messages, loading }
+  const loadMoreOlder = async () => {
+    if (!tenantId || !contactId || !firebaseReady || loadingMore) return
+    const cursor = oldestSnapshot
+    if (!cursor) return
+    setLoadingMore(true)
+    try {
+      const messagesRef = collection(
+        db,
+        "tenants",
+        tenantId,
+        "contacts",
+        contactId,
+        "messages"
+      )
+      const q = query(
+        messagesRef,
+        orderBy("createdAt", "desc"),
+        startAfter(cursor),
+        limit(LOAD_MORE_SIZE)
+      )
+      const snap = await getDocs(q)
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreMessage))
+      if (snap.docs.length > 0) {
+        setOldestSnapshot(snap.docs[snap.docs.length - 1])
+        setOlderMessages((prev) => [...prev, ...docs])
+        setHasMoreOlder(snap.docs.length >= LOAD_MORE_SIZE)
+      } else {
+        setHasMoreOlder(false)
+      }
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
+  const ts = (m: FirestoreMessage) => m.createdAt?.toDate?.()?.getTime() ?? 0
+  const allMessages = [...olderMessages, ...messages].sort((a, b) => ts(a) - ts(b))
+
+  return {
+    messages: allMessages,
+    loading,
+    loadingMore,
+    hasMoreOlder,
+    loadMoreOlder,
+  }
 }
 
 /**

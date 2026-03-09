@@ -460,12 +460,16 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const prevCountRef = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
 
-  const { messages, loading: messagesLoading } = useMessages(tenantId, contact.id ?? null)
+  const { messages, loading: messagesLoading, loadMoreOlder, hasMoreOlder, loadingMore } = useMessages(
+    tenantId,
+    contact.id ?? null
+  )
   const { contactTyping, agentTyping } = useTypingStatus(tenantId, contact.id ?? null)
 
   const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
@@ -493,18 +497,38 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact.id])
 
-  // Scroll to bottom on new messages (real or optimistic)
+  // Scroll to bottom on new messages — only when 1 new message (not load-more batch)
+  const prevLenRef = useRef(allMessages.length)
   useEffect(() => {
-    if (allMessages.length !== prevCountRef.current) {
-      prevCountRef.current = allMessages.length
+    const prevLen = prevLenRef.current
+    prevLenRef.current = allMessages.length
+    if (allMessages.length > prevLen && allMessages.length - prevLen === 1) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allMessages.length])
 
+  const handleMessagesScroll = useCallback(async () => {
+    const el = messagesContainerRef.current
+    if (!el || !hasMoreOlder || loadingMore) return
+    if (el.scrollTop < 80) {
+      const prevHeight = el.scrollHeight
+      const prevTop = el.scrollTop
+      await loadMoreOlder()
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const container = messagesContainerRef.current
+          if (container) container.scrollTop = prevTop + (container.scrollHeight - prevHeight)
+        })
+      })
+    }
+  }, [hasMoreOlder, loadingMore, loadMoreOlder])
+
+  // Scroll to bottom when opening chat (after messages load)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "instant" })
-  }, [contact.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!messagesLoading && allMessages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "instant" })
+    }
+  }, [contact.id, messagesLoading, allMessages.length])
 
   // Reset state when contact changes
   useEffect(() => {
@@ -720,7 +744,24 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       </div>
 
       {/* ── Messages ── */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-3">
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleMessagesScroll}
+        className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-3"
+      >
+        {hasMoreOlder && (
+          <div className="flex justify-center py-2">
+            {loadingMore ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="h-5 w-5 rounded-full border-2 border-accent/20 border-t-accent"
+              />
+            ) : (
+              <p className="text-[11px] text-muted-foreground/50">Role para cima para carregar mais</p>
+            )}
+          </div>
+        )}
         {messagesLoading && allMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 py-16">
             <motion.div
