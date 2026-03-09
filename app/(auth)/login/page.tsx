@@ -48,7 +48,7 @@ export default function LoginPage() {
       await authClient.organization.setActive({ organizationId: orgs[0].id })
       // Hard navigate — gives the browser time to commit the Set-Cookie
       // before the next request, avoiding race conditions in production
-      window.location.href = "/dashboard"
+      window.location.href = "/chats"
       return
     }
 

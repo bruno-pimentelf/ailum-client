@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  SquaresFour,
   ChatCircleText,
   AddressBook,
   Kanban,
@@ -36,7 +35,6 @@ type NavGroup = {
 type NavEntry = NavItem | (NavGroup & { type: "group" })
 
 const navigation: NavEntry[] = [
-  { label: "Dashboard", href: "/dashboard", icon: SquaresFour },
   {
     type: "group",
     label: "Atendimento",

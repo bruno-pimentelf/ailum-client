@@ -82,7 +82,7 @@ function SelectOrgContent() {
 
     // Activate org — hard navigate so the browser commits the updated cookie
     await authClient.organization.setActive({ organizationId: data.id })
-    window.location.href = "/dashboard"
+    window.location.href = "/chats"
   }
 
   const handleActivate = async () => {
@@ -101,7 +101,7 @@ function SelectOrgContent() {
     // Hard navigate so the browser commits the updated cookie before the
     // next request hits the server — router.push can race against Set-Cookie
     // in cross-site (ailum.io → api.ailum.io) production environments.
-    window.location.href = "/dashboard"
+    window.location.href = "/chats"
   }
 
   return (
@@ -223,7 +223,7 @@ function SelectOrgContent() {
               </Button>
 
               {!isNew && (
-                <button type="button" onClick={() => setShowCreate(false)} className="mt-1 text-center text-[12px] text-muted-foreground hover:text-foreground transition-colors duration-200">
+                <button type="button" onClick={() => setShowCreate(false)}                 className="cursor-pointer mt-1 text-center text-[12px] text-muted-foreground hover:text-foreground transition-colors duration-200">
                   Voltar
                 </button>
               )}
@@ -254,7 +254,7 @@ function SelectOrgContent() {
                     onClick={() => setSelectedId(org.id)}
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
-                    className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all duration-200 ${
+                    className={`cursor-pointer flex items-center gap-4 rounded-xl border p-4 text-left transition-all duration-200 ${
                       selectedId === org.id
                         ? "border-accent/60 bg-accent/[0.06]"
                         : "border-border bg-card/40 hover:border-border/80 hover:bg-card/60"
@@ -297,7 +297,7 @@ function SelectOrgContent() {
               <button
                 type="button"
                 onClick={() => setShowCreate(true)}
-                className="flex items-center justify-center gap-2 mt-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="cursor-pointer flex items-center justify-center gap-2 mt-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors duration-200"
               >
                 <Plus className="h-3.5 w-3.5" weight="bold" />
                 Criar nova clínica

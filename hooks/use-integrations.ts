@@ -1,0 +1,105 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  integrationsApi,
+  type ZapiSaveInput,
+  type AsaasSaveInput,
+  type Provider,
+} from "@/lib/api/integrations"
+
+export const INTEGRATIONS_KEY = ["integrations"] as const
+export const ZAPI_STATUS_KEY = ["integrations", "zapi", "status"] as const
+
+/**
+ * Full list of integrations for the active org.
+ */
+export function useIntegrations() {
+  return useQuery({
+    queryKey: INTEGRATIONS_KEY,
+    queryFn: integrationsApi.list,
+  })
+}
+
+/**
+ * Single integration by provider, derived from the cached list.
+ */
+export function useIntegration(provider: Provider) {
+  return useQuery({
+    queryKey: INTEGRATIONS_KEY,
+    queryFn: integrationsApi.list,
+    select: (data) => data.find((i) => i.provider === provider) ?? null,
+  })
+}
+
+/**
+ * Z-API connection status.
+ * `enabled` controls whether polling is active.
+ * `refetchInterval` drives automatic polling (e.g. while scanning QR code).
+ */
+export function useZapiStatus(options?: { enabled?: boolean; refetchInterval?: number }) {
+  return useQuery({
+    queryKey: ZAPI_STATUS_KEY,
+    queryFn: integrationsApi.zapiStatus,
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval,
+    refetchOnWindowFocus: true,
+  })
+}
+
+/**
+ * Z-API QR code (base64 image). Fetched on demand — not cached long.
+ * The caller should poll manually or use refetch().
+ */
+export function useZapiQrCode(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ["integrations", "zapi", "qrcode"],
+    queryFn: integrationsApi.zapiQrCode,
+    enabled: options?.enabled ?? false,
+    // QR code expires every 20s — keep stale immediately so refetch always fires
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  })
+}
+
+export function useSaveZapi() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ZapiSaveInput) => integrationsApi.saveZapi(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY }),
+  })
+}
+
+export function useZapiDisconnect() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: integrationsApi.zapiDisconnect,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ZAPI_STATUS_KEY })
+      qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY })
+    },
+  })
+}
+
+export function useZapiRestart() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: integrationsApi.zapiRestart,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ZAPI_STATUS_KEY }),
+  })
+}
+
+export function useSaveAsaas() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: AsaasSaveInput) => integrationsApi.saveAsaas(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY }),
+  })
+}
+
+export function useRemoveIntegration() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (provider: Provider) => integrationsApi.remove(provider),
+    onSuccess: () => qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY }),
+  })
+}
