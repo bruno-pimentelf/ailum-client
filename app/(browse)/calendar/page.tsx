@@ -15,13 +15,13 @@ import {
   DotsThree,
   Funnel,
   MagnifyingGlass,
-  CalendarCheck,
 } from "@phosphor-icons/react"
-import { useProfessionals, useProfessionalsWithAvailability } from "@/hooks/use-professionals"
+import { useProfessionals } from "@/hooks/use-professionals"
 import { useAppointments } from "@/hooks/use-appointments"
 import { useMe } from "@/hooks/use-me"
 import { NovoAgendamentoModal } from "@/components/calendar/novo-agendamento-modal"
 import { ProfessionalCalendar } from "@/components/calendar/professional-calendar"
+import { AppointmentStatusModal } from "@/components/calendar/appointment-status-modal"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
 
@@ -40,6 +40,7 @@ type CalendarAppointment = {
   duration: number
   type: string
   status: AppointmentStatus
+  statusApi: ApiAppointment["status"]
   paid: boolean
   day: number
   month: number
@@ -68,6 +69,7 @@ function toCalendarAppointment(api: ApiAppointment): CalendarAppointment {
     duration: api.durationMin ?? api.service?.durationMin ?? 50,
     type: api.service?.name ?? "Consulta",
     status: api.status === "CANCELLED" ? "cancelled" : mapApiStatus(api.status),
+    statusApi: api.status,
     paid: api.charge?.status === "PAID",
     day: d.getDate(),
     month: d.getMonth(),
@@ -170,19 +172,24 @@ function PaidBadge({ paid }: { paid: boolean }) {
 function MiniApt({
   apt,
   colorMap,
+  onClick,
 }: {
   apt: CalendarAppointment
   colorMap: Record<string, AptColorStyle>
+  onClick?: () => void
 }) {
   const c = getAptColorStyle(apt.color, colorMap)
   return (
-    <div className={`flex items-center gap-1 rounded px-1 py-0.5 text-[8px] font-bold truncate border ${c.bg} ${c.border}
-      ${apt.status === "done" ? "opacity-30" : ""}
-      ${apt.status === "cancelled" ? "opacity-15 line-through" : ""}`}>
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick?.() }}
+      className={`w-full text-left flex items-center gap-1 rounded px-1 py-0.5 text-[8px] font-bold truncate border cursor-pointer hover:ring-1 hover:ring-accent/40 transition-all ${c.bg} ${c.border}
+        ${apt.status === "done" ? "opacity-30" : ""}
+        ${apt.status === "cancelled" ? "opacity-15 line-through" : ""}`}
+    >
       <span className={`h-1 w-1 rounded-full shrink-0 ${c.dot}`} />
       <span className={`flex-1 truncate ${c.text}`}>{apt.time} {apt.patientName.split(" ")[0]}</span>
       <span className={`h-1 w-1 rounded-full shrink-0 ${apt.paid ? "bg-white/40" : "bg-white/10"}`} title={apt.paid ? "Pago" : "Pendente"} />
-    </div>
+    </button>
   )
 }
 
@@ -192,10 +199,12 @@ function DayAptCard({
   apt,
   index,
   colorMap,
+  onClick,
 }: {
   apt: CalendarAppointment
   index: number
   colorMap: Record<string, AptColorStyle>
+  onClick?: () => void
 }) {
   const c = getAptColorStyle(apt.color, colorMap)
   const startMin = timeToMinutes(apt.time) - 7 * 60
@@ -207,8 +216,9 @@ function DayAptCard({
       initial={{ opacity: 0, x: 12, scale: 0.97 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       transition={{ duration: 0.35, delay: index * 0.05, ease }}
+      onClick={onClick}
       className={`absolute left-0 right-0 mx-1 rounded-lg border px-2.5 py-1.5 cursor-pointer group
-        hover:bg-white/[0.07] transition-all duration-200 ${c.bg} ${c.border}
+        hover:bg-white/[0.07] hover:ring-2 hover:ring-accent/40 transition-all duration-200 ${c.bg} ${c.border}
         ${apt.status === "done" ? "opacity-40" : ""}
         ${apt.status === "cancelled" ? "opacity-20" : ""}`}
       style={{ top, height }}
@@ -241,194 +251,6 @@ function DayAptCard({
   )
 }
 
-// ─── Disponibilidade Week View ────────────────────────────────────────────────
-
-interface ProfessionalForAvailability {
-  id: string
-  fullName: string
-  calendarColor: string
-  availability: Array<{ dayOfWeek: number; startTime: string; endTime: string }>
-  availabilityExceptions: Array<{ date: string; isUnavailable: boolean }>
-}
-
-function DisponibilidadeWeekView({
-  selectedDate,
-  setSelectedDate,
-  activeDoctor,
-  professionals,
-}: {
-  selectedDate: Date
-  setSelectedDate: (d: Date | ((prev: Date) => Date)) => void
-  activeDoctor: string
-  professionals: ProfessionalForAvailability[]
-}) {
-  const startOfWeek = new Date(selectedDate)
-  startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay())
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(startOfWeek)
-    d.setDate(startOfWeek.getDate() + i)
-    return d
-  })
-
-  const prosToShow =
-    activeDoctor === "all"
-      ? professionals
-      : professionals.filter((p) => p.id === activeDoctor)
-
-  function isAvailable(pro: ProfessionalForAvailability, d: Date, hour: number) {
-    const dayOfWeek = d.getDay()
-    const dateStr = toYMD(d)
-    const exception = pro.availabilityExceptions?.find(
-      (ex) => (ex.date?.slice(0, 10) ?? ex.date) === dateStr && ex.isUnavailable
-    )
-    if (exception) return false
-
-    const slotsForDay = pro.availability?.filter((s) => s.dayOfWeek === dayOfWeek) ?? []
-    const cellStart = hour * 60
-    const cellEnd = (hour + 1) * 60
-
-    return slotsForDay.some((slot) => {
-      const [sh, sm] = slot.startTime.split(":").map(Number)
-      const [eh, em] = slot.endTime.split(":").map(Number)
-      const startMin = sh * 60 + sm
-      const endMin = eh * 60 + em
-      return cellStart < endMin && cellEnd > startMin
-    })
-  }
-
-  const HOURS_AV = Array.from({ length: 13 }, (_, i) => i + 7)
-
-  if (prosToShow.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <CalendarCheck className="h-12 w-12 text-white/20 mb-3" weight="duotone" />
-        <p className="text-[14px] font-semibold text-white/50">Nenhum profissional</p>
-        <p className="text-[12px] text-white/30 mt-1">
-          Configure profissionais e disponibilidade em Configurações → Disponibilidade.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <>
-      <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.05]">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() =>
-              setSelectedDate(
-                (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7)
-              )
-            }
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04]"
-          >
-            <CaretLeft className="h-3 w-3" />
-          </button>
-          <span className="text-[14px] font-black text-white/80">
-            Semana de {weekDays[0]?.getDate()} – {weekDays[6]?.getDate()}{" "}
-            {MONTHS_PT[selectedDate.getMonth()]}
-          </span>
-          <button
-            onClick={() =>
-              setSelectedDate(
-                (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7)
-              )
-            }
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04]"
-          >
-            <CaretRight className="h-3 w-3" />
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          {prosToShow.map((p) => (
-            <div
-              key={p.id}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08]"
-            >
-              <div
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: p.calendarColor || "#22c55e" }}
-              />
-              <span className="text-[11px] font-semibold text-white/70">{p.fullName}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-8 border-b border-white/[0.05]">
-        <div className="w-14" />
-        {weekDays.map((d, i) => {
-          const today = d.toDateString() === new Date().toDateString()
-          return (
-            <button
-              key={i}
-              onClick={() => setSelectedDate(d)}
-              className="py-2 flex flex-col items-center gap-0.5 hover:bg-white/[0.02]"
-            >
-              <span className="text-[9px] font-extrabold uppercase text-white/20">
-                {WEEKDAYS[d.getDay()]}
-              </span>
-              <span
-                className={`h-6 w-6 flex items-center justify-center rounded-full text-[12px] font-bold ${
-                  today ? "bg-accent text-accent-foreground" : "text-white/50"
-                }`}
-              >
-                {d.getDate()}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        {HOURS_AV.map((hour) => (
-          <div
-            key={hour}
-            className="flex border-b border-white/[0.04]"
-            style={{ minHeight: 44 }}
-          >
-            <div className="w-14 shrink-0 flex items-start justify-end pr-2 pt-1">
-              <span className="text-[9px] font-bold text-white/20 font-mono tabular-nums">
-                {String(hour).padStart(2, "0")}:00
-              </span>
-            </div>
-            <div className="flex-1 grid grid-cols-7">
-              {weekDays.map((d, di) => (
-                <div
-                  key={di}
-                  className="border-l border-white/[0.04] p-0.5 flex flex-col gap-0.5"
-                >
-                  {prosToShow.map((p) => {
-                    const avail = isAvailable(p, d, hour)
-                    if (!avail) return null
-                    return (
-                      <div
-                        key={p.id}
-                        className="flex-1 min-h-[20px] rounded-md border border-white/[0.08] flex items-center justify-center"
-                        style={{
-                          backgroundColor: `${p.calendarColor || "#22c55e"}20`,
-                          borderColor: `${p.calendarColor || "#22c55e"}40`,
-                        }}
-                        title={`${p.fullName} — ${String(hour).padStart(2, "0")}:00`}
-                      >
-                        {prosToShow.length === 1 && (
-                          <span className="text-[9px] font-semibold text-white/70">
-                            Disponível
-                          </span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
-  )
-}
-
 // ─── Side panel ───────────────────────────────────────────────────────────────
 
 function SidePanel({
@@ -436,11 +258,13 @@ function SidePanel({
   selectedDate,
   colorMap,
   onOpenNewAppointment,
+  onAppointmentClick,
 }: {
   appointments: CalendarAppointment[]
   selectedDate: Date
   colorMap: Record<string, AptColorStyle>
   onOpenNewAppointment: () => void
+  onAppointmentClick: (apt: CalendarAppointment) => void
 }) {
   const dayApts = appointments.filter(
     a => a.day === selectedDate.getDate() && a.month === selectedDate.getMonth() && a.year === selectedDate.getFullYear()
@@ -503,7 +327,8 @@ function SidePanel({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.3, delay: i * 0.04, ease }}
-                  className={`rounded-xl border p-3 cursor-pointer hover:bg-white/[0.06] transition-all duration-200 ${c.bg} ${c.border}
+                  onClick={() => onAppointmentClick(apt)}
+                  className={`rounded-xl border p-3 cursor-pointer hover:bg-white/[0.06] hover:ring-1 hover:ring-accent/30 transition-all duration-200 ${c.bg} ${c.border}
                     ${apt.status === "done" ? "opacity-40" : ""}
                     ${apt.status === "cancelled" ? "opacity-20" : ""}`}
                 >
@@ -557,18 +382,18 @@ function SidePanel({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-type ViewMode = "month" | "week" | "day" | "disponibilidade"
+type ViewMode = "month" | "week" | "day"
 
 export default function CalendarPage() {
   const { data: me } = useMe()
   const { data: professionals, isLoading: loadingProfessionals } = useProfessionals()
-  const { data: professionalsWithAvailability } = useProfessionalsWithAvailability()
   const [viewMode, setViewMode] = useState<ViewMode>("month")
   const [currentDate, setCurrentDate] = useState(new Date(THIS_YEAR, THIS_MONTH, 1))
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [activeDoctor, setActiveDoctor] = useState("all")
   const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false)
   const [novoAgendamentoDefaultDate, setNovoAgendamentoDefaultDate] = useState<Date | undefined>(undefined)
+  const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -757,7 +582,7 @@ export default function CalendarPage() {
 
             {/* View mode toggle */}
             <div className="flex items-center rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5">
-              {(["month", "week", "day", "disponibilidade"] as ViewMode[]).map((mode) => (
+              {(["month", "week", "day"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
@@ -773,7 +598,7 @@ export default function CalendarPage() {
                     />
                   )}
                   <span className="relative z-10">
-                    {mode === "month" ? "Mês" : mode === "week" ? "Semana" : mode === "day" ? "Dia" : "Disponibilidade"}
+                    {mode === "month" ? "Mês" : mode === "week" ? "Semana" : "Dia"}
                   </span>
                 </button>
               ))}
@@ -891,7 +716,12 @@ export default function CalendarPage() {
                             </div>
                             <div className="flex flex-col gap-0.5">
                               {apts.slice(0, 3).map((apt) => (
-                                <MiniApt key={apt.id} apt={apt} colorMap={professionalColorMap} />
+                                <MiniApt
+                                  key={apt.id}
+                                  apt={apt}
+                                  colorMap={professionalColorMap}
+                                  onClick={() => setSelectedAppointment(apt)}
+                                />
                               ))}
                               {apts.length > 3 && (
                                 <span className="text-[8px] font-semibold text-white/20 pl-1">
@@ -967,6 +797,7 @@ export default function CalendarPage() {
                             apt={apt}
                             index={i}
                             colorMap={professionalColorMap}
+                            onClick={() => setSelectedAppointment(apt)}
                           />
                         ))}
                       </AnimatePresence>
@@ -988,25 +819,6 @@ export default function CalendarPage() {
                     )
                   })()}
                 </div>
-              </motion.div>
-            )}
-
-            {/* ── Disponibilidade view ── */}
-            {viewMode === "disponibilidade" && (
-              <motion.div
-                key="disponibilidade"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease }}
-                className="flex flex-col"
-              >
-                <DisponibilidadeWeekView
-                  selectedDate={selectedDate}
-                  setSelectedDate={setSelectedDate}
-                  activeDoctor={activeDoctor}
-                  professionals={professionalsWithAvailability ?? []}
-                />
               </motion.div>
             )}
 
@@ -1064,10 +876,14 @@ export default function CalendarPage() {
                                   {apts.map((apt) => {
                                     const c = getAptColorStyle(apt.color, professionalColorMap)
                                     return (
-                                      <div key={apt.id} className={`rounded px-1.5 py-0.5 text-[9px] font-bold truncate border ${c.bg} ${c.border} ${c.text} flex items-center gap-1`}>
+                                      <button
+                                        key={apt.id}
+                                        onClick={() => setSelectedAppointment(apt)}
+                                        className={`w-full text-left rounded px-1.5 py-0.5 text-[9px] font-bold truncate border cursor-pointer hover:ring-1 hover:ring-accent/40 transition-all ${c.bg} ${c.border} ${c.text} flex items-center gap-1`}
+                                      >
                                         <span className="truncate">{apt.time} {apt.patientName.split(" ")[0]}</span>
                                         <span className={`h-1 w-1 rounded-full shrink-0 ${apt.paid ? "bg-white/40" : "bg-white/10"}`} />
-                                      </div>
+                                      </button>
                                     )
                                   })}
                                 </div>
@@ -1091,6 +907,21 @@ export default function CalendarPage() {
         defaultDate={novoAgendamentoDefaultDate}
       />
 
+      {selectedAppointment && (
+        <AppointmentStatusModal
+          open={!!selectedAppointment}
+          onClose={() => setSelectedAppointment(null)}
+          appointment={{
+            id: selectedAppointment.id,
+            patientName: selectedAppointment.patientName,
+            time: selectedAppointment.time,
+            type: selectedAppointment.type,
+            doctorName: selectedAppointment.doctorName,
+            status: selectedAppointment.statusApi,
+          }}
+        />
+      )}
+
       {/* ── Side panel ── */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
@@ -1106,6 +937,7 @@ export default function CalendarPage() {
             setNovoAgendamentoDefaultDate(selectedDate)
             setNovoAgendamentoOpen(true)
           }}
+          onAppointmentClick={(apt) => setSelectedAppointment(apt)}
         />
       </motion.div>
     </div>

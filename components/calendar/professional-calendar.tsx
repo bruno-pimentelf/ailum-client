@@ -25,6 +25,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useProfessional, useProfessionalMutations } from "@/hooks/use-professionals"
 import { useAppointments } from "@/hooks/use-appointments"
 import { NovoAgendamentoModal } from "@/components/calendar/novo-agendamento-modal"
+import { AppointmentStatusModal } from "@/components/calendar/appointment-status-modal"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
 import type { AvailabilityException } from "@/lib/api/professionals"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
@@ -171,6 +172,7 @@ type CalendarAppointment = {
   duration: number
   type: string
   status: AppointmentStatus
+  statusApi: ApiAppointment["status"]
   paid: boolean
   day: number
   month: number
@@ -194,6 +196,7 @@ function toCalendarAppointment(api: ApiAppointment): CalendarAppointment {
     duration: api.durationMin ?? api.service?.durationMin ?? 50,
     type: api.service?.name ?? "Consulta",
     status: api.status === "CANCELLED" ? "cancelled" : mapApiStatus(api.status),
+    statusApi: api.status,
     paid: api.charge?.status === "PAID",
     day: d.getDate(),
     month: d.getMonth(),
@@ -646,6 +649,7 @@ export function ProfessionalCalendar({
     date: Date
     slot: { startTime: string; endTime: string; overrideId?: string; dayOfWeek?: number }
   } | null>(null)
+  const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null)
 
   useEffect(() => {
     if (!dragPreview) return
@@ -1054,9 +1058,13 @@ export function ProfessionalCalendar({
                         const top = timeToTop(apt.time)
                         const h = Math.max(24, durationToPx(apt.duration) - 4)
                         return (
-                          <div
+                          <button
                             key={apt.id}
-                            className={`absolute left-0.5 right-0.5 rounded px-1.5 py-1 text-[9px] font-bold truncate border overflow-hidden ${
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedAppointment(apt)
+                            }}
+                            className={`absolute left-0.5 right-0.5 rounded px-1.5 py-1 text-[9px] font-bold truncate border overflow-hidden text-left cursor-pointer hover:ring-2 hover:ring-accent/40 transition-all ${
                               apt.status === "confirmed"
                                 ? "bg-blue-500/50 border-blue-500/60 text-white/95"
                                 : apt.status === "cancelled"
@@ -1066,7 +1074,7 @@ export function ProfessionalCalendar({
                             style={{ top, height: h }}
                           >
                             {apt.time} {apt.patientName.split(" ")[0]}
-                          </div>
+                          </button>
                         )
                       })}
                     </div>
@@ -1149,9 +1157,13 @@ export function ProfessionalCalendar({
                       </div>
                       <div className="flex flex-col gap-0.5 min-h-0 flex-1">
                         {dayApts.slice(0, 3).map((apt) => (
-                          <div
+                          <button
                             key={apt.id}
-                            className={`rounded px-1 py-0.5 text-[8px] font-semibold truncate ${
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedAppointment(apt)
+                            }}
+                            className={`w-full text-left rounded px-1 py-0.5 text-[8px] font-semibold truncate cursor-pointer hover:ring-1 hover:ring-accent/40 transition-all ${
                               apt.status === "confirmed"
                                 ? "bg-blue-500/40 text-blue-200"
                                 : apt.status === "cancelled"
@@ -1160,7 +1172,7 @@ export function ProfessionalCalendar({
                             }`}
                           >
                             {apt.time} {apt.patientName.split(" ")[0]}
-                          </div>
+                          </button>
                         ))}
                         {dayApts.length > 3 && (
                           <span className="text-[8px] text-white/30">+{dayApts.length - 3}</span>
@@ -1493,6 +1505,20 @@ export function ProfessionalCalendar({
         defaultDate={selectedDate}
         defaultProfessionalId={professionalId}
       />
+
+      {selectedAppointment && (
+        <AppointmentStatusModal
+          open={!!selectedAppointment}
+          onClose={() => setSelectedAppointment(null)}
+          appointment={{
+            id: selectedAppointment.id,
+            patientName: selectedAppointment.patientName,
+            time: selectedAppointment.time,
+            type: selectedAppointment.type,
+            status: selectedAppointment.statusApi,
+          }}
+        />
+      )}
     </div>
     </TooltipProvider>
   )
