@@ -1,15 +1,16 @@
 "use client"
 
 import { AnimatedCounter, FadeIn } from "./motion"
-
-const metrics = [
-  { value: 3200, suffix: "+", label: "agendamentos/mes" },
-  { value: 94, suffix: "%", label: "taxa de confirmacao" },
-  { value: 12, suffix: "s", label: "tempo medio de resposta" },
-  { value: 0, prefix: "R$", suffix: "", label: "no-show com Pix antecipado" },
-]
+import { useLanguage } from "@/components/providers/language-provider"
 
 export function Stats() {
+  const { t } = useLanguage()
+  const metrics = [
+    { value: 3200, suffix: "+", label: t.stats.agendamentos },
+    { value: 94, suffix: "%", label: t.stats.taxaConfirmacao },
+    { value: 12, suffix: "s", label: t.stats.tempoResposta },
+    { value: 0, prefix: "R$", suffix: "", label: t.stats.noShow },
+  ]
   return (
     <section className="border-y border-border">
       <div className="mx-auto max-w-6xl">

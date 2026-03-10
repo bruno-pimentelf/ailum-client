@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
+import { useLanguage } from "@/components/providers/language-provider"
 import { motion, AnimatePresence, useInView } from "framer-motion"
 import { Robot, Sparkle, HandGrabbing, Play } from "@phosphor-icons/react"
 import {
@@ -17,12 +18,6 @@ import { useDraggable, useDroppable } from "@dnd-kit/core"
 
 const ease = [0.33, 1, 0.68, 1] as any
 
-const columns = [
-  { id: "novo", label: "Novo Lead", dot: "bg-muted-foreground/40" },
-  { id: "agendado", label: "Agendado", dot: "bg-blue-500" },
-  { id: "pago", label: "Pago", dot: "bg-accent" },
-  { id: "confirmado", label: "Confirmado", dot: "bg-emerald-500" },
-]
 
 const patients = [
   { id: 1, name: "Ana Costa", procedure: "Limpeza", avatar: "AC" },
@@ -108,7 +103,7 @@ function KanbanColumn({
   activeId,
   manualMode,
 }: {
-  column: typeof columns[0]
+  column: { id: string; label: string; dot: string }
   columnPatients: typeof patients
   activeId: number | null
   manualMode: boolean
@@ -143,8 +138,15 @@ function KanbanColumn({
 }
 
 export function DemoKanban() {
+  const { t } = useLanguage()
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
+  const columns = [
+    { id: "novo", label: t.demo.kanbanCols[0], dot: "bg-muted-foreground/40" },
+    { id: "agendado", label: t.demo.kanbanCols[1], dot: "bg-blue-500" },
+    { id: "pago", label: t.demo.kanbanCols[2], dot: "bg-accent" },
+    { id: "confirmado", label: t.demo.kanbanCols[3], dot: "bg-emerald-500" },
+  ]
   const [positions, setPositions] = useState<PatientPositions>({
     1: "novo",
     2: "novo",
@@ -168,16 +170,17 @@ export function DemoKanban() {
     if (!isInView || manualMode) return
     let cancelled = false
 
+    const cols = t.demo.kanbanCols
     const sequence: { patient: number; to: string; name: string; fromLabel: string; toLabel: string }[] = [
-      { patient: 1, to: "agendado", name: "Ana Costa", fromLabel: "Novo Lead", toLabel: "Agendado" },
-      { patient: 2, to: "agendado", name: "Pedro Lima", fromLabel: "Novo Lead", toLabel: "Agendado" },
-      { patient: 1, to: "pago", name: "Ana Costa", fromLabel: "Agendado", toLabel: "Pago" },
-      { patient: 3, to: "agendado", name: "Julia Santos", fromLabel: "Novo Lead", toLabel: "Agendado" },
-      { patient: 2, to: "pago", name: "Pedro Lima", fromLabel: "Agendado", toLabel: "Pago" },
-      { patient: 1, to: "confirmado", name: "Ana Costa", fromLabel: "Pago", toLabel: "Confirmado" },
-      { patient: 3, to: "pago", name: "Julia Santos", fromLabel: "Agendado", toLabel: "Pago" },
-      { patient: 4, to: "agendado", name: "Rafael Dias", fromLabel: "Novo Lead", toLabel: "Agendado" },
-      { patient: 2, to: "confirmado", name: "Pedro Lima", fromLabel: "Pago", toLabel: "Confirmado" },
+      { patient: 1, to: "agendado", name: "Ana Costa", fromLabel: cols[0], toLabel: cols[1] },
+      { patient: 2, to: "agendado", name: "Pedro Lima", fromLabel: cols[0], toLabel: cols[1] },
+      { patient: 1, to: "pago", name: "Ana Costa", fromLabel: cols[1], toLabel: cols[2] },
+      { patient: 3, to: "agendado", name: "Julia Santos", fromLabel: cols[0], toLabel: cols[1] },
+      { patient: 2, to: "pago", name: "Pedro Lima", fromLabel: cols[1], toLabel: cols[2] },
+      { patient: 1, to: "confirmado", name: "Ana Costa", fromLabel: cols[2], toLabel: cols[3] },
+      { patient: 3, to: "pago", name: "Julia Santos", fromLabel: cols[1], toLabel: cols[2] },
+      { patient: 4, to: "agendado", name: "Rafael Dias", fromLabel: cols[0], toLabel: cols[1] },
+      { patient: 2, to: "confirmado", name: "Pedro Lima", fromLabel: cols[2], toLabel: cols[3] },
     ]
 
     async function runSequence() {
@@ -199,7 +202,7 @@ export function DemoKanban() {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [isInView, manualMode])
+  }, [isInView, manualMode, t.demo.kanbanCols])
 
   const handleToggleMode = () => {
     if (!manualMode) {
@@ -239,7 +242,7 @@ export function DemoKanban() {
       <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-foreground/[0.03]">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <p className="text-xs font-medium text-foreground">Funil de Pacientes</p>
+          <p className="text-xs font-medium text-foreground">{t.demo.kanbanTitle}</p>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               {manualMode ? (
@@ -248,7 +251,7 @@ export function DemoKanban() {
                 <Robot className="h-3 w-3 text-accent" />
               )}
               <span className="text-[10px] text-accent font-medium">
-                {manualMode ? "Modo manual" : "IA gerenciando"}
+                {manualMode ? t.demo.kanbanManual : t.demo.kanbanAI}
               </span>
             </div>
             <button
@@ -261,12 +264,12 @@ export function DemoKanban() {
               {manualMode ? (
                 <>
                   <Play className="h-2.5 w-2.5" />
-                  Voltar IA
+                  {t.demo.kanbanBackAI}
                 </>
               ) : (
                 <>
                   <HandGrabbing className="h-2.5 w-2.5" />
-                  Mover manual
+                  {t.demo.kanbanMoveManual}
                 </>
               )}
             </button>
@@ -288,7 +291,7 @@ export function DemoKanban() {
                 <Sparkle className="h-3 w-3 text-accent" />
                 <span className="text-[10px] text-muted-foreground">
                   <span className="font-medium text-foreground">{currentAction.patient}</span>
-                  {" "}acabou de avançar para <span className="font-medium text-accent">{currentAction.to}</span> ✓
+                  {" "}{t.demo.kanbanAction} <span className="font-medium text-accent">{currentAction.to}</span> ✓
                 </span>
               </motion.div>
             )}
@@ -296,7 +299,7 @@ export function DemoKanban() {
           {(!currentAction || manualMode) && (
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-[10px] text-muted-foreground/60">
-                {manualMode ? "Arraste os cards entre as colunas ✨" : "Tudo certo por aqui, monitorando..."}
+                {manualMode ? t.demo.kanbanDrag : t.demo.kanbanIdle}
               </span>
             </div>
           )}

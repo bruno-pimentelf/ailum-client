@@ -5,8 +5,10 @@ import { motion } from "framer-motion"
 import { ArrowRight, Check, Sparkle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "./motion"
+import { useLanguage } from "@/components/providers/language-provider"
 
 export function Waitlist() {
+    const { t } = useLanguage()
     const [email, setEmail] = useState("")
     const [submitted, setSubmitted] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -31,14 +33,14 @@ export function Waitlist() {
             <div className="relative mx-auto max-w-6xl px-6">
                 <FadeIn className="mx-auto max-w-lg text-center">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
-                        Acesso antecipado
+                        {t.waitlist.acessoAntecipado}
                     </p>
                     <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-                        Entre na{" "}
-                        <span className="font-display italic text-accent">lista de espera</span>
+                        {t.waitlist.entreLista}{" "}
+                        <span className="font-display italic text-accent">{t.waitlist.listaEspera}</span>
                     </h2>
                     <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                        Estamos trabalhando com um grupo seleto de clinicas. Deixe seu email para garantir acesso prioritario e ser uma das primeiras a usar a Ailum.
+                        {t.waitlist.descricao}
                     </p>
                 </FadeIn>
 
@@ -50,7 +52,7 @@ export function Waitlist() {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="seu@email.com"
+                                    placeholder={t.waitlist.placeholder}
                                     required
                                     className="w-full h-12 rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
                                 />
@@ -76,14 +78,14 @@ export function Waitlist() {
                                         </motion.div>
                                     ) : (
                                         <>
-                                            Aplicar-se
+                                            {t.waitlist.aplicarSe}
                                             <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                                         </>
                                     )}
                                 </span>
                             </Button>
                             <p className="text-center text-[11px] text-muted-foreground/60">
-                                Sem spam. Voce sera notificado quando abrirmos vagas.
+                                {t.waitlist.semSpam}
                             </p>
                         </form>
                     ) : (
@@ -96,9 +98,9 @@ export function Waitlist() {
                             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/15">
                                 <Check className="h-5 w-5 text-accent" weight="bold" />
                             </div>
-                            <h3 className="text-lg font-semibold text-foreground">Voce esta na lista!</h3>
+                            <h3 className="text-lg font-semibold text-foreground">{t.waitlist.sucesso}</h3>
                             <p className="mt-2 text-sm text-muted-foreground">
-                                Entraremos em contato em breve com acesso exclusivo a plataforma.
+                                {t.waitlist.sucessoDesc}
                             </p>
                         </motion.div>
                     )}
@@ -108,9 +110,9 @@ export function Waitlist() {
                 <FadeIn className="mx-auto mt-16 max-w-xl">
                     <div className="grid grid-cols-3 gap-6 text-center">
                         {[
-                            { value: "50+", label: "clinicas na fila" },
-                            { value: "48h", label: "para ativar" },
-                            { value: "100%", label: "gratuito no beta" },
+                            { value: "50+", label: t.waitlist.clinicasFila },
+                            { value: "48h", label: t.waitlist.paraAtivar },
+                            { value: "100%", label: t.waitlist.gratuitoBeta },
                         ].map((item) => (
                             <div key={item.label}>
                                 <p className="text-2xl font-semibold tracking-tight text-foreground">{item.value}</p>

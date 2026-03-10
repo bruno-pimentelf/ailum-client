@@ -4,8 +4,10 @@ import { motion } from "framer-motion"
 import { ArrowRight } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "./motion"
+import { useLanguage } from "@/components/providers/language-provider"
 
 export function CTA() {
+  const { t } = useLanguage()
   return (
     <section className="relative border-t border-border overflow-hidden">
       {/* Animated background glow */}
@@ -16,12 +18,12 @@ export function CTA() {
       <div className="relative mx-auto max-w-6xl px-6 py-24 md:py-32">
         <FadeIn className="mx-auto max-w-xl text-center">
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            Pronto para{" "}
-            <span className="font-display italic text-accent">iluminar</span>
-            {" "}sua clinica?
+            {t.cta.pronto}{" "}
+            <span className="font-display italic text-accent">{t.cta.iluminar}</span>
+            {" "}{t.cta.suaClinica}
           </h2>
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-            Fale com um especialista e descubra como a Ailum pode transformar o atendimento da sua clinica em menos de 48 horas.
+            {t.cta.faleEspecialista}
           </p>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -38,7 +40,7 @@ export function CTA() {
                   transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
                 />
                 <span className="relative z-10 flex items-center">
-                  Aplicar-se
+                  {t.cta.aplicarSe}
                   <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </span>
               </a>

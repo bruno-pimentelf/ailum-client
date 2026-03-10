@@ -3,19 +3,20 @@
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence, useInView } from "framer-motion"
 import { Checks, Robot } from "@phosphor-icons/react"
+import { useLanguage } from "@/components/providers/language-provider"
 
 const ease = [0.33, 1, 0.68, 1] as any
 
-const messages = [
-  { id: 1, from: "patient", text: "Oi! Queria marcar uma consulta com a Dra. Marina, tem horário disponível?", time: "09:41" },
-  { id: 2, from: "ai", text: "Oi! Que bom que entrou em contato 😊 Deixa eu dar uma olhada na agenda dela agora...", time: "09:41" },
-  { id: 3, from: "ai", text: "Achei dois horários ótimos essa semana: quarta (12/03) às 14h ou quinta (13/03) às 10h. Qual fica melhor pra você?", time: "09:42" },
-  { id: 4, from: "patient", text: "Quinta às 10h perfeito!", time: "09:43" },
-  { id: 5, from: "ai", text: "Perfeito! Já reservei o horário pra você 🙌 Pra garantir a consulta na agenda, é só confirmar com o Pix de R$150,00 abaixo — é rapidinho!", time: "09:43" },
-  { id: 6, from: "ai", type: "pix", text: "Pix Copia e Cola\n\nR$ 150,00\nClinica Harmonia LTDA", time: "09:43" },
-]
-
 export function DemoChat() {
+  const { t } = useLanguage()
+  const messages = [
+    { id: 1, from: "patient" as const, text: t.demo.demoMsg1, time: "09:41" },
+    { id: 2, from: "ai" as const, text: t.demo.demoMsg2, time: "09:41" },
+    { id: 3, from: "ai" as const, text: t.demo.demoMsg3, time: "09:42" },
+    { id: 4, from: "patient" as const, text: t.demo.demoMsg4, time: "09:43" },
+    { id: 5, from: "ai" as const, text: t.demo.demoMsg5, time: "09:43" },
+    { id: 6, from: "ai" as const, type: "pix" as const, text: t.demo.demoMsg6, time: "09:43" },
+  ]
   const ref = useRef(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
@@ -76,10 +77,10 @@ export function DemoChat() {
             <span className="text-xs font-semibold text-accent">CH</span>
           </div>
           <div className="flex-1">
-            <p className="text-xs font-medium text-foreground">Clinica Harmonia</p>
+            <p className="text-xs font-medium text-foreground">{t.demo.clinicName}</p>
             <div className="flex items-center gap-1.5">
               <Robot className="h-3 w-3 text-accent" />
-              <p className="text-[10px] text-accent font-medium">Ailum IA ativa</p>
+              <p className="text-[10px] text-accent font-medium">{t.demo.aiActive}</p>
             </div>
           </div>
         </div>
@@ -108,7 +109,7 @@ export function DemoChat() {
                         <div className="h-4 w-4 rounded bg-accent/15 flex items-center justify-center">
                           <span className="text-[9px] font-bold text-accent">$</span>
                         </div>
-                        <span className="text-[10px] font-semibold text-accent">Pagamento via Pix</span>
+                        <span className="text-[10px] font-semibold text-accent">{t.demo.pixPayment}</span>
                       </div>
                     )}
                     <p className="text-[12px] leading-relaxed whitespace-pre-line">{msg.text}</p>

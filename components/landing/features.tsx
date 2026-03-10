@@ -4,33 +4,7 @@ import { FadeIn } from "./motion"
 import { DemoChat } from "./demo-chat"
 import { DemoKanban } from "./demo-kanban"
 import { DemoCalendar } from "./demo-calendar"
-
-const featureSections = [
-  {
-    tag: "WhatsApp + IA",
-    title: "Atendimento que parece humano, disponível 24h",
-    description:
-      "A IA conversa de verdade com seus pacientes pelo WhatsApp — responde dúvidas, sugere horários, manda o Pix e confirma tudo. Com o jeito de falar da sua clínica, não um robô genérico.",
-    component: "chat",
-    reversed: false,
-  },
-  {
-    tag: "Funil inteligente",
-    title: "Veja exatamente onde cada paciente está",
-    description:
-      "Do primeiro contato até a consulta confirmada, tudo em um funil visual. A IA avança os status sozinha conforme o paciente responde e paga — você só acompanha.",
-    component: "kanban",
-    reversed: true,
-  },
-  {
-    tag: "Calendario integrado",
-    title: "Agenda que só mostra o que está garantido",
-    description:
-      "Filtre por profissional, sala ou tipo de atendimento. Nenhuma consulta aparece na agenda sem pagamento confirmado — chega de no-show, chega de surpresa.",
-    component: "calendar",
-    reversed: false,
-  },
-]
+import { useLanguage } from "@/components/providers/language-provider"
 
 function FeatureDemo({ type }: { type: string }) {
   switch (type) {
@@ -46,16 +20,41 @@ function FeatureDemo({ type }: { type: string }) {
 }
 
 export function Features() {
+  const { t } = useLanguage()
+  const featureSections = [
+    {
+      tag: t.features.whatsapp,
+      title: t.features.whatsappTitle,
+      description: t.features.whatsappDesc,
+      component: "chat" as const,
+      reversed: false,
+    },
+    {
+      tag: t.features.funil,
+      title: t.features.funilTitle,
+      description: t.features.funilDesc,
+      component: "kanban" as const,
+      reversed: true,
+    },
+    {
+      tag: t.features.calendario,
+      title: t.features.calendarioTitle,
+      description: t.features.calendarioDesc,
+      component: "calendar" as const,
+      reversed: false,
+    },
+  ]
+
   return (
     <section id="recursos" className="py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6">
         <FadeIn className="mx-auto max-w-lg text-center mb-20">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
-            Plataforma
+            {t.features.platforma}
           </p>
           <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            Veja como funciona{" "}
-            <span className="font-display italic text-accent">por dentro</span>
+            {t.features.vejaComo}{" "}
+            <span className="font-display italic text-accent">{t.features.porDentro}</span>
           </h2>
         </FadeIn>
 

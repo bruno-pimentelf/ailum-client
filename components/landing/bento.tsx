@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useLanguage } from "@/components/providers/language-provider"
 import { motion, useInView, AnimatePresence } from "framer-motion"
 import { FadeIn, StaggerContainer, staggerItem } from "./motion"
 import {
@@ -25,16 +26,16 @@ import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 const ease = [0.33, 1, 0.68, 1] as any
 
 // ─── Card 1: Voice equalizer ──────────────────────────────────────────────────
-function VoiceAnim({ active }: { active: boolean }) {
+function VoiceAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
   const bars = [0.4, 0.7, 1, 0.6, 0.85, 0.5, 0.9, 0.65, 0.75, 0.45, 0.8, 0.55]
   return (
     <div className="rounded-xl border border-border bg-background/50 px-4 py-3 flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Tom de voz ativo</span>
+          <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">{t.bento.voiceLabel}</span>
         </div>
-        <span className="text-[9px] text-accent/60 font-medium">Personalizado</span>
+        <span className="text-[9px] text-accent/60 font-medium">{t.bento.voiceCustom}</span>
       </div>
       {/* Equalizer — uses absolute height so scaleY never clips */}
       <div className="relative flex items-end gap-[3px]" style={{ height: 48 }}>
@@ -56,20 +57,19 @@ function VoiceAnim({ active }: { active: boolean }) {
         ))}
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="text-[9px] text-muted-foreground/40">Clínica Harmonia</span>
+        <span className="text-[9px] text-muted-foreground/40">{t.bento.clinicName}</span>
       </div>
     </div>
   )
 }
 
 // ─── Card 2: Patient history lines ───────────────────────────────────────────
-const historyLines = [
-  { label: "Ana Costa", tag: "Limpeza", date: "12/03", color: "text-accent" },
-  { label: "Pedro Lima", tag: "Retorno", date: "11/03", color: "text-blue-400" },
-  { label: "Julia Santos", tag: "Clareamento", date: "10/03", color: "text-violet-400" },
-]
-
-function HistoryAnim({ active }: { active: boolean }) {
+function HistoryAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
+  const historyLines = [
+    { label: t.bento.historyLabels[0], tag: t.bento.historyTags[0], date: t.bento.historyDates[0], color: "text-accent" },
+    { label: t.bento.historyLabels[1], tag: t.bento.historyTags[1], date: t.bento.historyDates[1], color: "text-blue-400" },
+    { label: t.bento.historyLabels[2], tag: t.bento.historyTags[2], date: t.bento.historyDates[2], color: "text-violet-400" },
+  ]
   const [visible, setVisible] = useState<number[]>([])
 
   useEffect(() => {
@@ -107,13 +107,12 @@ function HistoryAnim({ active }: { active: boolean }) {
 }
 
 // ─── Card 3: Notification stack ───────────────────────────────────────────────
-const notifications = [
-  { Icon: Bell, text: "Lembrete enviado — Ana Costa amanhã às 10h", color: "border-accent/20 bg-accent/5", iconColor: "text-accent" },
-  { Icon: CheckCircle, text: "Julia confirmou presença", color: "border-emerald-500/20 bg-emerald-500/5", iconColor: "text-emerald-400" },
-  { Icon: ChatText, text: "Follow-up enviado — Pedro Lima", color: "border-blue-500/20 bg-blue-500/5", iconColor: "text-blue-400" },
-]
-
-function NotifAnim({ active }: { active: boolean }) {
+function NotifAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
+  const notifications = [
+    { Icon: Bell, text: t.bento.notif1, color: "border-accent/20 bg-accent/5", iconColor: "text-accent" },
+    { Icon: CheckCircle, text: t.bento.notif2, color: "border-emerald-500/20 bg-emerald-500/5", iconColor: "text-emerald-400" },
+    { Icon: ChatText, text: t.bento.notif3, color: "border-blue-500/20 bg-blue-500/5", iconColor: "text-blue-400" },
+  ]
   const [visible, setVisible] = useState<number[]>([])
 
   useEffect(() => {
@@ -153,13 +152,12 @@ function NotifAnim({ active }: { active: boolean }) {
 }
 
 // ─── Card 4: Dedicated manager chat ───────────────────────────────────────────
-const managerMessages = [
-  { from: "manager", text: "Configurei o fluxo de reengajamento pra você." },
-  { from: "clinic", text: "Que rápido, obrigado!" },
-  { from: "manager", text: "Qualquer ajuste é só chamar aqui." },
-]
-
-function ManagerAnim({ active }: { active: boolean }) {
+function ManagerAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
+  const managerMessages = [
+    { from: "manager" as const, text: t.bento.manager1 },
+    { from: "clinic" as const, text: t.bento.manager2 },
+    { from: "manager" as const, text: t.bento.manager3 },
+  ]
   const [visible, setVisible] = useState<number[]>([])
   const [typing, setTyping] = useState(false)
 
@@ -197,8 +195,8 @@ function ManagerAnim({ active }: { active: boolean }) {
           <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-card" />
         </div>
         <div>
-          <p className="text-[10px] font-semibold text-foreground leading-none">Gabriel · Gerente</p>
-          <p className="text-[8px] text-emerald-400 mt-0.5">online agora</p>
+          <p className="text-[10px] font-semibold text-foreground leading-none">{t.bento.managerLabel}</p>
+          <p className="text-[8px] text-emerald-400 mt-0.5">{t.bento.managerOnline}</p>
         </div>
       </div>
 
@@ -250,7 +248,7 @@ function ManagerAnim({ active }: { active: boolean }) {
 }
 
 // ─── Card 5: Pix payment confirm ──────────────────────────────────────────────
-function PixAnim({ active }: { active: boolean }) {
+function PixAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
   const [phase, setPhase] = useState<"idle" | "progress" | "done">("idle")
   const [progress, setProgress] = useState(0)
 
@@ -281,9 +279,9 @@ function PixAnim({ active }: { active: boolean }) {
       <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-background/50 p-3">
         <div className="flex items-center gap-2 mb-1">
           <WhatsappLogo className="h-3.5 w-3.5 text-emerald-500/70" />
-          <span className="text-[9px] text-muted-foreground/60">Clínica Harmonia · WhatsApp</span>
+          <span className="text-[9px] text-muted-foreground/60">{t.bento.clinicName} · WhatsApp</span>
         </div>
-        <p className="text-[10px] text-foreground/80 leading-snug">Olá! Segue o Pix para confirmar sua consulta de quinta às 10h.</p>
+        <p className="text-[10px] text-foreground/80 leading-snug">{t.bento.pixMsg}</p>
         <div className="flex items-center gap-2 mt-1 rounded-lg border border-accent/20 bg-accent/5 px-2.5 py-2">
           <div className="h-5 w-5 rounded bg-zinc-900 border border-accent/20 flex items-center justify-center shrink-0">
             <span className="text-[6px] font-bold text-accent">PIX</span>
@@ -305,7 +303,7 @@ function PixAnim({ active }: { active: boolean }) {
         {phase === "progress" && (
           <motion.div key="prog" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-1">
             <div className="flex justify-between">
-              <span className="text-[9px] text-muted-foreground/50">Processando pagamento...</span>
+              <span className="text-[9px] text-muted-foreground/50">{t.bento.pixProcessing}</span>
               <span className="text-[9px] text-accent/70 tabular-nums font-mono">{progress}%</span>
             </div>
             <div className="h-1 rounded-full bg-border overflow-hidden">
@@ -323,8 +321,8 @@ function PixAnim({ active }: { active: boolean }) {
           >
             <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" weight="fill" />
             <div>
-              <p className="text-[10px] font-semibold text-emerald-400 leading-none">Pix confirmado</p>
-              <p className="text-[8px] text-emerald-400/60 mt-0.5">Horário reservado automaticamente</p>
+              <p className="text-[10px] font-semibold text-emerald-400 leading-none">{t.bento.pixDoneTitle}</p>
+              <p className="text-[8px] text-emerald-400/60 mt-0.5">{t.bento.pixDoneSub}</p>
             </div>
           </motion.div>
         )}
@@ -350,20 +348,19 @@ const allChartData = [
   { mes: "Dez", qualidade: 75 },
 ]
 
-const chartConfig: ChartConfig = {
-  qualidade: {
-    label: "Qualidade",
-    color: "oklch(0.712 0.126 215.9)",
-  },
-}
+function LearningAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
+  const chartConfig: ChartConfig = {
+    qualidade: {
+      label: t.bento.chartQualidade,
+      color: "oklch(0.712 0.126 215.9)",
+    },
+  }
 
-const metrics = [
-  { label: "Taxa de resposta", value: "98%", color: "text-accent" },
-  { label: "Satisfação", value: "4.9 / 5", color: "text-amber-400" },
-  { label: "No-show", value: "0%", color: "text-emerald-400" },
-]
-
-function LearningAnim({ active }: { active: boolean }) {
+  const metrics = [
+    { label: t.bento.metric1, value: "98%", color: "text-accent" },
+    { label: t.bento.metric2, value: "4.9 / 5", color: "text-amber-400" },
+    { label: t.bento.metric3, value: "0%", color: "text-emerald-400" },
+  ]
   const [revealed, setRevealed] = useState(0)
   const [metricsVisible, setMetricsVisible] = useState(false)
 
@@ -392,7 +389,7 @@ function LearningAnim({ active }: { active: boolean }) {
       {/* Chart — takes most of the space */}
       <div className="flex-1 min-w-0 rounded-xl border border-border bg-background/50 px-4 pt-4 pb-2">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Qualidade das respostas</span>
+          <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">{t.bento.chartLabel}</span>
           <AnimatePresence>
             {revealed === allChartData.length && (
               <motion.span
@@ -400,7 +397,7 @@ function LearningAnim({ active }: { active: boolean }) {
                 animate={{ opacity: 1, x: 0 }}
                 className="text-[9px] text-emerald-400 font-medium"
               >
-                +317% em 12 meses
+                {t.bento.chartGrowth}
               </motion.span>
             )}
           </AnimatePresence>
@@ -467,51 +464,6 @@ interface CardDef {
   anim: (active: boolean) => React.ReactNode
 }
 
-const cards: CardDef[] = [
-  {
-    icon: Microphone,
-    title: "Fala do jeito que você fala",
-    description: "A IA aprende o tom da sua clínica — seja mais formal ou mais próximo. Cada resposta soa como se fosse você mesmo atendendo.",
-    span: "",
-    anim: (active) => <VoiceAnim active={active} />,
-  },
-  {
-    icon: FileText,
-    title: "Histórico completo de cada paciente",
-    description: "Resumo automático de cada conversa, anotações, tags e tudo que foi dito — organizado e fácil de consultar.",
-    span: "",
-    anim: (active) => <HistoryAnim active={active} />,
-  },
-  {
-    icon: Bell,
-    title: "Lembra, avisa e traz de volta",
-    description: "Lembretes antes da consulta, follow-up após o atendimento e reengajamento de quem sumiu. Tudo automático.",
-    span: "",
-    anim: (active) => <NotifAnim active={active} />,
-  },
-  {
-    icon: UserCheck,
-    title: "Um especialista só pra sua clínica",
-    description: "Você não fica sozinho. Cada clínica tem um gerente dedicado que configura a IA, ajusta os fluxos e garante que tudo funcione do jeito certo.",
-    span: "md:col-span-2",
-    anim: (active) => <ManagerAnim active={active} />,
-  },
-  {
-    icon: Shield,
-    title: "Pix antes de entrar na agenda",
-    description: "A IA manda o Pix no WhatsApp. Só depois do pagamento o horário é bloqueado. Fim do no-show.",
-    span: "",
-    anim: (active) => <PixAnim active={active} />,
-  },
-  {
-    icon: Sparkle,
-    title: "Fica melhor com o tempo",
-    description: "Quanto mais a IA conversa com seus pacientes, mais ela entende o ritmo da sua clínica e afina as respostas — sem você precisar fazer nada.",
-    span: "md:col-span-3",
-    anim: (active) => <LearningAnim active={active} />,
-  },
-]
-
 // ─── Individual card with inView trigger ─────────────────────────────────────
 
 function BentoCard({ card }: { card: CardDef }) {
@@ -563,16 +515,62 @@ function BentoCard({ card }: { card: CardDef }) {
 // ─── Section ──────────────────────────────────────────────────────────────────
 
 export function Bento() {
+  const { t } = useLanguage()
+  const cards: CardDef[] = [
+    {
+      icon: Microphone,
+      title: t.bento.voiceTitle,
+      description: t.bento.voiceDesc,
+      span: "",
+      anim: (active) => <VoiceAnim active={active} t={t} />,
+    },
+    {
+      icon: FileText,
+      title: t.bento.historyTitle,
+      description: t.bento.historyDesc,
+      span: "",
+      anim: (active) => <HistoryAnim active={active} t={t} />,
+    },
+    {
+      icon: Bell,
+      title: t.bento.notifTitle,
+      description: t.bento.notifDesc,
+      span: "",
+      anim: (active) => <NotifAnim active={active} t={t} />,
+    },
+    {
+      icon: UserCheck,
+      title: t.bento.managerTitle,
+      description: t.bento.managerDesc,
+      span: "md:col-span-2",
+      anim: (active) => <ManagerAnim active={active} t={t} />,
+    },
+    {
+      icon: Shield,
+      title: t.bento.pixTitle,
+      description: t.bento.pixDesc,
+      span: "",
+      anim: (active) => <PixAnim active={active} t={t} />,
+    },
+    {
+      icon: Sparkle,
+      title: t.bento.learningTitle,
+      description: t.bento.learningDesc,
+      span: "md:col-span-3",
+      anim: (active) => <LearningAnim active={active} t={t} />,
+    },
+  ]
+
   return (
     <section id="produto" className="border-t border-border py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6">
         <FadeIn className="mx-auto max-w-lg text-center mb-16">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
-            Recursos
+            {t.bento.tag}
           </p>
           <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            Tudo que sua clínica precisa em{" "}
-            <span className="font-display italic text-accent">um só lugar</span>
+            {t.bento.title}{" "}
+            <span className="font-display italic text-accent">{t.bento.titleAccent}</span>
           </h2>
         </FadeIn>
 

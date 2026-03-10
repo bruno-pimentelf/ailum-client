@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+import { useLanguage } from "@/components/providers/language-provider"
 import {
   motion,
   AnimatePresence,
@@ -21,15 +22,18 @@ const ease = [0.33, 1, 0.68, 1] as const
 
 /* ═══ Step 1: Chat ═══════════════════════════════════════════════════════════ */
 
-const chatMessages = [
-  { id: 1, from: "patient", text: "Oi! Quero marcar uma consulta com a Dra. Marina 😊", time: "09:41" },
-  { id: 2, from: "ai", text: "Oi! Que bom que entrou em contato. Deixa eu verificar a agenda dela...", time: "09:41" },
-  { id: 3, from: "ai", text: "Tenho quinta-feira (13/03) às 10h disponível. Funciona pra você?", time: "09:42" },
-  { id: 4, from: "patient", text: "Perfeito, pode ser!", time: "09:42" },
-  { id: 5, from: "ai", text: "Ótimo! Vou te enviar o Pix agora pra garantir o horário 🙌", time: "09:42" },
-]
+function getChatMessages(t: { howItWorks: { chatMsg1: string; chatMsg2: string; chatMsg3: string; chatMsg4: string; chatMsg5: string } }) {
+  return [
+    { id: 1, from: "patient" as const, text: t.howItWorks.chatMsg1, time: "09:41" },
+    { id: 2, from: "ai" as const, text: t.howItWorks.chatMsg2, time: "09:41" },
+    { id: 3, from: "ai" as const, text: t.howItWorks.chatMsg3, time: "09:42" },
+    { id: 4, from: "patient" as const, text: t.howItWorks.chatMsg4, time: "09:42" },
+    { id: 5, from: "ai" as const, text: t.howItWorks.chatMsg5, time: "09:42" },
+  ]
+}
 
-function StepChat({ active }: { active: boolean }) {
+function StepChat({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
+  const chatMessages = getChatMessages(t)
   const [visible, setVisible] = useState<number[]>([])
   const [typing, setTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -73,8 +77,8 @@ function StepChat({ active }: { active: boolean }) {
           <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground leading-none">Clínica Harmonia</p>
-          <p className="text-[10px] text-accent mt-0.5">IA ativa · online agora</p>
+          <p className="text-sm font-semibold text-foreground leading-none">{t.howItWorks.chatClinic}</p>
+          <p className="text-[10px] text-accent mt-0.5">{t.howItWorks.chatAI}</p>
         </div>
         <WhatsappLogo className="ml-auto h-4.5 w-4.5 text-emerald-500/60" />
       </div>
@@ -137,7 +141,7 @@ function QRPattern() {
   )
 }
 
-function StepPix({ active }: { active: boolean }) {
+function StepPix({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
   const [phase, setPhase] = useState<"idle"|"generating"|"qr"|"waiting"|"paid">("idle")
   const [copied, setCopied] = useState(false)
   const [payProgress, setPayProgress] = useState(0)
@@ -160,11 +164,11 @@ function StepPix({ active }: { active: boolean }) {
       <div className="flex items-center gap-2 px-5 py-3 border-b border-border bg-accent/[0.05]">
         <motion.div animate={{ scale: phase === "paid" ? [1,1.3,1] : 1 }} transition={{ duration: 0.4 }}
           className={`h-1.5 w-1.5 rounded-full ${phase === "paid" ? "bg-emerald-400" : "bg-accent animate-pulse"}`} />
-        <span className="text-sm font-medium text-foreground">Pagamento via Pix</span>
+        <span className="text-sm font-medium text-foreground">{t.howItWorks.pixTitle}</span>
         <AnimatePresence mode="wait">
           {phase === "paid" ? (
             <motion.div key="paid" initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} className="ml-auto flex items-center gap-1">
-              <CheckCircle className="h-3.5 w-3.5 text-emerald-400" /><span className="text-[10px] text-emerald-400 font-semibold">Pago!</span>
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-400" /><span className="text-[10px] text-emerald-400 font-semibold">{t.howItWorks.pixPaid}</span>
             </motion.div>
           ) : (
             <motion.span key="amt" exit={{ opacity: 0 }} className="ml-auto text-[10px] text-emerald-400 font-medium">R$ 150,00</motion.span>
@@ -184,7 +188,7 @@ function StepPix({ active }: { active: boolean }) {
           {phase === "generating" && (
             <motion.div key="gen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center gap-2 py-16">
               <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="h-5 w-5 rounded-full border-2 border-accent/20 border-t-accent" />
-              <span className="text-[10px] text-muted-foreground/60">Gerando QR code...</span>
+              <span className="text-[10px] text-muted-foreground/60">{t.howItWorks.pixGenerating}</span>
             </motion.div>
           )}
           {(phase === "qr" || phase === "waiting" || phase === "paid") && (
@@ -206,28 +210,28 @@ function StepPix({ active }: { active: boolean }) {
               </div>
               <div className="flex flex-col gap-3 flex-1 min-w-0">
                 <div>
-                  <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider mb-1.5">Pix Copia e Cola</p>
+                  <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider mb-1.5">{t.howItWorks.pixCopyPaste}</p>
                   <button onClick={() => setCopied(true)} className="w-full flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-left hover:border-accent/30 transition-colors">
                     <span className="flex-1 truncate font-mono text-[10px] text-muted-foreground">00020126580014br.gov.bcb.pix…6304ABCD</span>
                     <AnimatePresence mode="wait">
                       {copied ? <motion.span key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }}><CheckCircle className="h-3.5 w-3.5 text-emerald-400" /></motion.span>
-                        : <motion.span key="cp" initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[10px] text-accent/50 shrink-0">copiar</motion.span>}
+                        : <motion.span key="cp" initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[10px] text-accent/50 shrink-0">{t.howItWorks.pixCopy}</motion.span>}
                     </AnimatePresence>
                   </button>
                 </div>
                 <div className="text-center">
-                  <p className="text-[11px] text-muted-foreground/40">ou escaneie com o app do banco</p>
+                  <p className="text-[11px] text-muted-foreground/40">{t.howItWorks.pixScan}</p>
                 </div>
                 <AnimatePresence mode="wait">
                   {phase === "waiting" && (
                     <motion.div key="w" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-2">
-                      <div className="flex justify-between"><span className="text-[10px] text-muted-foreground/50">Aguardando pagamento</span><span className="text-[10px] text-accent/60 tabular-nums font-mono">{payProgress}%</span></div>
+                      <div className="flex justify-between"><span className="text-[10px] text-muted-foreground/50">{t.howItWorks.pixWaiting}</span><span className="text-[10px] text-accent/60 tabular-nums font-mono">{payProgress}%</span></div>
                       <div className="h-1.5 rounded-full bg-border overflow-hidden"><motion.div className="h-full rounded-full bg-accent/70" style={{ width: `${payProgress}%` }} /></div>
                     </motion.div>
                   )}
                   {phase === "paid" && (
                     <motion.div key="d" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2.5">
-                      <div className="h-2 w-2 rounded-full bg-emerald-400" /><span className="text-[11px] text-emerald-400 font-medium">Pagamento confirmado · R$ 150,00</span>
+                      <div className="h-2 w-2 rounded-full bg-emerald-400" /><span className="text-[11px] text-emerald-400 font-medium">{t.howItWorks.pixConfirmed}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -243,14 +247,20 @@ function StepPix({ active }: { active: boolean }) {
 /* ═══ Step 3: Calendar ═══════════════════════════════════════════════════════ */
 
 const calSlots = ["08:00","09:00","10:00","11:00","14:00","15:00"]
-const existingApts = [
-  { time: "08:00", col: 1, label: "Dr. Carlos", sub: "Retorno", color: "bg-blue-500/10 border-blue-500/20 text-blue-400" },
-  { time: "11:00", col: 1, label: "Dr. Carlos", sub: "Consulta", color: "bg-blue-500/10 border-blue-500/20 text-blue-400" },
-  { time: "14:00", col: 2, label: "Dra. Marina", sub: "Limpeza", color: "bg-accent/10 border-accent/20 text-accent" },
-  { time: "15:00", col: 1, label: "Dr. Carlos", sub: "Exame", color: "bg-blue-500/10 border-blue-500/20 text-blue-400" },
-]
 
-function StepCalendar({ active }: { active: boolean }) {
+function getExistingApts(t: ReturnType<typeof useLanguage>["t"]) {
+  const aptTypes = t.demo.aptTypes
+  const doctors = { carlos: t.demo.doctorCarlos, marina: t.demo.doctorMarina }
+  return [
+    { time: "08:00", col: 1, label: doctors.carlos, sub: aptTypes[4], color: "bg-blue-500/10 border-blue-500/20 text-blue-400" },
+    { time: "11:00", col: 1, label: doctors.carlos, sub: aptTypes[3], color: "bg-blue-500/10 border-blue-500/20 text-blue-400" },
+    { time: "14:00", col: 2, label: doctors.marina, sub: aptTypes[0], color: "bg-accent/10 border-accent/20 text-accent" },
+    { time: "15:00", col: 1, label: doctors.carlos, sub: aptTypes[3], color: "bg-blue-500/10 border-blue-500/20 text-blue-400" },
+  ]
+}
+
+function StepCalendar({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
+  const existingApts = getExistingApts(t)
   const [phase, setPhase] = useState<"idle"|"scanning"|"blocking"|"confirmed"|"notified">("idle")
   const [scanRow, setScanRow] = useState(-1)
 
@@ -270,22 +280,22 @@ function StepCalendar({ active }: { active: boolean }) {
   return (
     <div className="rounded-xl border border-border bg-background/60 overflow-hidden w-full max-w-lg mx-auto">
       <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-accent/[0.05]">
-        <span className="text-sm font-medium text-foreground">Março 2026 · Quinta, 13</span>
+        <span className="text-sm font-medium text-foreground">{t.howItWorks.calDate}</span>
         <AnimatePresence mode="wait">
           {(phase === "confirmed" || phase === "notified") ? (
             <motion.div key="ok" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-emerald-400" /><span className="text-[10px] text-emerald-400 font-medium">Reservado</span>
+              <CheckCircle className="h-3 w-3 text-emerald-400" /><span className="text-[10px] text-emerald-400 font-medium">{t.howItWorks.calReserved}</span>
             </motion.div>
           ) : phase === "scanning" ? (
-            <motion.span key="s" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-accent/60">verificando agenda...</motion.span>
+            <motion.span key="s" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-accent/60">{t.howItWorks.calChecking}</motion.span>
           ) : (
-            <motion.span key="w" className="text-[10px] text-muted-foreground/40">aguardando Pix...</motion.span>
+            <motion.span key="w" className="text-[10px] text-muted-foreground/40">{t.howItWorks.calAwaiting}</motion.span>
           )}
         </AnimatePresence>
       </div>
       <div className="p-4 flex flex-col gap-0.5">
         <div className="grid grid-cols-4 gap-px mb-2 pl-10">
-          {["Seg 10","Ter 11","Qua 12","Qui 13"].map((d,i) => (
+          {t.howItWorks.calDays.map((d,i) => (
             <div key={d} className={`text-center text-[9px] font-medium py-1 rounded-sm ${i===3 ? "text-accent bg-accent/8" : "text-muted-foreground/40"}`}>{d}</div>
           ))}
         </div>
@@ -318,8 +328,8 @@ function StepCalendar({ active }: { active: boolean }) {
                           {(phase === "confirmed" || phase === "notified") && (
                             <motion.div key="cf" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 350, damping: 22 }}
                               className="absolute inset-0.5 rounded-sm border border-accent/30 bg-accent/12 flex flex-col justify-center px-1.5">
-                              <span className="text-[8px] font-bold text-accent truncate leading-tight">Dra. Marina</span>
-                              <span className="text-[6px] text-accent/60 truncate">Consulta</span>
+                              <span className="text-[8px] font-bold text-accent truncate leading-tight">{t.demo.doctorMarina}</span>
+                              <span className="text-[6px] text-accent/60 truncate">{t.demo.aptTypes[3]}</span>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -339,8 +349,8 @@ function StepCalendar({ active }: { active: boolean }) {
               className="mt-3 flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
               <WhatsappLogo className="h-5 w-5 text-emerald-400 shrink-0" />
               <div>
-                <p className="text-[11px] text-emerald-400 font-medium leading-none">Confirmação enviada no WhatsApp</p>
-                <p className="text-[9px] text-emerald-400/60 mt-1">Quinta 13/03 às 10h · Dra. Marina</p>
+                <p className="text-[11px] text-emerald-400 font-medium leading-none">{t.howItWorks.calConfirmTitle}</p>
+                <p className="text-[9px] text-emerald-400/60 mt-1">{t.howItWorks.calConfirmSub}</p>
               </div>
             </motion.div>
           )}
@@ -350,41 +360,37 @@ function StepCalendar({ active }: { active: boolean }) {
   )
 }
 
-/* ═══ Step definitions ═══════════════════════════════════════════════════════ */
-
-const steps = [
-  {
-    number: "01",
-    icon: ChatCircle,
-    title: "Paciente conversa no WhatsApp",
-    description:
-      "A IA atende com a voz da sua clínica, entende a necessidade e já sugere o melhor horário disponível.",
-    demo: (active: boolean) => <StepChat active={active} />,
-  },
-  {
-    number: "02",
-    icon: CreditCard,
-    title: "Pagamento via Pix",
-    description:
-      "A IA envia o QR code e o código Pix direto na conversa. Só avança quando o pagamento cai. Zero no-show.",
-    demo: (active: boolean) => <StepPix active={active} />,
-  },
-  {
-    number: "03",
-    icon: CalendarCheck,
-    title: "Agenda confirmada",
-    description:
-      "Com o Pix confirmado, o horário é bloqueado automaticamente no calendário. Sem surpresas, sem faltas.",
-    demo: (active: boolean) => <StepCalendar active={active} />,
-  },
-]
-
 /* ═══ Main component — full-screen scroll-pinned experience ═════════════════ */
 
 const DEMO_HEIGHT = 500
 
 export function HowItWorks() {
+  const { t } = useLanguage()
   const sectionRef = useRef<HTMLDivElement>(null)
+
+  const steps = [
+    {
+      number: "01",
+      icon: ChatCircle,
+      title: t.howItWorks.step1Title,
+      description: t.howItWorks.step1Desc,
+      demo: (active: boolean) => <StepChat active={active} t={t} />,
+    },
+    {
+      number: "02",
+      icon: CreditCard,
+      title: t.howItWorks.step2Title,
+      description: t.howItWorks.step2Desc,
+      demo: (active: boolean) => <StepPix active={active} t={t} />,
+    },
+    {
+      number: "03",
+      icon: CalendarCheck,
+      title: t.howItWorks.step3Title,
+      description: t.howItWorks.step3Desc,
+      demo: (active: boolean) => <StepCalendar active={active} t={t} />,
+    },
+  ]
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -427,11 +433,11 @@ export function HowItWorks() {
             className="text-center mb-12"
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
-              Como funciona
+              {t.howItWorks.title}
             </p>
             <h2 className="mt-3 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-              Do primeiro contato à{" "}
-              <span className="font-display italic text-accent">consulta paga</span>
+              {t.howItWorks.subtitle}{" "}
+              <span className="font-display italic text-accent">{t.howItWorks.subtitleAccent}</span>
             </h2>
           </motion.div>
 

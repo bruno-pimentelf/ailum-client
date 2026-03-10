@@ -5,10 +5,12 @@ import { motion, useMotionValue, useTransform, useSpring } from "framer-motion"
 import { ArrowRight } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { MedicalViz } from "@/components/landing/medical-viz"
+import { useLanguage } from "@/components/providers/language-provider"
 
 const ease = [0.33, 1, 0.68, 1] as any
 
 export function Hero() {
+  const { t } = useLanguage()
   const containerRef = useRef<HTMLDivElement>(null)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
@@ -48,7 +50,7 @@ export function Hero() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
             </span>
-            <span className="text-xs text-muted-foreground">Agendamento com pagamento integrado via Pix</span>
+            <span className="text-xs text-muted-foreground">{t.hero.pill}</span>
           </motion.div>
 
           {/* Headline with parallax */}
@@ -61,9 +63,9 @@ export function Hero() {
               transition={{ duration: 0.9, delay: 0.2, ease }}
               className="text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-[4.25rem] lg:leading-[1.08]"
             >
-              Agende consultas{" "}
+              {t.hero.headline}{" "}
               <span className="font-display italic text-accent">
-                enquanto dorme
+                {t.hero.headlineAccent}
               </span>
             </motion.h1>
           </motion.div>
@@ -75,7 +77,7 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.4, ease }}
             className="mx-auto mt-6 max-w-xl text-pretty text-[15px] leading-relaxed text-muted-foreground"
           >
-            IA integrada ao WhatsApp que atende, agenda e cobra via Pix enquanto voce foca no que importa. Cada clinica com seu gerente de conta dedicado.
+            {t.hero.subheadline}
           </motion.p>
 
           {/* CTAs */}
@@ -93,7 +95,7 @@ export function Hero() {
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
                 />
                 <span className="relative z-10 flex items-center">
-                  Aplicar-se
+                  {t.hero.aplicarSe}
                   <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </span>
               </a>

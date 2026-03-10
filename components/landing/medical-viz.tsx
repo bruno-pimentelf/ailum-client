@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback, useId } from "react"
+import { useLanguage } from "@/components/providers/language-provider"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Heartbeat,
@@ -255,76 +256,78 @@ interface LeadContact {
   borderActive: string
 }
 
-const LEADS: LeadContact[] = [
-  {
-    id: "maria",
-    name: "Maria Silva",
-    initials: "MS",
-    source: "WhatsApp",
-    lastMessage: "Perfeito, pode agendar!",
-    temp: "hot",
-    tempLabel: "Quente",
-    engagement: 96,
-    conversion: 92,
-    responseMin: 2,
-    ecgAmplitude: 1.0,
-    ecgNoise: 0.3,
-    dotColor: "bg-rose-400/70",
-    accentColor: "text-accent",
-    borderActive: "border-accent/30",
-  },
-  {
-    id: "joao",
-    name: "João Pereira",
-    initials: "JP",
-    source: "WhatsApp",
-    lastMessage: "Vou confirmar com minha esposa",
-    temp: "warm",
-    tempLabel: "Morno",
-    engagement: 64,
-    conversion: 48,
-    responseMin: 25,
-    ecgAmplitude: 0.6,
-    ecgNoise: 0.5,
-    dotColor: "bg-amber-400/60",
-    accentColor: "text-accent/70",
-    borderActive: "border-accent/20",
-  },
-  {
-    id: "ana",
-    name: "Ana Luíza",
-    initials: "AL",
-    source: "Instagram",
-    lastMessage: "Qual o valor da consulta?",
-    temp: "warm",
-    tempLabel: "Morno",
-    engagement: 51,
-    conversion: 35,
-    responseMin: 48,
-    ecgAmplitude: 0.45,
-    ecgNoise: 0.8,
-    dotColor: "bg-amber-400/50",
-    accentColor: "text-accent/60",
-    borderActive: "border-accent/15",
-  },
-  {
-    id: "carlos",
-    name: "Carlos Mendes",
-    initials: "CM",
-    source: "Site",
-    lastMessage: "Sem resposta há 3 dias",
-    temp: "cold",
-    tempLabel: "Frio",
-    engagement: 12,
-    conversion: 6,
-    responseMin: 4320,
-    ecgAmplitude: 0.15,
-    ecgNoise: 1.5,
-    dotColor: "bg-white/20",
-    accentColor: "text-white/35",
-    borderActive: "border-white/10",
-  },
-]
+function getLeads(t: ReturnType<typeof useLanguage>["t"]): LeadContact[] {
+  return [
+    {
+      id: "maria",
+      name: "Maria Silva",
+      initials: "MS",
+      source: "WhatsApp",
+      lastMessage: t.leadMonitor.msgMaria,
+      temp: "hot",
+      tempLabel: t.leadMonitor.hot,
+      engagement: 96,
+      conversion: 92,
+      responseMin: 2,
+      ecgAmplitude: 1.0,
+      ecgNoise: 0.3,
+      dotColor: "bg-rose-400/70",
+      accentColor: "text-accent",
+      borderActive: "border-accent/30",
+    },
+    {
+      id: "joao",
+      name: "João Pereira",
+      initials: "JP",
+      source: "WhatsApp",
+      lastMessage: t.leadMonitor.msgJoao,
+      temp: "warm",
+      tempLabel: t.leadMonitor.warm,
+      engagement: 64,
+      conversion: 48,
+      responseMin: 25,
+      ecgAmplitude: 0.6,
+      ecgNoise: 0.5,
+      dotColor: "bg-amber-400/60",
+      accentColor: "text-accent/70",
+      borderActive: "border-accent/20",
+    },
+    {
+      id: "ana",
+      name: "Ana Luíza",
+      initials: "AL",
+      source: "Instagram",
+      lastMessage: t.leadMonitor.msgAna,
+      temp: "warm",
+      tempLabel: t.leadMonitor.warm,
+      engagement: 51,
+      conversion: 35,
+      responseMin: 48,
+      ecgAmplitude: 0.45,
+      ecgNoise: 0.8,
+      dotColor: "bg-amber-400/50",
+      accentColor: "text-accent/60",
+      borderActive: "border-accent/15",
+    },
+    {
+      id: "carlos",
+      name: "Carlos Mendes",
+      initials: "CM",
+      source: "Site",
+      lastMessage: t.leadMonitor.msgCarlos,
+      temp: "cold",
+      tempLabel: t.leadMonitor.cold,
+      engagement: 12,
+      conversion: 6,
+      responseMin: 4320,
+      ecgAmplitude: 0.15,
+      ecgNoise: 1.5,
+      dotColor: "bg-white/20",
+      accentColor: "text-white/35",
+      borderActive: "border-white/10",
+    },
+  ]
+}
 
 function formatResponseTime(minutes: number): string {
   if (minutes < 60) return `${minutes}min`
@@ -402,12 +405,14 @@ function VitalCard({
 /* ═══ Main component ═════════════════════════════════════════════════════════ */
 
 export function MedicalViz() {
+  const { t } = useLanguage()
   const uid = useId().replace(/:/g, "")
   const [selectedId, setSelectedId] = useState("maria")
+  const LEADS = useMemo(() => getLeads(t), [t])
 
   const selected = useMemo(
     () => LEADS.find((l) => l.id === selectedId) ?? LEADS[0],
-    [selectedId]
+    [selectedId, LEADS]
   )
 
   const handleSelect = useCallback((id: string) => setSelectedId(id), [])
@@ -434,7 +439,7 @@ export function MedicalViz() {
         <div className="flex items-center gap-2.5">
           <div className="h-2 w-2 rounded-full bg-accent/70 animate-pulse" />
           <span className="text-[11px] font-medium text-white/50 tracking-wider uppercase">
-            Lead Monitor · Ao vivo
+            {t.leadMonitor.title}
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -461,7 +466,7 @@ export function MedicalViz() {
       <div className="px-5 pt-3 pb-1">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[9px] text-white/20 uppercase tracking-widest font-mono">
-            Atividade · Lead II
+            {t.leadMonitor.activity}
           </span>
           <div className="flex items-center gap-1.5">
             <Heartbeat weight="fill" className="h-3 w-3 text-white/20" />
@@ -501,7 +506,7 @@ export function MedicalViz() {
         {/* Lead list (interactive) */}
         <div className="flex flex-col">
           <div className="text-[9px] text-white/20 uppercase tracking-widest font-mono mb-2.5">
-            Leads Ativos
+            {t.leadMonitor.activeLeads}
           </div>
           <div className="flex flex-col gap-1.5">
             {LEADS.map((lead) => {
@@ -572,51 +577,51 @@ export function MedicalViz() {
         {/* Vitals — change based on selected lead */}
         <div className="flex flex-col">
           <div className="text-[9px] text-white/20 uppercase tracking-widest font-mono mb-2.5">
-            Sinais do Lead
+            {t.leadMonitor.leadSignals}
           </div>
           <div className="flex flex-col gap-2">
             <VitalCard
               icon={<Heartbeat weight="fill" className="w-4 h-4" />}
-              label="Engajamento"
+              label={t.leadMonitor.engagement}
               value={selected.engagement}
               unit="%"
               color={selected.accentColor}
               subtext={
                 selected.temp === "hot"
-                  ? "Altamente responsivo"
+                  ? t.leadMonitor.subEngagementHot
                   : selected.temp === "warm"
-                  ? "Engajamento moderado"
-                  : "Baixa atividade"
+                  ? t.leadMonitor.subEngagementWarm
+                  : t.leadMonitor.subEngagementCold
               }
               delay={0}
             />
             <VitalCard
               icon={<TrendUp weight="fill" className="w-4 h-4" />}
-              label="Prob. Conversão"
+              label={t.leadMonitor.conversionProb}
               value={selected.conversion}
               unit="%"
               color={selected.accentColor}
               subtext={
                 selected.conversion >= 70
-                  ? "Pronto para agendar"
+                  ? t.leadMonitor.subConversionHigh
                   : selected.conversion >= 30
-                  ? "Precisa de follow-up"
-                  : "Requer reativação"
+                  ? t.leadMonitor.subConversionMid
+                  : t.leadMonitor.subConversionLow
               }
               delay={0.06}
             />
             <VitalCard
               icon={<Timer weight="fill" className="w-4 h-4" />}
-              label="Tempo de Resposta"
+              label={t.leadMonitor.responseTime}
               value={formatResponseTime(selected.responseMin)}
               unit=""
               color={selected.accentColor}
-              subtext={`Última interação: ${
+              subtext={`${t.leadMonitor.lastInteraction}: ${
                 selected.responseMin < 60
-                  ? "agora há pouco"
+                  ? t.leadMonitor.lastInteractionNow
                   : selected.responseMin < 1440
-                  ? "hoje"
-                  : "há dias"
+                  ? t.leadMonitor.lastInteractionToday
+                  : t.leadMonitor.lastInteractionDays
               }`}
               delay={0.12}
             />
@@ -629,9 +634,8 @@ export function MedicalViz() {
         <div className="flex items-center gap-2">
           <Lightning weight="fill" className="h-3 w-3 text-accent/60" />
           <span className="text-[10px] text-white/30">
-            IA monitorando{" "}
-            <span className="text-white/50 font-medium">{LEADS.length} leads</span>{" "}
-            em tempo real
+            {t.leadMonitor.aiMonitoring}{" "}
+            <span className="text-white/50 font-medium">{LEADS.length} {t.leadMonitor.leadsRealtime}</span>
           </span>
         </div>
         <div className="flex items-center gap-3">

@@ -1,15 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useLanguage } from "@/components/providers/language-provider"
 import { motion, useInView, AnimatePresence } from "framer-motion"
 import { Robot, Sparkle, Check } from "@phosphor-icons/react"
 
 const ease = [0.33, 1, 0.68, 1] as any
 
-const doctors = [
-  { id: "marina", name: "Dra. Marina", color: "bg-accent text-accent-foreground" },
-  { id: "carlos", name: "Dr. Carlos", color: "bg-blue-500 text-white" },
-]
 
 const timeSlots = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00"]
 
@@ -23,15 +20,20 @@ interface Appointment {
   textColor: string
 }
 
-const appointmentSequence: (Appointment & { delay: number })[] = [
-  { id: 1, time: "08:00", patient: "Ana Costa", type: "Limpeza", doctor: "marina", color: "bg-accent/10 border-accent/20", textColor: "text-accent", delay: 1200 },
-  { id: 2, time: "10:00", patient: "Pedro Lima", type: "Ortodontia", doctor: "carlos", color: "bg-blue-500/10 border-blue-500/20", textColor: "text-blue-600", delay: 3000 },
-  { id: 3, time: "14:00", patient: "Julia Santos", type: "Clareamento", doctor: "marina", color: "bg-accent/10 border-accent/20", textColor: "text-accent", delay: 5000 },
-  { id: 4, time: "11:00", patient: "Rafael Dias", type: "Consulta", doctor: "carlos", color: "bg-blue-500/10 border-blue-500/20", textColor: "text-blue-600", delay: 7000 },
-  { id: 5, time: "16:00", patient: "Maria Oliveira", type: "Retorno", doctor: "marina", color: "bg-accent/10 border-accent/20", textColor: "text-accent", delay: 9000 },
-]
-
 export function DemoCalendar() {
+  const { t } = useLanguage()
+  const doctors = [
+    { id: "marina", name: t.demo.doctorMarina, color: "bg-accent text-accent-foreground" },
+    { id: "carlos", name: t.demo.doctorCarlos, color: "bg-blue-500 text-white" },
+  ]
+  const aptTypes = t.demo.aptTypes
+  const appointmentSequence: (Appointment & { delay: number })[] = [
+    { id: 1, time: "08:00", patient: "Ana Costa", type: aptTypes[0], doctor: "marina", color: "bg-accent/10 border-accent/20", textColor: "text-accent", delay: 1200 },
+    { id: 2, time: "10:00", patient: "Pedro Lima", type: aptTypes[1], doctor: "carlos", color: "bg-blue-500/10 border-blue-500/20", textColor: "text-blue-600", delay: 3000 },
+    { id: 3, time: "14:00", patient: "Julia Santos", type: aptTypes[2], doctor: "marina", color: "bg-accent/10 border-accent/20", textColor: "text-accent", delay: 5000 },
+    { id: 4, time: "11:00", patient: "Rafael Dias", type: aptTypes[3], doctor: "carlos", color: "bg-blue-500/10 border-blue-500/20", textColor: "text-blue-600", delay: 7000 },
+    { id: 5, time: "16:00", patient: "Maria Oliveira", type: aptTypes[4], doctor: "marina", color: "bg-accent/10 border-accent/20", textColor: "text-accent", delay: 9000 },
+  ]
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
   const [visibleAppointments, setVisibleAppointments] = useState<number[]>([])
@@ -71,7 +73,7 @@ export function DemoCalendar() {
     (apt) => activeDoctor === "todos" || apt.doctor === activeDoctor
   )
 
-  const days = ["Seg", "Ter", "Qua", "Qui", "Sex"]
+  const days = t.demo.calDays
   const dates = [10, 11, 12, 13, 14]
 
   return (
@@ -79,7 +81,7 @@ export function DemoCalendar() {
       <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-foreground/[0.03]">
         {/* Calendar header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <p className="text-xs font-medium text-foreground">Marco 2026</p>
+          <p className="text-xs font-medium text-foreground">{t.demo.calMonth}</p>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setActiveDoctor("todos")}
@@ -88,7 +90,7 @@ export function DemoCalendar() {
                 : "text-muted-foreground hover:text-foreground"
                 }`}
             >
-              Todos
+              {t.demo.calAll}
             </button>
             {doctors.map((doc) => (
               <button
@@ -119,12 +121,12 @@ export function DemoCalendar() {
               >
                 <Sparkle className="h-3 w-3 text-accent animate-pulse" />
                 <span className="text-[10px] text-muted-foreground">
-                  Pix recebido de{" "}
+                  {t.demo.calPixFrom}{" "}
                   <span className="font-medium text-foreground">
                     {appointmentSequence.find((a) => a.id === creatingId)?.patient}
                   </span>
                   {" — "}
-                  <span className="text-accent">agendando agora</span>
+                  <span className="text-accent">{t.demo.calScheduling}</span>
                 </span>
                 <Check className="h-3 w-3 text-emerald-500" />
               </motion.div>
@@ -137,7 +139,7 @@ export function DemoCalendar() {
               >
                 <Robot className="h-3 w-3 text-accent" />
                 <span className="text-[10px] text-muted-foreground">
-                  {visibleAppointments.length} {visibleAppointments.length === 1 ? "consulta confirmada" : "consultas confirmadas"} hoje
+                  {visibleAppointments.length} {visibleAppointments.length === 1 ? t.demo.calConfirmed : t.demo.calConfirmedPlural} {t.demo.calToday}
                 </span>
               </motion.div>
             ) : null}
