@@ -21,6 +21,7 @@ import { useProfessionals, useProfessionalsWithAvailability } from "@/hooks/use-
 import { useAppointments } from "@/hooks/use-appointments"
 import { useMe } from "@/hooks/use-me"
 import { NovoAgendamentoModal } from "@/components/calendar/novo-agendamento-modal"
+import { ProfessionalCalendar } from "@/components/calendar/professional-calendar"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
 
@@ -649,6 +650,38 @@ export default function CalendarPage() {
 
   const aptsForDay = (day: number) =>
     filteredApts.filter(a => a.day === day && a.month === month && a.year === year)
+
+  const role = me?.role ?? "SECRETARY"
+  const profId = me?.professionalId
+
+  // Profissional: sempre calendário próprio. Admin/Secretary: calendário do profissional quando um for selecionado
+  const showProfessionalCalendar =
+    (role === "PROFESSIONAL" && !!profId) ||
+    ((role === "ADMIN" || role === "SECRETARY") && activeDoctor !== "all" && !!activeDoctor)
+
+  const professionalCalendarId = role === "PROFESSIONAL" ? profId : activeDoctor
+
+  if (showProfessionalCalendar && professionalCalendarId) {
+    const pro = professionals?.find((p) => p.id === professionalCalendarId)
+    const canEditAvailability = role === "ADMIN" || role === "PROFESSIONAL"
+    return (
+      <div className="flex h-full overflow-hidden">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <ProfessionalCalendar
+            professionalId={professionalCalendarId}
+            professionalName={pro?.fullName ?? "Calendário"}
+            canEdit={canEditAvailability}
+            accentColor={pro?.calendarColor ?? "#22c55e"}
+            onBackToAll={
+              role === "ADMIN" || role === "SECRETARY"
+                ? () => setActiveDoctor("all")
+                : undefined
+            }
+          />
+        </div>
+      </div>
+    )
+  }
 
   const dayViewApts = filteredApts.filter(
     a => a.day === selectedDate.getDate() && a.month === selectedDate.getMonth() && a.year === selectedDate.getFullYear()

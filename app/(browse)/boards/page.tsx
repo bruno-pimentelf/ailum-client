@@ -30,11 +30,12 @@ import {
   PencilSimple,
 } from "@phosphor-icons/react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useFunnelStore } from "@/lib/funnel-store"
 import { useFunnels, useBoard, useFunnelMutations } from "@/hooks/use-board"
+import { useMe } from "@/hooks/use-me"
 import { FunnelModal } from "@/components/app/funnel-modal"
 import { SelectContactModal } from "@/components/app/select-contact-modal"
 import { StageConfigModal } from "@/components/app/stage-config-modal"
+import { MoveContactModal } from "@/components/app/move-contact-modal"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -116,11 +117,13 @@ function KanbanCard({
   stageColor,
   isDragging = false,
   overlay = false,
+  onMoveToOtherFunnel,
 }: {
   contact: BoardContact
   stageColor: string
   isDragging?: boolean
   overlay?: boolean
+  onMoveToOtherFunnel?: () => void
 }) {
   const name = contact.name ?? contact.phone
   const lastMsg = contact.messages[0]
@@ -145,12 +148,29 @@ function KanbanCard({
             <p className="text-[10px] text-muted-foreground/40 font-mono">{contact.phone}</p>
           </div>
         </div>
-        <button
-          className="opacity-0 group-hover:opacity-100 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-all duration-150"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <DotsThree className="h-3.5 w-3.5" weight="bold" />
-        </button>
+        {overlay ? (
+          <div className="h-6 w-6 shrink-0" />
+        ) : onMoveToOtherFunnel ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="opacity-0 group-hover:opacity-100 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-all duration-150 cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <DotsThree className="h-3.5 w-3.5" weight="bold" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={4} className="min-w-[180px]">
+              <DropdownMenuItem onClick={(e) => { e.preventDefault(); onMoveToOtherFunnel() }} className="cursor-pointer">
+                <FlowArrow className="h-3.5 w-3.5" />
+                Mover para outro funil
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="h-6 w-6 shrink-0" />
+        )}
       </div>
 
       {/* Last message preview */}
@@ -216,12 +236,25 @@ function KanbanCard({
 
 // ─── Draggable card wrapper ───────────────────────────────────────────────────
 
-function DraggableCard({ contact, stageColor }: { contact: BoardContact; stageColor: string }) {
+function DraggableCard({
+  contact,
+  stageColor,
+  onMoveToOtherFunnel,
+}: {
+  contact: BoardContact
+  stageColor: string
+  onMoveToOtherFunnel?: () => void
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: contact.id })
 
   return (
     <div ref={setNodeRef} {...listeners} {...attributes} suppressHydrationWarning>
-      <KanbanCard contact={contact} stageColor={stageColor} isDragging={isDragging} />
+      <KanbanCard
+        contact={contact}
+        stageColor={stageColor}
+        isDragging={isDragging}
+        onMoveToOtherFunnel={onMoveToOtherFunnel}
+      />
     </div>
   )
 }
@@ -236,6 +269,8 @@ function KanbanColumn({
   onAddContact,
   onUpdateStageName,
   onOpenConfig,
+  onMoveToOtherFunnel,
+  canEdit,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
@@ -244,6 +279,8 @@ function KanbanColumn({
   onAddContact: (stage: BoardStage) => void
   onUpdateStageName: (stage: BoardStage, name: string) => void
   onOpenConfig: (stage: BoardStage) => void
+  onMoveToOtherFunnel?: (contact: BoardContact) => void
+  canEdit?: boolean
 }) {
   const { setNodeRef } = useDroppable({ id: stage.id })
   const style = stageStyle(stage.color)
@@ -284,7 +321,7 @@ function KanbanColumn({
       >
         <div className="flex items-center gap-2 min-w-0">
           <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: style.dot }} />
-          {editing ? (
+          {editing && canEdit ? (
             <input
               ref={inputRef}
               type="text"
@@ -299,7 +336,7 @@ function KanbanColumn({
               className="flex-1 min-w-0 rounded-md px-2 py-0.5 text-[12px] font-semibold bg-black/30 border border-white/[0.08] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 selection:bg-accent/60 selection:text-white"
               style={{ color: stage.color }}
             />
-          ) : (
+          ) : canEdit ? (
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setEditing(true) }}
@@ -309,6 +346,10 @@ function KanbanColumn({
             >
               {displayName}
             </button>
+          ) : (
+            <span className="flex-1 min-w-0 truncate text-[12px] font-semibold text-left">
+              {displayName}
+            </span>
           )}
           <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
             {contacts.length}
@@ -317,24 +358,26 @@ function KanbanColumn({
             <span className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-wider">final</span>
           )}
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpenConfig(stage) }}
-            className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
-            title="Configurar IA"
-          >
-            <DotsThree className="h-3 w-3" weight="bold" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onAddContact(stage) }}
-            className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
-            title="Adicionar contato"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
-        </div>
+        {canEdit && (
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onOpenConfig(stage) }}
+              className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
+              title="Configurar IA"
+            >
+              <DotsThree className="h-3 w-3" weight="bold" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onAddContact(stage) }}
+              className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
+              title="Adicionar contato"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Drop zone */}
@@ -374,7 +417,15 @@ function KanbanColumn({
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.2, ease }}
               >
-                <DraggableCard contact={contact} stageColor={stage.color} />
+                <DraggableCard
+                  contact={contact}
+                  stageColor={stage.color}
+                  onMoveToOtherFunnel={
+                    canEdit && onMoveToOtherFunnel
+                      ? () => onMoveToOtherFunnel(contact)
+                      : undefined
+                  }
+                />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -418,16 +469,20 @@ function MobileColumn({
   stage,
   contacts,
   funnelId,
+  canEdit,
   onAddContact,
   onUpdateStageName,
   onOpenConfig,
+  onMoveToOtherFunnel,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
   funnelId: string
+  canEdit?: boolean
   onAddContact: (stage: BoardStage) => void
   onUpdateStageName?: (stage: BoardStage, name: string) => void
   onOpenConfig: (stage: BoardStage) => void
+  onMoveToOtherFunnel?: (contact: BoardContact) => void
 }) {
   const [open, setOpen] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -471,7 +526,7 @@ function MobileColumn({
           className="cursor-pointer flex-1 flex items-center gap-2 text-left min-w-0"
         >
           <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: style.dot }} />
-          {editing && onUpdateStageName ? (
+          {editing && onUpdateStageName && canEdit ? (
             <input
               ref={inputRef}
               type="text"
@@ -486,15 +541,19 @@ function MobileColumn({
               className="flex-1 min-w-0 rounded-md px-2 py-0.5 text-[12px] font-semibold bg-black/30 border border-white/[0.08] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 selection:bg-accent/60 selection:text-white"
               style={{ color: stage.color }}
             />
-          ) : (
+          ) : canEdit && onUpdateStageName ? (
             <span
               role="button"
               tabIndex={0}
-              onClick={(e) => { e.stopPropagation(); onUpdateStageName && setEditing(true) }}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onUpdateStageName && setEditing(true) } }}
+              onClick={(e) => { e.stopPropagation(); setEditing(true) }}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditing(true) } }}
               className="text-left flex-1 min-w-0 truncate text-[12px] font-semibold hover:underline decoration-white/30 cursor-pointer"
               style={{ color: stage.color }}
             >
+              {displayName}
+            </span>
+          ) : (
+            <span className="text-left flex-1 min-w-0 truncate text-[12px] font-semibold" style={{ color: stage.color }}>
               {displayName}
             </span>
           )}
@@ -503,22 +562,26 @@ function MobileColumn({
           </span>
         </button>
         <div className="flex items-center gap-0.5 shrink-0">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpenConfig(stage) }}
-            className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
-            title="Configurar IA"
-          >
-            <DotsThree className="h-3.5 w-3.5" weight="bold" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onAddContact(stage)}
-            className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
-            title="Adicionar contato"
-          >
-            <Plus className="h-3.5 w-3.5" weight="bold" />
-          </button>
+          {canEdit && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onOpenConfig(stage) }}
+                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
+                title="Configurar IA"
+              >
+                <DotsThree className="h-3.5 w-3.5" weight="bold" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onAddContact(stage)}
+                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
+                title="Adicionar contato"
+              >
+                <Plus className="h-3.5 w-3.5" weight="bold" />
+              </button>
+            </>
+          )}
           <motion.div animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }} className="flex h-6 w-6 items-center justify-center">
             <CaretDown className="h-3.5 w-3.5 text-white/30" weight="bold" />
           </motion.div>
@@ -541,7 +604,16 @@ function MobileColumn({
                 </p>
               ) : (
                 contacts.map((c) => (
-                  <KanbanCard key={c.id} contact={c} stageColor={stage.color} />
+                  <KanbanCard
+                    key={c.id}
+                    contact={c}
+                    stageColor={stage.color}
+                    onMoveToOtherFunnel={
+                      canEdit && onMoveToOtherFunnel
+                        ? () => onMoveToOtherFunnel(c)
+                        : undefined
+                    }
+                  />
                 ))
               )}
             </div>
@@ -565,16 +637,19 @@ export default function BoardsPage() {
   const [editingFunnel, setEditingFunnel] = useState<FunnelListItem | undefined>(undefined)
   const [addContactTarget, setAddContactTarget] = useState<{ stage: BoardStage; funnelId: string } | null>(null)
   const [configStage, setConfigStage] = useState<BoardStage | null>(null)
+  const [moveContactTarget, setMoveContactTarget] = useState<{
+    contact: BoardContact
+    currentFunnelId: string
+    currentStageId: string
+  } | null>(null)
   const dndId = useId()
 
-  const openBuilder = useFunnelStore((s) => s.openBuilder)
-  const globalActiveFlowId = useFunnelStore((s) => s.globalActiveFlowId)
-  const setGlobalActiveFlow = useFunnelStore((s) => s.setGlobalActiveFlow)
-
   const { data: funnels, isLoading: funnelsLoading } = useFunnels()
+  const { data: me } = useMe()
+  const canEditFunnels = me?.role === "ADMIN" || me?.role === "SECRETARY"
 
-  // Default to first funnel once loaded
-  const selectedFunnelId = activeFunnelId ?? funnels?.[0]?.id ?? null
+  const defaultFunnelId = funnels?.find((f) => f.isDefault)?.id ?? null
+  const selectedFunnelId = activeFunnelId ?? defaultFunnelId ?? funnels?.[0]?.id ?? null
 
   const { funnel, stages, stageMap, loading: boardLoading, error: boardError, moveContact, refetch } = useBoard(
     selectedFunnelId,
@@ -584,7 +659,7 @@ export default function BoardsPage() {
   const queryClient = useQueryClient()
   const boardKey = ["board", selectedFunnelId, debouncedSearch || undefined] as const
 
-  const { createStage, updateStage, createDefaultFunnel } = useFunnelMutations()
+  const { createStage, updateStage, createDefaultFunnel, updateFunnel } = useFunnelMutations()
 
   async function handleUpdateStageName(s: BoardStage, name: string) {
     if (!selectedFunnelId) return
@@ -673,7 +748,7 @@ export default function BoardsPage() {
   function handleDragEnd({ active, over }: DragEndEvent) {
     setActiveContact(null)
     setOverId(null)
-    if (!over) return
+    if (!over || !canEditFunnels) return
 
     const fromStageId = findStageOfContact(String(active.id))
     if (!fromStageId) return
@@ -713,6 +788,17 @@ export default function BoardsPage() {
         contactsInStage={(stageMap[addContactTarget.stage.id] ?? []).map((c) => c.id)}
       />
     )}
+    {moveContactTarget && (
+      <MoveContactModal
+        open={!!moveContactTarget}
+        onClose={() => setMoveContactTarget(null)}
+        contact={moveContactTarget.contact}
+        currentFunnelId={moveContactTarget.currentFunnelId}
+        currentStageId={moveContactTarget.currentStageId}
+        funnels={funnels ?? []}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["board"] })}
+      />
+    )}
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Header ── */}
       <div className="flex items-stretch justify-between border-b border-border/50 shrink-0 h-11">
@@ -726,8 +812,10 @@ export default function BoardsPage() {
               ))}
             </div>
           ) : (
-            funnels?.map((f) => {
-              const isGlobalActive = globalActiveFlowId === f.id
+            [...(funnels ?? [])]
+              .sort((a, b) => (a.isDefault ? -1 : b.isDefault ? 1 : 0))
+              .map((f) => {
+              const isDefaultFunnel = f.isDefault === true
               const isActive = selectedFunnelId === f.id
               return (
                 <div key={f.id} className="group relative flex items-stretch">
@@ -744,25 +832,27 @@ export default function BoardsPage() {
                         transition={{ duration: 0.22, ease }}
                       />
                     )}
-                    {isGlobalActive && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" title="Fluxo ativo" />
+                    {isDefaultFunnel && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" title="Funil padrão" />
                     )}
                     <span className="relative">{f.name}</span>
                   </button>
                   {/* Edit button — appears on hover */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); openEditModal(f) }}
-                    className="hidden group-hover:flex h-4 w-4 self-center mr-1 items-center justify-center rounded text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors cursor-pointer"
-                    title="Editar funil"
-                  >
-                    <DotsThree className="h-3.5 w-3.5" weight="bold" />
-                  </button>
+                  {canEditFunnels && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openEditModal(f) }}
+                      className="hidden group-hover:flex h-4 w-4 self-center mr-1 items-center justify-center rounded text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Editar funil"
+                    >
+                      <DotsThree className="h-3.5 w-3.5" weight="bold" />
+                    </button>
+                  )}
                 </div>
               )
             })
           )}
           {/* Add funnel — template picker */}
-          {!funnelsLoading && (
+          {!funnelsLoading && canEditFunnels && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -826,30 +916,21 @@ export default function BoardsPage() {
             <ArrowsClockwise className="h-3.5 w-3.5" />
           </button>
 
-          {/* Active flow toggle */}
-          {selectedFunnelId && (globalActiveFlowId === selectedFunnelId ? (
+          {/* Funil padrão — badge ou botão para definir como padrão */}
+          {selectedFunnelId && (defaultFunnelId === selectedFunnelId ? (
             <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-2.5 h-7">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-emerald-400">Fluxo ativo</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-400">Padrão</span>
             </div>
-          ) : (
+          ) : canEditFunnels ? (
             <button
-              onClick={() => selectedFunnelId && setGlobalActiveFlow(selectedFunnelId)}
-              className="flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 text-[10px] font-semibold text-white/30 hover:border-emerald-500/30 hover:bg-emerald-500/[0.06] hover:text-emerald-400 transition-all duration-200"
+              onClick={() => updateFunnel.mutate({ id: selectedFunnelId, body: { isDefault: true } })}
+              disabled={updateFunnel.isPending}
+              className="flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 text-[10px] font-semibold text-white/30 hover:border-emerald-500/30 hover:bg-emerald-500/[0.06] hover:text-emerald-400 transition-all duration-200 disabled:opacity-50"
             >
-              Definir como ativo
+              Definir como padrão
             </button>
-          ))}
-
-          {funnel && (
-            <button
-              onClick={() => openBuilder(funnel.id, funnel.name)}
-              className="flex h-7 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/[0.06] px-2.5 text-[12px] font-semibold text-accent/80 hover:text-accent hover:bg-accent/10 hover:border-accent/40 transition-colors duration-150"
-            >
-              <FlowArrow className="h-3.5 w-3.5" />
-              Construtor
-            </button>
-          )}
+          ) : null)}
         </div>
       </div>
 
@@ -951,9 +1032,17 @@ export default function BoardsPage() {
                       stage={stage}
                       contacts={stageMap[stage.id] ?? []}
                       funnelId={selectedFunnelId!}
+                      canEdit={canEditFunnels}
                       onAddContact={(s) => setAddContactTarget({ stage: s, funnelId: selectedFunnelId! })}
                       onUpdateStageName={handleUpdateStageName}
                       onOpenConfig={setConfigStage}
+                      onMoveToOtherFunnel={(c) =>
+                        setMoveContactTarget({
+                          contact: c,
+                          currentFunnelId: selectedFunnelId!,
+                          currentStageId: stage.id,
+                        })
+                      }
                     />
                   ))}
                 </div>
@@ -970,9 +1059,17 @@ export default function BoardsPage() {
                           stage={stage}
                           contacts={stageMap[stage.id] ?? []}
                           funnelId={selectedFunnelId!}
+                          canEdit={canEditFunnels}
                           onAddContact={(s) => setAddContactTarget({ stage: s, funnelId: selectedFunnelId! })}
                           onUpdateStageName={handleUpdateStageName}
                           onOpenConfig={setConfigStage}
+                          onMoveToOtherFunnel={(c) =>
+                            setMoveContactTarget({
+                              contact: c,
+                              currentFunnelId: selectedFunnelId!,
+                              currentStageId: stage.id,
+                            })
+                          }
                           isOver={
                             overId === stage.id ||
                             (stageMap[stage.id] ?? []).some(
@@ -983,6 +1080,7 @@ export default function BoardsPage() {
                       </div>
                     </div>
                   ))}
+                  {canEditFunnels && (
                   <button
                     type="button"
                     onClick={handleAddStage}
@@ -992,6 +1090,7 @@ export default function BoardsPage() {
                     <Plus className="h-3.5 w-3.5" />
                     {createStage.isPending ? "Criando..." : "Adicionar etapa"}
                   </button>
+                  )}
                 </div>
               </motion.div>
             </AnimatePresence>

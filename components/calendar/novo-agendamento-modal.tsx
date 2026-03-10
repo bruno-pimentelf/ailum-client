@@ -45,10 +45,12 @@ export function NovoAgendamentoModal({
   open,
   onClose,
   defaultDate,
+  defaultProfessionalId,
 }: {
   open: boolean
   onClose: () => void
   defaultDate?: Date
+  defaultProfessionalId?: string
 }) {
   const [step, setStep] = useState<Step>(1)
   const [contact, setContact] = useState<ApiContact | null>(null)
@@ -94,14 +96,14 @@ export function NovoAgendamentoModal({
       setStep(1)
       setContact(null)
       setContactSearch("")
-      setProfessionalId("")
+      setProfessionalId(defaultProfessionalId ?? "")
       setServiceId("")
       setSelectedDate(defaultDate ? toYMD(defaultDate) : todayYMD())
       setSelectedSlot(null)
       setNotes("")
       setError(null)
     }
-  }, [open, defaultDate])
+  }, [open, defaultDate, defaultProfessionalId])
 
   const contacts = contactsData?.data ?? []
 

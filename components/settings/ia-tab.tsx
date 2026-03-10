@@ -1,0 +1,180 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import type React from "react"
+import { motion } from "framer-motion"
+import { Robot, Check, ArrowsClockwise, Warning } from "@phosphor-icons/react"
+import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
+import { useMe } from "@/hooks/use-me"
+
+const inputCls =
+  "w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/40 transition-colors disabled:opacity-50"
+const textareaCls =
+  "w-full rounded-lg border border-border bg-muted/20 px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/40 resize-y min-h-[120px] transition-colors disabled:opacity-50"
+const labelCls = "block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
+
+export function IATab() {
+  const { data: tenant, isLoading, error } = useTenant()
+  const { data: me } = useMe()
+  const update = useUpdateTenant()
+
+  const canEdit = me?.role === "ADMIN" || me?.role === "SECRETARY"
+
+  const [form, setForm] = useState({
+    agentBasePrompt: "",
+    guardrailRules: "",
+  })
+  const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!tenant) return
+    setForm({
+      agentBasePrompt: tenant.agentBasePrompt ?? "",
+      guardrailRules: tenant.guardrailRules ?? "",
+    })
+  }, [tenant])
+
+  const set = (k: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((prev) => ({ ...prev, [k]: e.target.value }))
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    setSaveError(null)
+    try {
+      await update.mutateAsync({
+        agentBasePrompt: form.agentBasePrompt.trim() || null,
+        guardrailRules: form.guardrailRules.trim() || null,
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erro ao salvar")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 w-full">
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5">
+          <div className="h-3 w-28 rounded bg-muted/30 animate-pulse mb-4" />
+          <div className="space-y-3">
+            <div className="h-24 rounded-lg bg-muted/20 animate-pulse" />
+            <div className="h-24 rounded-lg bg-muted/20 animate-pulse" />
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col items-center justify-center gap-3 py-20 text-center"
+      >
+        <Warning className="h-8 w-8 text-rose-400/40" weight="duotone" />
+        <p className="text-[13px] text-muted-foreground/50">Erro ao carregar configurações de IA</p>
+      </motion.div>
+    )
+  }
+
+  if (!canEdit) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 w-full">
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5">
+          <p className="text-[13px] text-muted-foreground">
+            Apenas administradores e secretárias podem editar as configurações de IA.
+          </p>
+        </div>
+      </motion.div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="space-y-6 w-full"
+    >
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Robot className="h-4 w-4 text-muted-foreground" weight="duotone" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Prompt base do agente
+            </span>
+          </div>
+          <p className="text-[12px] text-muted-foreground">
+            Instruções gerais aplicadas a todos os estágios do funil. Use para definir o tom e regras globais da recepção.
+          </p>
+          <div>
+            <label className={labelCls}>Prompt base</label>
+            <textarea
+              value={form.agentBasePrompt}
+              onChange={set("agentBasePrompt")}
+              placeholder="Ex: Você representa a clínica X. Seja cordial e profissional..."
+              rows={4}
+              className={textareaCls}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Warning className="h-4 w-4 text-muted-foreground" weight="duotone" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Regras de guardrail
+            </span>
+          </div>
+          <p className="text-[12px] text-muted-foreground">
+            O que o agente não deve fazer. Ex: não dar diagnósticos médicos, não divulgar preços sem confirmar...
+          </p>
+          <div>
+            <label className={labelCls}>Regras</label>
+            <textarea
+              value={form.guardrailRules}
+              onChange={set("guardrailRules")}
+              placeholder="Ex: Não dê diagnósticos. Não confirme consultas sem verificar disponibilidade..."
+              rows={4}
+              className={textareaCls}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <div>
+            {saveError && (
+              <p className="text-[12px] text-rose-400 flex items-center gap-1.5">
+                <Warning className="h-3.5 w-3.5" /> {saveError}
+              </p>
+            )}
+            {saved && (
+              <p className="text-[12px] text-emerald-400 flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5" weight="bold" /> Alterações salvas
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={update.isPending}
+            className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[13px] font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-60 transition-colors"
+          >
+            {update.isPending ? (
+              <>
+                <ArrowsClockwise className="h-4 w-4 animate-spin" /> Salvando...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" weight="bold" /> Salvar alterações
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </motion.div>
+  )
+}

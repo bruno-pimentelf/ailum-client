@@ -2,25 +2,23 @@
 
 import { useState, useEffect } from "react"
 import type React from "react"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   CalendarBlank,
-  Clock,
-  Check,
-  Trash,
-  ArrowsClockwise,
   Warning,
   User,
   IdentificationCard,
   Storefront,
+  CalendarCheck,
+  ArrowRight,
 } from "@phosphor-icons/react"
 import { useMe } from "@/hooks/use-me"
 import { useProfessionals, useProfessional, useProfessionalMutations, useProfessionalServiceLinks } from "@/hooks/use-professionals"
 import { useServices } from "@/hooks/use-services"
 import { professionalsApi } from "@/lib/api/professionals"
 import { membersApi } from "@/lib/api/members"
-import { AvailabilityWeekGrid } from "@/components/settings/availability-week-grid"
 import {
   Select,
   SelectContent,
@@ -28,18 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { AvailabilitySlot, AvailabilityException } from "@/lib/api/professionals"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
 const inputCls =
   "h-9 w-full rounded-xl border border-border/60 bg-background/40 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-200"
 const labelCls = "block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
-
-function formatDateBR(dateStr: string) {
-  const [y, m, d] = dateStr.split("-").map(Number)
-  return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`
-}
 
 // ─── Criar Meu Perfil Profissional ────────────────────────────────────────────
 
@@ -187,67 +179,9 @@ export function DisponibilidadeTab() {
     }
   }, [role, professionals, professionalIdFromAuth, selectedProfId])
 
-  const { data: professional, isLoading: loadingProf } = useProfessional(effectiveProfId)
-  const { putAvailability, addException, removeException } = useProfessionalMutations(effectiveProfId)
+  const { data: professional } = useProfessional(effectiveProfId)
   const { data: services } = useServices()
   const { link: linkService, unlink: unlinkService } = useProfessionalServiceLinks()
-
-  const [slots, setSlots] = useState<Array<{ dayOfWeek: number; startTime: string; endTime: string; slotDurationMin?: number }>>([])
-  const [newExceptionDate, setNewExceptionDate] = useState("")
-  const [newExceptionReason, setNewExceptionReason] = useState("")
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!professional?.availability) return
-    const mapped = (professional.availability as AvailabilitySlot[]).map((a) => ({
-      dayOfWeek: a.dayOfWeek,
-      startTime: a.startTime ?? "09:00",
-      endTime: a.endTime ?? "18:00",
-      slotDurationMin: a.slotDurationMin ?? 50,
-    }))
-    setSlots(mapped)
-  }, [professional?.availability])
-
-  async function handleSaveSlots() {
-    if (!effectiveProfId || !canEdit) return
-    setError(null)
-    try {
-      await putAvailability.mutateAsync(slots)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar")
-    }
-  }
-
-  function handleSlotsChange(newSlots: typeof slots) {
-    setSlots(newSlots)
-  }
-
-  async function handleAddException() {
-    if (!effectiveProfId || !newExceptionDate.trim()) return
-    setError(null)
-    try {
-      await addException.mutateAsync({
-        date: newExceptionDate.trim(),
-        reason: newExceptionReason.trim() || undefined,
-      })
-      setNewExceptionDate("")
-      setNewExceptionReason("")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao adicionar exceção")
-    }
-  }
-
-  async function handleRemoveException(date: string) {
-    if (!effectiveProfId) return
-    try {
-      await removeException.mutateAsync(date)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao remover exceção")
-    }
-  }
 
   // ─── SECRETARY ─────────────────────────────────────────────────────────────
   if (role === "SECRETARY") {
@@ -315,8 +249,83 @@ export function DisponibilidadeTab() {
     )
   }
 
-  const exceptions = (professional?.availabilityExceptions ?? []) as AvailabilityException[]
+  // Para PROFESSIONAL: CTA principal leva ao calendário (doc: calendário único)
+  if (role === "PROFESSIONAL" && professional) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease }}
+        className="space-y-6"
+      >
+        <div className="rounded-2xl border border-accent/25 bg-accent/5 p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/25 flex items-center justify-center">
+              <CalendarCheck className="h-7 w-7 text-accent" weight="duotone" />
+            </div>
+            <div>
+              <h3 className="text-[16px] font-bold text-foreground">
+                Configure sua agenda no Calendário
+              </h3>
+              <p className="text-[13px] text-muted-foreground mt-1 max-w-md">
+                Veja sua disponibilidade, consultas e configure horários em um único lugar — sem trocar de tela.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/calendar"
+            className="flex items-center gap-2 h-11 px-5 rounded-xl bg-accent text-accent-foreground text-[13px] font-bold hover:bg-accent/90 transition-colors shrink-0"
+          >
+            Ir para Calendário
+            <ArrowRight className="h-4 w-4" weight="bold" />
+          </Link>
+        </div>
 
+        <div className="rounded-2xl border border-border/50 bg-background/30 p-6">
+          <h4 className="text-[13px] font-semibold text-foreground mb-3">Serviços que oferece</h4>
+          <p className="text-[12px] text-muted-foreground mb-4">
+            Só serviços vinculados aparecem na agenda e na IA. Bloqueios e horários são configurados no calendário.
+          </p>
+          {professional && canEdit && (
+            <div className="flex flex-wrap gap-2">
+              {(services ?? [])
+                .filter((s) => s.isConsultation)
+                .map((s) => {
+                  const linked = (professional.professionalServices ?? []).some((ps) => ps.serviceId === s.id)
+                  return (
+                    <label
+                      key={s.id}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/40 bg-background/20 cursor-pointer text-[12px]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={linked}
+                        disabled={linkService.isPending || unlinkService.isPending}
+                        onChange={async () => {
+                          if (!effectiveProfId) return
+                          if (linked) {
+                            await unlinkService.mutateAsync({ professionalId: effectiveProfId, serviceId: s.id })
+                          } else {
+                            await linkService.mutateAsync({ professionalId: effectiveProfId, serviceId: s.id })
+                          }
+                        }}
+                        className="rounded border-border/60 text-accent"
+                      />
+                      {s.name}
+                    </label>
+                  )
+                })}
+            </div>
+          )}
+          {(services ?? []).filter((s) => s.isConsultation).length === 0 && (
+            <p className="text-[12px] text-muted-foreground">Nenhum serviço de consulta. Crie em Serviços.</p>
+          )}
+        </div>
+      </motion.div>
+    )
+  }
+
+  // ADMIN: CTA + serviços
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -324,7 +333,30 @@ export function DisponibilidadeTab() {
       transition={{ duration: 0.4, ease }}
       className="space-y-8"
     >
-      {/* Profissional (Admin) ou Nome (Professional) */}
+      <div className="rounded-2xl border border-accent/25 bg-accent/5 p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/25 flex items-center justify-center">
+            <CalendarCheck className="h-7 w-7 text-accent" weight="duotone" />
+          </div>
+          <div>
+            <h3 className="text-[16px] font-bold text-foreground">
+              Configure disponibilidade no Calendário
+            </h3>
+            <p className="text-[13px] text-muted-foreground mt-1 max-w-md">
+              Horários, bloqueios e overrides são configurados diretamente no calendário. Arraste para adicionar disponibilidade.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/calendar"
+          className="flex items-center gap-2 h-11 px-5 rounded-xl bg-accent text-accent-foreground text-[13px] font-bold hover:bg-accent/90 transition-colors shrink-0"
+        >
+          Ir para Calendário
+          <ArrowRight className="h-4 w-4" weight="bold" />
+        </Link>
+      </div>
+
+      {/* Profissional (Admin) — selector */}
       {role === "ADMIN" && professionals && professionals.length > 1 && (
         <div>
           <label className={labelCls}>Profissional</label>
@@ -413,149 +445,6 @@ export function DisponibilidadeTab() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Grade semanal interativa */}
-      <div className="rounded-2xl border border-border/50 bg-background/30 backdrop-blur-sm overflow-hidden shadow-lg shadow-black/5">
-        <div className="px-6 py-4 border-b border-border/40 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-              <CalendarBlank className="h-4 w-4 text-accent" weight="duotone" />
-            </div>
-            <div>
-              <h3 className="text-[14px] font-bold text-foreground">Grade semanal recorrente</h3>
-              <p className="text-[11px] text-muted-foreground">Clique nas células para marcar sua disponibilidade</p>
-            </div>
-          </div>
-          {canEdit && (
-            <button
-              onClick={handleSaveSlots}
-              disabled={putAvailability.isPending}
-              className="flex items-center gap-2 h-9 px-5 rounded-xl bg-accent text-accent-foreground text-[12px] font-bold hover:bg-accent/90 transition-all duration-200 disabled:opacity-50 hover:shadow-md hover:shadow-accent/15"
-            >
-              {putAvailability.isPending ? (
-                <ArrowsClockwise className="h-4 w-4 animate-spin" />
-              ) : saved ? (
-                <Check className="h-4 w-4" weight="bold" />
-              ) : null}
-              Salvar
-            </button>
-          )}
-        </div>
-        <div className="p-5">
-          {loadingProf ? (
-            <div className="flex items-center justify-center py-16">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                className="h-6 w-6 rounded-full border-2 border-accent/30 border-t-accent"
-              />
-            </div>
-          ) : (
-            <AvailabilityWeekGrid
-              slots={slots}
-              onChange={handleSlotsChange}
-              disabled={!canEdit}
-              accentColor={professional?.calendarColor || "#22c55e"}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Exceções */}
-      <div className="rounded-2xl border border-border/50 bg-background/30 backdrop-blur-sm overflow-hidden shadow-lg shadow-black/5">
-        <div className="px-6 py-4 border-b border-border/40 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-            <Clock className="h-4 w-4 text-accent" weight="duotone" />
-          </div>
-          <div>
-            <h3 className="text-[14px] font-bold text-foreground">Exceções</h3>
-            <p className="text-[11px] text-muted-foreground">Folgas, feriados e dias indisponíveis</p>
-          </div>
-        </div>
-        <div className="p-5 space-y-4">
-          {canEdit && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap items-end gap-3"
-            >
-              <div className="flex-1 min-w-[140px]">
-                <label className={labelCls}>Data</label>
-                <input
-                  type="date"
-                  value={newExceptionDate}
-                  onChange={(e) => setNewExceptionDate(e.target.value)}
-                  className={inputCls}
-                />
-              </div>
-              <div className="flex-[2] min-w-[160px]">
-                <label className={labelCls}>Motivo (opcional)</label>
-                <input
-                  type="text"
-                  value={newExceptionReason}
-                  onChange={(e) => setNewExceptionReason(e.target.value)}
-                  placeholder="Ex: Férias, Natal"
-                  className={inputCls}
-                />
-              </div>
-              <button
-                onClick={handleAddException}
-                disabled={!newExceptionDate.trim() || addException.isPending}
-                className="h-9 px-5 rounded-xl bg-accent/80 text-accent-foreground text-[12px] font-bold hover:bg-accent transition-all duration-200 disabled:opacity-50"
-              >
-                Adicionar
-              </button>
-            </motion.div>
-          )}
-          <div className="space-y-2">
-            {exceptions.length === 0 ? (
-              <p className="text-[12px] text-muted-foreground py-3">Nenhuma exceção cadastrada.</p>
-            ) : (
-              <AnimatePresence>
-                {exceptions.map((ex) => (
-                  <motion.div
-                    key={ex.id}
-                    layout
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -8 }}
-                    className="flex items-center justify-between p-3 rounded-xl border border-border/40 bg-background/20 hover:bg-background/30 transition-colors"
-                  >
-                    <div>
-                      <span className="text-[13px] font-semibold text-foreground">
-                        {formatDateBR(ex.date.split("T")[0] ?? ex.date)}
-                      </span>
-                      {ex.reason && (
-                        <span className="ml-2 text-[12px] text-muted-foreground">— {ex.reason}</span>
-                      )}
-                    </div>
-                    {canEdit && (
-                      <button
-                        onClick={() => handleRemoveException(ex.date.split("T")[0] ?? ex.date)}
-                        disabled={removeException.isPending}
-                        className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </button>
-                    )}
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 text-red-400/90 text-[12px] font-medium"
-        >
-          <Warning className="h-4 w-4 shrink-0" />
-          {error}
-        </motion.div>
       )}
     </motion.div>
   )

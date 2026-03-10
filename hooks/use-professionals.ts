@@ -2,7 +2,13 @@
 
 import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query"
 import { professionalsApi } from "@/lib/api/professionals"
-import type { Professional, AvailabilityInput, ExceptionInput } from "@/lib/api/professionals"
+import type {
+  Professional,
+  AvailabilityInput,
+  ExceptionInput,
+  OverrideInput,
+  BlockRangeInput,
+} from "@/lib/api/professionals"
 
 export function useProfessionals() {
   return useQuery({
@@ -45,12 +51,13 @@ export function useProfessionalsWithAvailability() {
 
 export function useProfessionalMutations(professionalId: string | null) {
   const queryClient = useQueryClient()
+  const queryKey = ["professional", professionalId] as const
 
   const putAvailability = useMutation({
     mutationFn: (body: AvailabilityInput[]) =>
       professionalsApi.putAvailability(professionalId!, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["professional", professionalId] })
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
       queryClient.invalidateQueries({ queryKey: ["professionals"] })
     },
   })
@@ -58,20 +65,67 @@ export function useProfessionalMutations(professionalId: string | null) {
   const addException = useMutation({
     mutationFn: (body: ExceptionInput) =>
       professionalsApi.addException(professionalId!, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["professional", professionalId] })
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
   const removeException = useMutation({
     mutationFn: (date: string) =>
       professionalsApi.removeException(professionalId!, date),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["professional", professionalId] })
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
-  return { putAvailability, addException, removeException }
+  const addOverride = useMutation({
+    mutationFn: (body: OverrideInput) =>
+      professionalsApi.addOverride(professionalId!, body),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
+  const removeOverride = useMutation({
+    mutationFn: (overrideId: string) =>
+      professionalsApi.removeOverride(professionalId!, overrideId),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
+  const addBlockRange = useMutation({
+    mutationFn: (body: BlockRangeInput) =>
+      professionalsApi.addBlockRange(professionalId!, body),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
+  const replaceOverridesForDate = useMutation({
+    mutationFn: async ({
+      removeIds,
+      addSlots,
+    }: {
+      removeIds: string[]
+      addSlots: OverrideInput[]
+    }) => {
+      for (const id of removeIds) {
+        await professionalsApi.removeOverride(professionalId!, id)
+      }
+      for (const slot of addSlots) {
+        await professionalsApi.addOverride(professionalId!, slot)
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
+  const removeBlockRange = useMutation({
+    mutationFn: (blockRangeId: string) =>
+      professionalsApi.removeBlockRange(professionalId!, blockRangeId),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  })
+
+  return {
+    putAvailability,
+    addException,
+    removeException,
+    addOverride,
+    removeOverride,
+    replaceOverridesForDate,
+    addBlockRange,
+    removeBlockRange,
+  }
 }
 
 /** Vincular/desvincular profissional ↔ serviço. Invalida services e professionals. */

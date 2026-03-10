@@ -54,6 +54,7 @@ export interface FunnelListItem {
   id: string
   name: string
   description: string | null
+  isDefault?: boolean
   stages: Array<{
     id: string
     name: string
@@ -67,6 +68,7 @@ export interface FunnelInput {
   name: string
   description?: string | null
   order?: number
+  isDefault?: boolean
 }
 
 export interface StageInput {
@@ -102,6 +104,72 @@ export interface StageAgentConfigInput {
   allowedTools?: AllowedTool[]
   model?: "HAIKU" | "SONNET"
   temperature?: number
+}
+
+// ─── Triggers ──────────────────────────────────────────────────────────────────
+
+export type TriggerEvent =
+  | "STAGE_ENTERED"
+  | "STALE_IN_STAGE"
+  | "PAYMENT_CONFIRMED"
+  | "APPOINTMENT_APPROACHING"
+  | "AI_INTENT"
+  | "MESSAGE_RECEIVED"
+
+export type TriggerAction =
+  | "SEND_MESSAGE"
+  | "MOVE_STAGE"
+  | "GENERATE_PIX"
+  | "NOTIFY_OPERATOR"
+  | "WAIT_AND_REPEAT"
+
+export interface SendMessageActionConfig {
+  useAI?: boolean
+  message?: string
+}
+
+export interface MoveStageActionConfig {
+  stageId?: string
+}
+
+export interface GeneratePixActionConfig {
+  amount?: number
+  description?: string
+  dueHours?: number
+}
+
+export type ActionConfig =
+  | SendMessageActionConfig
+  | MoveStageActionConfig
+  | GeneratePixActionConfig
+  | Record<string, unknown>
+
+export interface ConditionConfig {
+  path?: string[]
+  equals?: string
+}
+
+export interface Trigger {
+  id: string
+  stageId: string
+  tenantId: string
+  event: TriggerEvent
+  action: TriggerAction
+  actionConfig: ActionConfig
+  conditionConfig: ConditionConfig | null
+  delayMinutes: number
+  cooldownSeconds: number
+  isActive: boolean
+  createdAt: string
+}
+
+export interface TriggerInput {
+  event: TriggerEvent
+  action: TriggerAction
+  actionConfig: ActionConfig
+  conditionConfig?: ConditionConfig | null
+  delayMinutes?: number
+  cooldownSeconds?: number
 }
 
 // ─── API functions ────────────────────────────────────────────────────────────
@@ -159,11 +227,28 @@ export const funnelsApi = {
       body,
     }),
 
+  // ── Triggers ─────────────────────────────────────────────────────────────
+
+  listTriggers: (stageId: string) =>
+    apiFetch<Trigger[]>(`/funnels/stages/${stageId}/triggers`),
+
+  createTrigger: (stageId: string, body: TriggerInput) =>
+    apiFetch<Trigger>(`/funnels/stages/${stageId}/triggers`, { method: "POST", body }),
+
+  updateTrigger: (triggerId: string, body: Partial<TriggerInput>) =>
+    apiFetch<Trigger>(`/funnels/triggers/${triggerId}`, { method: "PATCH", body }),
+
+  deleteTrigger: (triggerId: string) =>
+    apiFetch<void>(`/funnels/triggers/${triggerId}`, { method: "DELETE" }),
+
+  toggleTrigger: (triggerId: string) =>
+    apiFetch<Trigger>(`/funnels/triggers/${triggerId}/toggle`, { method: "PATCH" }),
+
   // ── Contacts ─────────────────────────────────────────────────────────────
 
-  moveContact: (contactId: string, stageId: string) =>
+  moveContact: (contactId: string, stageId: string, funnelId?: string) =>
     apiFetch<void>(`/contacts/${contactId}/stage`, {
       method: "PATCH",
-      body: { stageId },
+      body: funnelId ? { stageId, funnelId } : { stageId },
     }),
 }

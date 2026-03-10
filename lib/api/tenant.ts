@@ -17,6 +17,8 @@ export interface Tenant {
   addressCity: string | null
   addressState: string | null
   addressZip: string | null
+  agentBasePrompt: string | null
+  guardrailRules: string | null
   createdAt: string
 }
 
@@ -36,6 +38,8 @@ export type TenantUpdateInput = Partial<
     | "addressCity"
     | "addressState"
     | "addressZip"
+    | "agentBasePrompt"
+    | "guardrailRules"
   >
 >
 

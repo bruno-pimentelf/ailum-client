@@ -11,11 +11,35 @@ export interface AvailabilitySlot {
   slotDurationMin?: number
 }
 
+export interface SlotMaskInterval {
+  startTime: string // HH:mm
+  endTime: string
+}
+
 export interface AvailabilityException {
   id: string
   professionalId: string
   date: string // YYYY-MM-DD
   isUnavailable: boolean
+  reason: string | null
+  /** Quando isUnavailable=false, remove esses intervalos do dia (bloqueio parcial). */
+  slotMask?: SlotMaskInterval[] | null
+}
+
+export interface AvailabilityOverride {
+  id: string
+  professionalId: string
+  date: string // YYYY-MM-DD
+  startTime: string
+  endTime: string
+  slotDurationMin?: number
+}
+
+export interface AvailabilityBlockRange {
+  id: string
+  professionalId: string
+  dateFrom: string
+  dateTo: string
   reason: string | null
 }
 
@@ -37,6 +61,8 @@ export interface Professional {
   calendarColor: string
   availability: AvailabilitySlot[]
   availabilityExceptions: AvailabilityException[]
+  availabilityOverrides?: AvailabilityOverride[]
+  availabilityBlockRanges?: AvailabilityBlockRange[]
   professionalServices?: ProfessionalServiceLink[]
 }
 
@@ -50,6 +76,21 @@ export interface AvailabilityInput {
 export interface ExceptionInput {
   date: string // YYYY-MM-DD
   isUnavailable?: boolean
+  reason?: string
+  /** Apenas quando isUnavailable=false. Remove esses intervalos do dia. */
+  slotMask?: SlotMaskInterval[]
+}
+
+export interface OverrideInput {
+  date: string // YYYY-MM-DD
+  startTime: string
+  endTime: string
+  slotDurationMin?: number
+}
+
+export interface BlockRangeInput {
+  dateFrom: string
+  dateTo: string
   reason?: string
 }
 
@@ -86,6 +127,40 @@ export const professionalsApi = {
 
   removeException: (id: string, date: string) =>
     apiFetch<void>(`/professionals/${id}/exceptions/${date}`, {
+      method: "DELETE",
+    }),
+
+  getOverrides: (id: string, params?: { from?: string; to?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.from) qs.set("from", params.from)
+    if (params?.to) qs.set("to", params.to)
+    return apiFetch<AvailabilityOverride[]>(
+      `/professionals/${id}/overrides${qs.toString() ? `?${qs}` : ""}`
+    )
+  },
+
+  addOverride: (id: string, body: OverrideInput) =>
+    apiFetch<AvailabilityOverride>(`/professionals/${id}/overrides`, {
+      method: "POST",
+      body,
+    }),
+
+  removeOverride: (id: string, overrideId: string) =>
+    apiFetch<void>(`/professionals/${id}/overrides/${overrideId}`, {
+      method: "DELETE",
+    }),
+
+  getBlockRanges: (id: string) =>
+    apiFetch<AvailabilityBlockRange[]>(`/professionals/${id}/block-ranges`),
+
+  addBlockRange: (id: string, body: BlockRangeInput) =>
+    apiFetch<AvailabilityBlockRange>(`/professionals/${id}/block-ranges`, {
+      method: "POST",
+      body,
+    }),
+
+  removeBlockRange: (id: string, blockRangeId: string) =>
+    apiFetch<void>(`/professionals/${id}/block-ranges/${blockRangeId}`, {
       method: "DELETE",
     }),
 

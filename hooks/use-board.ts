@@ -4,7 +4,7 @@ import { collection, query, where, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuthStore } from "@/lib/auth-store"
 import { ApiError } from "@/lib/api"
-import { funnelsApi, type BoardContact, type FunnelListItem, type BoardStage, type FunnelInput, type StageInput, type StageAgentConfig, type StageAgentConfigInput } from "@/lib/api/funnels"
+import { funnelsApi, type BoardContact, type FunnelListItem, type BoardStage, type FunnelInput, type StageInput, type StageAgentConfig, type StageAgentConfigInput, type Trigger, type TriggerInput } from "@/lib/api/funnels"
 import type { FirestoreContact } from "@/lib/types/firestore"
 
 // ─── List funnels ─────────────────────────────────────────────────────────────
@@ -249,6 +249,40 @@ export function useFunnelMutations() {
     },
   })
 
+  const createTrigger = useMutation({
+    mutationFn: ({ stageId, body }: { stageId: string; body: TriggerInput }) =>
+      funnelsApi.createTrigger(stageId, body),
+    onSuccess: (_, { stageId }) => {
+      queryClient.invalidateQueries({ queryKey: ["triggers", stageId] })
+      invalidate()
+    },
+  })
+
+  const updateTrigger = useMutation({
+    mutationFn: ({ triggerId, body }: { triggerId: string; body: Partial<TriggerInput> }) =>
+      funnelsApi.updateTrigger(triggerId, body),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["triggers", data.stageId] })
+      invalidate()
+    },
+  })
+
+  const deleteTrigger = useMutation({
+    mutationFn: (triggerId: string) => funnelsApi.deleteTrigger(triggerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["triggers"] })
+      invalidate()
+    },
+  })
+
+  const toggleTrigger = useMutation({
+    mutationFn: (triggerId: string) => funnelsApi.toggleTrigger(triggerId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["triggers", data.stageId] })
+      invalidate()
+    },
+  })
+
   return {
     createFunnel,
     createDefaultFunnel,
@@ -258,5 +292,19 @@ export function useFunnelMutations() {
     updateStage,
     deleteStage,
     upsertAgentConfig,
+    createTrigger,
+    updateTrigger,
+    deleteTrigger,
+    toggleTrigger,
   }
+}
+
+// ─── Triggers ─────────────────────────────────────────────────────────────────
+
+export function useTriggers(stageId: string | null) {
+  return useQuery<Trigger[]>({
+    queryKey: ["triggers", stageId],
+    queryFn: () => funnelsApi.listTriggers(stageId!),
+    enabled: !!stageId,
+  })
 }
