@@ -19,6 +19,14 @@ export interface AvailabilityException {
   reason: string | null
 }
 
+/** Vínculo profissional ↔ serviço (incluído em GET /professionals e /professionals/:id) */
+export interface ProfessionalServiceLink {
+  professionalId: string
+  serviceId: string
+  customPrice: number | null
+  service?: { id: string; name: string; price: number }
+}
+
 export interface Professional {
   id: string
   tenantId: string
@@ -29,6 +37,7 @@ export interface Professional {
   calendarColor: string
   availability: AvailabilitySlot[]
   availabilityExceptions: AvailabilityException[]
+  professionalServices?: ProfessionalServiceLink[]
 }
 
 export interface AvailabilityInput {
@@ -88,4 +97,21 @@ export const professionalsApi = {
     }>(
       `/scheduling/professionals/${id}/availability?date=${params.date}&serviceId=${params.serviceId}`
     ),
+
+  /** Vincular profissional a um serviço (para agendamento e IA). */
+  linkService: (
+    professionalId: string,
+    serviceId: string,
+    body?: { customPrice?: number }
+  ) =>
+    apiFetch<{ professionalId: string; serviceId: string; customPrice: number | null }>(
+      `/professionals/${professionalId}/services/${serviceId}`,
+      { method: "POST", body: body ?? {} }
+    ),
+
+  /** Desvincular profissional de um serviço. */
+  unlinkService: (professionalId: string, serviceId: string) =>
+    apiFetch<void>(`/professionals/${professionalId}/services/${serviceId}`, {
+      method: "DELETE",
+    }),
 }

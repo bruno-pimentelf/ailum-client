@@ -13,9 +13,11 @@ import {
   Warning,
   User,
   IdentificationCard,
+  Storefront,
 } from "@phosphor-icons/react"
 import { useMe } from "@/hooks/use-me"
-import { useProfessionals, useProfessional, useProfessionalMutations } from "@/hooks/use-professionals"
+import { useProfessionals, useProfessional, useProfessionalMutations, useProfessionalServiceLinks } from "@/hooks/use-professionals"
+import { useServices } from "@/hooks/use-services"
 import { professionalsApi } from "@/lib/api/professionals"
 import { membersApi } from "@/lib/api/members"
 import { AvailabilityWeekGrid } from "@/components/settings/availability-week-grid"
@@ -187,6 +189,8 @@ export function DisponibilidadeTab() {
 
   const { data: professional, isLoading: loadingProf } = useProfessional(effectiveProfId)
   const { putAvailability, addException, removeException } = useProfessionalMutations(effectiveProfId)
+  const { data: services } = useServices()
+  const { link: linkService, unlink: unlinkService } = useProfessionalServiceLinks()
 
   const [slots, setSlots] = useState<Array<{ dayOfWeek: number; startTime: string; endTime: string; slotDurationMin?: number }>>([])
   const [newExceptionDate, setNewExceptionDate] = useState("")
@@ -352,6 +356,63 @@ export function DisponibilidadeTab() {
           <User className="h-5 w-5 text-accent" weight="duotone" />
           <span className="text-[14px] font-semibold text-foreground">{professional.fullName}</span>
         </motion.div>
+      )}
+
+      {/* Serviços que este profissional oferece */}
+      {professional && canEdit && (
+        <div className="rounded-2xl border border-border/50 bg-background/30 backdrop-blur-sm overflow-hidden shadow-lg shadow-black/5">
+          <div className="px-6 py-4 border-b border-border/40 flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+              <Storefront className="h-4 w-4 text-accent" weight="duotone" />
+            </div>
+            <div>
+              <h3 className="text-[14px] font-bold text-foreground">Serviços que este profissional oferece</h3>
+              <p className="text-[11px] text-muted-foreground">Só serviços vinculados aparecem na agenda e na IA</p>
+            </div>
+          </div>
+          <div className="p-5">
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+              {(services ?? [])
+                .filter((s) => s.isConsultation)
+                .map((s) => {
+                  const linked = (professional.professionalServices ?? []).some((ps) => ps.serviceId === s.id)
+                  const isLoading = linkService.isPending || unlinkService.isPending
+                  return (
+                    <label
+                      key={s.id}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border/40 bg-background/20 hover:bg-background/30 cursor-pointer transition-colors disabled:opacity-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={linked}
+                        disabled={isLoading}
+                        onChange={async () => {
+                          if (!effectiveProfId) return
+                          try {
+                            if (linked) {
+                              await unlinkService.mutateAsync({ professionalId: effectiveProfId, serviceId: s.id })
+                            } else {
+                              await linkService.mutateAsync({ professionalId: effectiveProfId, serviceId: s.id })
+                            }
+                          } catch {
+                            // invalidation already in mutation
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-border/60 bg-background/40 text-accent focus:ring-accent/30"
+                      />
+                      <span className="text-[13px] font-medium text-foreground">{s.name}</span>
+                      <span className="text-[11px] text-muted-foreground ml-auto">
+                        {s.durationMin} min · R$ {s.price.toLocaleString("pt-BR")}
+                      </span>
+                    </label>
+                  )
+                })}
+              {(services ?? []).filter((s) => s.isConsultation).length === 0 && (
+                <p className="text-[12px] text-muted-foreground py-2">Nenhum serviço de consulta cadastrado. Crie em Serviços.</p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Grade semanal interativa */}

@@ -15,7 +15,9 @@ import {
   Warning,
   ArrowsClockwise,
 } from "@phosphor-icons/react"
-import { useServices, useCreateService, useUpdateService, useRemoveService } from "@/hooks/use-services"
+import { useServices, useCreateService, useUpdateService, useRemoveService, useService } from "@/hooks/use-services"
+import { useProfessionals } from "@/hooks/use-professionals"
+import { useProfessionalServiceLinks } from "@/hooks/use-professionals"
 import type { Service, ServiceInput } from "@/lib/api/services"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -140,7 +142,10 @@ function ServiceEditorModal({
   const isNew = service === null
   const create = useCreateService()
   const update = useUpdateService()
-  const isPending = create.isPending || update.isPending
+  const { link, unlink } = useProfessionalServiceLinks()
+  const { data: serviceDetail } = useService(service?.id ?? null)
+  const { data: professionals } = useProfessionals()
+  const isPending = create.isPending || update.isPending || link.isPending || unlink.isPending
 
   const [form, setForm] = useState<FormState>({
     name:           service?.name ?? "",
@@ -150,6 +155,15 @@ function ServiceEditorModal({
     isConsultation: service?.isConsultation ?? true,
   })
   const [error, setError] = useState<string | null>(null)
+  const [selectedProfessionalIds, setSelectedProfessionalIds] = useState<string[]>([])
+
+  const linkedProfessionalIds = serviceDetail?.professionalServices?.map((ps) => ps.professional.id) ?? []
+
+  useEffect(() => {
+    if (serviceDetail?.professionalServices) {
+      setSelectedProfessionalIds(serviceDetail.professionalServices.map((ps) => ps.professional.id))
+    }
+  }, [serviceDetail?.professionalServices])
 
   // Keep form in sync when editing service changes (shouldn't happen but defensive)
   useEffect(() => {
@@ -193,11 +207,29 @@ function ServiceEditorModal({
         await create.mutateAsync(body)
       } else {
         await update.mutateAsync({ id: service!.id, body })
+        const toAdd = selectedProfessionalIds.filter((id) => !linkedProfessionalIds.includes(id))
+        const toRemove = linkedProfessionalIds.filter((id) => !selectedProfessionalIds.includes(id))
+        await Promise.all([
+          ...toAdd.map((professionalId) =>
+            link.mutateAsync({ professionalId, serviceId: service!.id })
+          ),
+          ...toRemove.map((professionalId) =>
+            unlink.mutateAsync({ professionalId, serviceId: service!.id })
+          ),
+        ])
       }
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar serviço")
     }
+  }
+
+  function toggleProfessional(professionalId: string) {
+    setSelectedProfessionalIds((prev) =>
+      prev.includes(professionalId)
+        ? prev.filter((id) => id !== professionalId)
+        : [...prev, professionalId]
+    )
   }
 
   return (
@@ -299,6 +331,44 @@ function ServiceEditorModal({
               É consulta (agendável no calendário e na IA)
             </span>
           </label>
+
+          {/* Profissionais que oferecem (só ao editar) */}
+          {!isNew && (
+            <div>
+              <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
+                Profissionais que oferecem este serviço
+              </label>
+              <p className="text-[11px] text-white/35 mb-2">
+                Só aparecem na agenda e na IA os profissionais vinculados. Marque quem oferece este serviço.
+              </p>
+              <div className="max-h-40 overflow-y-auto rounded-xl border border-white/[0.08] bg-white/[0.02] p-2 space-y-1">
+                {(professionals ?? []).map((pro) => {
+                  const checked = selectedProfessionalIds.includes(pro.id)
+                  return (
+                    <label
+                      key={pro.id}
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-white/[0.04] cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleProfessional(pro.id)}
+                        className="h-4 w-4 rounded border-white/[0.15] bg-white/[0.04] text-accent focus:ring-accent/30"
+                      />
+                      <span
+                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: pro.calendarColor || "#22c55e" }}
+                      />
+                      <span className="text-[12px] font-medium text-white/80">{pro.fullName}</span>
+                    </label>
+                  )
+                })}
+                {(professionals ?? []).length === 0 && (
+                  <p className="text-[11px] text-white/30 py-2 text-center">Nenhum profissional cadastrado</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Error */}
           <AnimatePresence>

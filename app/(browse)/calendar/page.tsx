@@ -593,7 +593,7 @@ export default function CalendarPage() {
       from: fromStr,
       to: toStr,
       professionalId: professionalIdParam,
-      limit: 200,
+      limit: 100,
     }
   }, [year, month, me?.role, me?.professionalId, activeDoctor])
 

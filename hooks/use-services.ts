@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { servicesApi, type Service, type ServiceInput, type ServiceUpdateInput } from "@/lib/api/services"
+import { servicesApi, type Service, type ServiceInput, type ServiceUpdateInput, type ServiceWithProfessionals } from "@/lib/api/services"
 
 const QK = ["services"] as const
 
@@ -8,6 +8,16 @@ export function useServices() {
     queryKey: QK,
     queryFn:  () => servicesApi.list(),
     staleTime: 60_000,
+  })
+}
+
+/** Serviço com profissionais vinculados (para edição e associações). */
+export function useService(id: string | null) {
+  return useQuery<ServiceWithProfessionals>({
+    queryKey: ["service", id],
+    queryFn: () => servicesApi.get(id!),
+    enabled: !!id,
+    staleTime: 30_000,
   })
 }
 

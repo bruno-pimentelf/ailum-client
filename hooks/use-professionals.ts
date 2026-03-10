@@ -73,3 +73,40 @@ export function useProfessionalMutations(professionalId: string | null) {
 
   return { putAvailability, addException, removeException }
 }
+
+/** Vincular/desvincular profissional ↔ serviço. Invalida services e professionals. */
+export function useProfessionalServiceLinks() {
+  const queryClient = useQueryClient()
+
+  const link = useMutation({
+    mutationFn: ({
+      professionalId,
+      serviceId,
+      customPrice,
+    }: {
+      professionalId: string
+      serviceId: string
+      customPrice?: number
+    }) =>
+      professionalsApi.linkService(professionalId, serviceId, customPrice != null ? { customPrice } : undefined),
+    onSuccess: (_, { professionalId }) => {
+      queryClient.invalidateQueries({ queryKey: ["professionals"] })
+      queryClient.invalidateQueries({ queryKey: ["professional", professionalId] })
+      queryClient.invalidateQueries({ queryKey: ["services"] })
+      queryClient.invalidateQueries({ queryKey: ["service"] })
+    },
+  })
+
+  const unlink = useMutation({
+    mutationFn: ({ professionalId, serviceId }: { professionalId: string; serviceId: string }) =>
+      professionalsApi.unlinkService(professionalId, serviceId),
+    onSuccess: (_, { professionalId }) => {
+      queryClient.invalidateQueries({ queryKey: ["professionals"] })
+      queryClient.invalidateQueries({ queryKey: ["professional", professionalId] })
+      queryClient.invalidateQueries({ queryKey: ["services"] })
+      queryClient.invalidateQueries({ queryKey: ["service"] })
+    },
+  })
+
+  return { link, unlink }
+}
