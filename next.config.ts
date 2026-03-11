@@ -5,6 +5,12 @@ import type { NextConfig } from "next";
 // `rm -rf .next` between builds.  Production builds still write to `.next`.
 const nextConfig: NextConfig = {
   distDir: process.env.NODE_ENV === "production" ? ".next" : ".next-dev",
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**", pathname: "/**" },
+      { protocol: "http", hostname: "**", pathname: "/**" },
+    ],
+  },
 };
 
 export default nextConfig;
