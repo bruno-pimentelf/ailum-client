@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   CaretLeft,
@@ -22,12 +22,20 @@ import {
   Trash,
 } from "@phosphor-icons/react"
 import { useQueryClient } from "@tanstack/react-query"
-import { useProfessional, useProfessionalMutations } from "@/hooks/use-professionals"
+import {
+  useProfessional,
+  useProfessionalMutations,
+  useProfessionalOverrides,
+} from "@/hooks/use-professionals"
 import { useAppointments } from "@/hooks/use-appointments"
 import { NovoAgendamentoModal } from "@/components/calendar/novo-agendamento-modal"
 import { AppointmentStatusModal } from "@/components/calendar/appointment-status-modal"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
-import type { AvailabilityException } from "@/lib/api/professionals"
+import type {
+  AvailabilityException,
+  AvailabilityOverride,
+  Professional,
+} from "@/lib/api/professionals"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
 import {
   Tooltip,
@@ -35,6 +43,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   computeDayAvailability,
   getBlockSource,
@@ -683,27 +702,58 @@ export function ProfessionalCalendar({
   }, [!!dragPreview])
 
   const queryClient = useQueryClient()
+  const mutatingDatesRef = useRef<Set<string>>(new Set())
+
   const { data: professional, isLoading: loadingProf } = useProfessional(professionalId)
-  const mutations = useProfessionalMutations(professionalId)
+  const {
+    putAvailability,
+    deleteAvailability,
+    addException,
+    removeException,
+    removeOverride,
+    replaceOverridesForDate,
+    addBlockRange,
+    removeBlockRange,
+  } = useProfessionalMutations(professionalId)
+
+  const fromDate = useMemo(() => {
+    if (viewMode === "week") {
+      const d = new Date(selectedDate)
+      d.setDate(d.getDate() - d.getDay())
+      return d
+    }
+    const y = selectedDate.getFullYear()
+    const m = selectedDate.getMonth()
+    const firstOfMonth = new Date(y, m, 1)
+    const d = new Date(firstOfMonth)
+    d.setDate(d.getDate() - d.getDay())
+    return d
+  }, [selectedDate, viewMode])
+
+  const toDate = useMemo(() => {
+    if (viewMode === "week") {
+      const d = new Date(fromDate)
+      d.setDate(d.getDate() + 6)
+      return d
+    }
+    const y = selectedDate.getFullYear()
+    const m = selectedDate.getMonth()
+    const lastOfMonth = new Date(y, m + 1, 0)
+    const d = new Date(lastOfMonth)
+    d.setDate(d.getDate() + (6 - d.getDay()))
+    return d
+  }, [fromDate, selectedDate, viewMode])
+
+  const { data: overridesInRange } = useProfessionalOverrides(
+    professionalId,
+    toYMD(fromDate),
+    toYMD(toDate)
+  )
 
   const availability = professional?.availability ?? []
   const exceptions = (professional?.availabilityExceptions ?? []) as AvailabilityException[]
-  const overrides = professional?.availabilityOverrides ?? []
+  const overrides = overridesInRange ?? professional?.availabilityOverrides ?? []
   const blockRanges = professional?.availabilityBlockRanges ?? []
-
-  const { putAvailability, addException, addOverride, removeOverride, replaceOverridesForDate, addBlockRange, removeException, removeBlockRange } = mutations
-
-  const fromDate = useMemo(() => {
-    const d = new Date(selectedDate)
-    d.setDate(d.getDate() - d.getDay())
-    return d
-  }, [selectedDate])
-
-  const toDate = useMemo(() => {
-    const d = new Date(fromDate)
-    d.setDate(d.getDate() + (viewMode === "week" ? 6 : 34))
-    return d
-  }, [fromDate, viewMode])
 
   const appointmentsParams = useMemo(
     () => ({
@@ -812,13 +862,55 @@ export function ProfessionalCalendar({
               ))}
             </div>
 
-            <button
-              onClick={() => setNovoAgendamentoOpen(true)}
-              className="flex h-8 items-center gap-1.5 rounded-lg bg-accent px-3.5 text-[12px] font-bold text-accent-foreground"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Agendar
-            </button>
+            {canEdit && (
+              <AlertDialog>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-[11px] font-bold text-white/60 hover:bg-white/5 hover:text-white/80"
+                        aria-label="Limpar disponibilidade"
+                      >
+                        <Trash className="h-3.5 w-3.5" />
+                        Limpar
+                      </button>
+                    </AlertDialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>Limpar toda a disponibilidade</TooltipContent>
+                </Tooltip>
+                <AlertDialogContent className="max-w-sm">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Limpar disponibilidade</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Limpar toda a disponibilidade deste profissional? Isso remove grade
+                      semanal, exceções, overrides e bloqueios. Os agendamentos não serão
+                      alterados.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      variant="destructive"
+                      onClick={() => deleteAvailability.mutate()}
+                    >
+                      {deleteAvailability.isPending ? "Limpando…" : "Limpar"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setNovoAgendamentoOpen(true)}
+                  className="flex h-8 items-center gap-1.5 rounded-lg bg-accent px-3.5 text-[12px] font-bold text-accent-foreground"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Agendar
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Novo agendamento</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -1119,8 +1211,10 @@ export function ProfessionalCalendar({
                   const isToday =
                     day === today.getDate() && m === today.getMonth() && y === today.getFullYear()
                   return (
-                    <button
+                    <div
                       key={i}
+                      role={canEdit ? "button" : undefined}
+                      tabIndex={canEdit ? 0 : undefined}
                       onClick={(e) => {
                         if (canEdit) {
                           setContextMenu({
@@ -1130,9 +1224,16 @@ export function ProfessionalCalendar({
                           })
                         }
                       }}
-                      className={`flex flex-col gap-1 p-2 border-b border-r border-white/[0.04] text-left hover:bg-white/[0.02] transition-colors ${
-                        isToday ? "bg-accent/10" : ""
-                      }`}
+                      onKeyDown={(e) => {
+                        if (canEdit && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault()
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                          setContextMenu({ date: d, x: rect.left, y: rect.top })
+                        }
+                      }}
+                      className={`flex flex-col gap-1 p-2 border-b border-r border-white/[0.04] text-left transition-colors ${
+                        canEdit ? "cursor-pointer hover:bg-white/[0.02]" : ""
+                      } ${isToday ? "bg-accent/10" : ""}`}
                     >
                       <div className="flex items-center justify-between">
                         <span
@@ -1178,7 +1279,7 @@ export function ProfessionalCalendar({
                           <span className="text-[8px] text-white/30">+{dayApts.length - 3}</span>
                         )}
                       </div>
-                    </button>
+                    </div>
                   )
                 })
               })()}
@@ -1225,23 +1326,91 @@ export function ProfessionalCalendar({
         onConfirm={(date, startTime, endTime) => {
           if (!overrideModal) return
           setOverrideModal(null)
-          const pendingId = `override-single-${Date.now()}`
+          const dateStr = date
+          if (mutatingDatesRef.current.has(dateStr)) return
+          mutatingDatesRef.current.add(dateStr)
+
+          const freshProf = queryClient.getQueryData<Professional>([
+            "professional",
+            professionalId,
+          ]) as Professional | undefined
+          const freshOverrides =
+            (queryClient.getQueryData<AvailabilityOverride[]>([
+              "professionalOverrides",
+              professionalId,
+              toYMD(fromDate),
+              toYMD(toDate),
+            ]) as AvailabilityOverride[] | undefined) ??
+            freshProf?.availabilityOverrides ??
+            []
+
+          const optsForDate = {
+            availability: freshProf?.availability ?? [],
+            exceptions: (freshProf?.availabilityExceptions ?? []) as AvailabilityException[],
+            overrides: freshOverrides,
+            blockRanges: freshProf?.availabilityBlockRanges ?? [],
+          }
+          const dayAvail = computeDayAvailability(overrideModal, optsForDate)
+          const existingOverridesForDate = freshOverrides.filter(
+            (o) => (o.date?.slice(0, 10) ?? o.date) === dateStr
+          )
+
+          const slotDurationMin = 50
+          const effectiveSlots = dayAvail.blocked
+            ? []
+            : dayAvail.slots.map((s) => ({
+                startTime: s.startTime,
+                endTime: s.endTime,
+                slotDurationMin: s.slotDurationMin ?? 50,
+              }))
+          const merged = [
+            ...effectiveSlots,
+            { startTime, endTime, slotDurationMin },
+          ]
+          const pendingId = `override-add-${Date.now()}`
           setPendingAdditions((prev) => [
             ...prev,
-            { id: pendingId, type: "override-add", date, startTime, endTime },
-          ])
-          addOverride.mutate(
-            { date, startTime, endTime, slotDurationMin: 50 },
             {
-              onSuccess: () => setPendingAdditions((prev) => prev.filter((p) => p.id !== pendingId)),
+              id: pendingId,
+              type: "override",
+              date: dateStr,
+              slots: merged.map((s) => ({
+                startTime: s.startTime,
+                endTime: s.endTime,
+              })),
+            },
+          ])
+          replaceOverridesForDate.mutate(
+            {
+              removeIds: existingOverridesForDate.map((o) => o.id),
+              addSlots: merged.map((s) => ({
+                date: dateStr,
+                startTime: s.startTime,
+                endTime: s.endTime,
+                slotDurationMin: s.slotDurationMin,
+              })),
+              dateStr,
+              from: toYMD(fromDate),
+              to: toYMD(toDate),
+              onOptimisticApply: () =>
+                setPendingAdditions((prev) =>
+                  prev.filter((p) => p.id !== pendingId)
+                ),
+            },
+            {
               onError: () => {
-                setPendingAdditions((prev) => prev.filter((p) => p.id !== pendingId))
+                setPendingAdditions((prev) =>
+                  prev.filter((p) => p.id !== pendingId)
+                )
                 setToast({ msg: "Falha ao adicionar horário.", variant: "error" })
+              },
+              onSettled: () => {
+                mutatingDatesRef.current.delete(dateStr)
               },
             }
           )
         }}
-        isPending={addOverride.isPending}
+        isPending={replaceOverridesForDate.isPending}
       />
 
       <DragCreateModal
@@ -1262,14 +1431,19 @@ export function ProfessionalCalendar({
               ...prev,
               { id: pendingId, type: "weekly", dayOfWeek, startTime, endTime, slotDurationMin },
             ])
+            const freshProf = queryClient.getQueryData<Professional>([
+              "professional",
+              professionalId,
+            ]) as Professional | undefined
+            const freshAvailability = freshProf?.availability ?? []
             const newSlot = {
               dayOfWeek,
               startTime,
               endTime,
               slotDurationMin,
             }
-            const otherDays = availability.filter((s) => s.dayOfWeek !== dayOfWeek)
-            const sameDay = availability.filter((s) => s.dayOfWeek === dayOfWeek)
+            const otherDays = freshAvailability.filter((s) => s.dayOfWeek !== dayOfWeek)
+            const sameDay = freshAvailability.filter((s) => s.dayOfWeek === dayOfWeek)
             const merged = [...otherDays, ...sameDay, newSlot]
             putAvailability.mutate(merged, {
               onSuccess: () => {
@@ -1289,22 +1463,41 @@ export function ProfessionalCalendar({
             })
           } else {
             const dateStr = toYMD(dragCreateModal.date)
-            const dayOfWeek = dragCreateModal.date.getDay()
-            const existingOverridesForDate = overrides.filter((o) => (o.date?.slice(0, 10) ?? o.date) === dateStr)
-            const effectiveSlots =
-              existingOverridesForDate.length > 0
-                ? existingOverridesForDate.map((o) => ({
-                    startTime: o.startTime,
-                    endTime: o.endTime,
-                    slotDurationMin: o.slotDurationMin ?? 50,
-                  }))
-                : availability
-                    .filter((s) => s.dayOfWeek === dayOfWeek)
-                    .map((s) => ({
-                      startTime: s.startTime ?? "09:00",
-                      endTime: s.endTime ?? "18:00",
-                      slotDurationMin: s.slotDurationMin ?? 50,
-                    }))
+            if (mutatingDatesRef.current.has(dateStr)) return
+            mutatingDatesRef.current.add(dateStr)
+
+            const freshProf = queryClient.getQueryData<Professional>([
+              "professional",
+              professionalId,
+            ]) as Professional | undefined
+            const freshOverrides =
+              (queryClient.getQueryData<AvailabilityOverride[]>([
+                "professionalOverrides",
+                professionalId,
+                toYMD(fromDate),
+                toYMD(toDate),
+              ]) as AvailabilityOverride[] | undefined) ??
+              freshProf?.availabilityOverrides ??
+              []
+
+            const optsForDate = {
+              availability: freshProf?.availability ?? [],
+              exceptions: (freshProf?.availabilityExceptions ?? []) as AvailabilityException[],
+              overrides: freshOverrides,
+              blockRanges: freshProf?.availabilityBlockRanges ?? [],
+            }
+            const dayAvail = computeDayAvailability(dragCreateModal.date, optsForDate)
+            const existingOverridesForDate = freshOverrides.filter(
+              (o) => (o.date?.slice(0, 10) ?? o.date) === dateStr
+            )
+
+            const effectiveSlots = dayAvail.blocked
+              ? []
+              : dayAvail.slots.map((s) => ({
+                  startTime: s.startTime,
+                  endTime: s.endTime,
+                  slotDurationMin: s.slotDurationMin ?? 50,
+                }))
             const merged = [...effectiveSlots, { startTime, endTime, slotDurationMin }]
             const pendingId = `override-${Date.now()}`
             setPendingAdditions((prev) => [
@@ -1325,14 +1518,23 @@ export function ProfessionalCalendar({
                   endTime: s.endTime,
                   slotDurationMin: s.slotDurationMin,
                 })),
+                dateStr,
+                from: toYMD(fromDate),
+                to: toYMD(toDate),
+                onOptimisticApply: () =>
+                  setPendingAdditions((prev) =>
+                    prev.filter((p) => p.id !== pendingId)
+                  ),
               },
               {
-                onSuccess: () => {
-                  setPendingAdditions((prev) => prev.filter((p) => p.id !== pendingId))
-                },
                 onError: () => {
-                  setPendingAdditions((prev) => prev.filter((p) => p.id !== pendingId))
+                  setPendingAdditions((prev) =>
+                    prev.filter((p) => p.id !== pendingId)
+                  )
                   setToast({ msg: "Falha ao salvar. Tente novamente.", variant: "error" })
+                },
+                onSettled: () => {
+                  mutatingDatesRef.current.delete(dateStr)
                 },
               }
             )

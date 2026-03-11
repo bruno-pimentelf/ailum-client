@@ -119,6 +119,11 @@ export const professionalsApi = {
       body,
     }),
 
+  deleteAvailability: (id: string) =>
+    apiFetch<{ cleared: boolean }>(`/professionals/${id}/availability`, {
+      method: "DELETE",
+    }),
+
   addException: (id: string, body: ExceptionInput) =>
     apiFetch<AvailabilityException>(`/professionals/${id}/exceptions`, {
       method: "POST",

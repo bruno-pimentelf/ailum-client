@@ -17,7 +17,9 @@ import {
   User,
   Phone,
   Robot,
+  Sparkle,
 } from "@phosphor-icons/react"
+import { useMe } from "@/hooks/use-me"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -35,7 +37,7 @@ type NavGroup = {
 
 type NavEntry = NavItem | (NavGroup & { type: "group" })
 
-const navigation: NavEntry[] = [
+const baseNavigation: NavEntry[] = [
   {
     type: "group",
     label: "Atendimento",
@@ -48,6 +50,7 @@ const navigation: NavEntry[] = [
     ],
   },
   { label: "Calendário", href: "/calendar", icon: CalendarBlank },
+  { label: "Secretária IA", href: "/ai-availability", icon: Sparkle },
   { label: "Configurações", href: "/settings", icon: Gear },
 ]
 
@@ -139,6 +142,14 @@ interface SidebarProps {
   accountManagerPhone?: string
 }
 
+function getNavigation(role: string | undefined): NavEntry[] {
+  const nav = [...baseNavigation]
+  if (role === "SECRETARY") {
+    return nav.filter((e) => !("href" in e && e.href === "/ai-availability"))
+  }
+  return nav
+}
+
 export function AppSidebar({
   collapsed,
   onToggle,
@@ -146,7 +157,10 @@ export function AppSidebar({
   accountManagerPhone,
 }: SidebarProps) {
   const pathname = usePathname()
+  const { data: me } = useMe()
   const [openGroups, setOpenGroups] = useState<string[]>(["Atendimento"])
+
+  const navigation = getNavigation(me?.role)
 
   const toggleGroup = (label: string) => {
     setOpenGroups((prev) =>

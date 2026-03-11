@@ -4,7 +4,7 @@
  * Prioridade:
  * 1. Exceção com isUnavailable=true → dia bloqueado
  * 2. Block range (dateFrom ≤ date ≤ dateTo) → dia bloqueado
- * 3. Override (date) → usar horários do override
+ * 3. Grade semanal + overrides → união com mesclagem de sobreposições (alinhado ao backend)
  * 4. Caso contrário → usar availability onde dayOfWeek = dia da semana (0–6)
  * 5. Exceção com isUnavailable=false + slotMask → subtrair intervalos dos slots
  *
@@ -40,6 +40,34 @@ export interface DayAvailability {
 function parseDate(d: string | Date): string {
   if (typeof d === "string") return d.slice(0, 10)
   return toYMD(d)
+}
+
+type MergeWindow = {
+  startMin: number
+  endMin: number
+  overrideId?: string
+  isOverride?: boolean
+  slotDurationMin?: number
+  dayOfWeek?: number
+}
+
+/** Une e mescla intervalos sobrepostos. Ex.: 9h-12h + 11h-13h → 9h-13h */
+function mergeOverlapping(windows: MergeWindow[]): MergeWindow[] {
+  if (windows.length === 0) return []
+  const sorted = [...windows].sort((a, b) => a.startMin - b.startMin)
+  const merged: MergeWindow[] = [{ ...sorted[0] }]
+  for (let i = 1; i < sorted.length; i++) {
+    const cur = merged[merged.length - 1]!
+    const next = sorted[i]!
+    if (next.startMin <= cur.endMin) {
+      cur.endMin = Math.max(cur.endMin, next.endMin)
+      if (next.overrideId) cur.overrideId = next.overrideId
+      if (next.isOverride) cur.isOverride = true
+    } else {
+      merged.push({ ...next })
+    }
+  }
+  return merged
 }
 
 /** Subtrai intervalos de máscara de um slot. Retorna segmentos restantes. */
@@ -92,49 +120,39 @@ export function computeDayAvailability(
   const dayOverrides = (opts.overrides ?? []).filter(
     (o) => parseDate(o.date) === dateStr
   )
-  const exSlotMask = opts.exceptions.find(
+  const weeklySlots = opts.availability.filter((a) => a.dayOfWeek === dayOfWeek)
+  const maskExceptions = opts.exceptions.filter(
     (e) => parseDate(e.date) === dateStr && e.isUnavailable === false && (e.slotMask?.length ?? 0) > 0
   )
-  const mask = exSlotMask?.slotMask ?? []
+  const mask = maskExceptions.flatMap((e) => e.slotMask ?? [])
 
-  if (dayOverrides.length > 0) {
-    let slots: DayAvailabilitySlot[] = dayOverrides.map((o) => ({
-      startTime: o.startTime,
-      endTime: o.endTime,
+  const allWindows: MergeWindow[] = [
+    ...weeklySlots.map((s) => ({
+      startMin: timeToMinutes(s.startTime ?? "09:00"),
+      endMin: timeToMinutes(s.endTime ?? "18:00"),
+      slotDurationMin: s.slotDurationMin,
+      isOverride: false as const,
+      dayOfWeek,
+      overrideId: undefined as string | undefined,
+    })),
+    ...dayOverrides.map((o) => ({
+      startMin: timeToMinutes(o.startTime),
+      endMin: timeToMinutes(o.endTime),
       slotDurationMin: o.slotDurationMin,
-      isOverride: true,
       overrideId: o.id,
-    }))
-    if (mask.length > 0) {
-      const result: DayAvailabilitySlot[] = []
-      for (const s of slots) {
-        const segs = subtractMaskFromSlot(
-          timeToMinutes(s.startTime),
-          timeToMinutes(s.endTime),
-          mask
-        )
-        for (const [startM, endM] of segs) {
-          result.push({
-            startTime: minutesToHHMM(startM),
-            endTime: minutesToHHMM(endM),
-            slotDurationMin: s.slotDurationMin,
-            isOverride: true,
-            overrideId: s.overrideId,
-          })
-        }
-      }
-      slots = result
-    }
-    return { blocked: false, slots }
-  }
+      isOverride: true as const,
+      dayOfWeek: undefined as number | undefined,
+    })),
+  ]
+  const mergedRaw = mergeOverlapping(allWindows)
 
-  const weeklySlots = opts.availability.filter((a) => a.dayOfWeek === dayOfWeek)
-  let slots: DayAvailabilitySlot[] = weeklySlots.map((s) => ({
-    startTime: s.startTime ?? "09:00",
-    endTime: s.endTime ?? "18:00",
-    slotDurationMin: s.slotDurationMin,
-    isOverride: false,
-    dayOfWeek,
+  let slots: DayAvailabilitySlot[] = mergedRaw.map((w) => ({
+    startTime: minutesToHHMM(w.startMin),
+    endTime: minutesToHHMM(w.endMin),
+    slotDurationMin: w.slotDurationMin ?? 50,
+    isOverride: w.isOverride ?? false,
+    overrideId: w.overrideId,
+    dayOfWeek: w.overrideId ? undefined : dayOfWeek,
   }))
 
   if (mask.length > 0) {
@@ -150,8 +168,9 @@ export function computeDayAvailability(
           startTime: minutesToHHMM(startM),
           endTime: minutesToHHMM(endM),
           slotDurationMin: s.slotDurationMin,
-          isOverride: false,
-          dayOfWeek,
+          isOverride: s.isOverride,
+          overrideId: s.overrideId,
+          dayOfWeek: s.dayOfWeek,
         })
       }
     }

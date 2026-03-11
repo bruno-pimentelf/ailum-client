@@ -8,6 +8,7 @@ import type {
   ExceptionInput,
   OverrideInput,
   BlockRangeInput,
+  AvailabilityOverride,
 } from "@/lib/api/professionals"
 
 export function useProfessionals() {
@@ -23,6 +24,22 @@ export function useProfessional(id: string | null) {
     queryKey: ["professional", id],
     queryFn: () => professionalsApi.get(id!),
     enabled: !!id,
+    staleTime: 30_000,
+  })
+}
+
+/** Overrides do profissional no intervalo from–to (cheatsheet: GET overrides?from=&to=) */
+export function useProfessionalOverrides(
+  professionalId: string | null,
+  from: string,
+  to: string
+) {
+  return useQuery({
+    queryKey: ["professionalOverrides", professionalId, from, to],
+    queryFn: () =>
+      professionalsApi.getOverrides(professionalId!, { from, to }),
+    enabled: !!professionalId && !!from && !!to,
+    staleTime: 15_000,
   })
 }
 
@@ -83,7 +100,12 @@ export function useProfessionalMutations(professionalId: string | null) {
   const removeOverride = useMutation({
     mutationFn: (overrideId: string) =>
       professionalsApi.removeOverride(professionalId!, overrideId),
-    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({
+        queryKey: ["professionalOverrides", professionalId],
+      })
+    },
   })
 
   const addBlockRange = useMutation({
@@ -92,22 +114,67 @@ export function useProfessionalMutations(professionalId: string | null) {
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
+  type ReplaceOverridesVars = {
+    removeIds: string[]
+    addSlots: OverrideInput[]
+    dateStr?: string
+    from?: string
+    to?: string
+    onOptimisticApply?: () => void
+  }
+
   const replaceOverridesForDate = useMutation({
-    mutationFn: async ({
-      removeIds,
-      addSlots,
-    }: {
-      removeIds: string[]
-      addSlots: OverrideInput[]
-    }) => {
+    mutationFn: async ({ removeIds, addSlots }: ReplaceOverridesVars) => {
       for (const id of removeIds) {
-        await professionalsApi.removeOverride(professionalId!, id)
+        try {
+          await professionalsApi.removeOverride(professionalId!, id)
+        } catch (e) {
+          const status = (e as { status?: number })?.status
+          if (status !== 404) throw e
+        }
       }
       for (const slot of addSlots) {
         await professionalsApi.addOverride(professionalId!, slot)
       }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+    onMutate: async (vars) => {
+      const { removeIds, addSlots, dateStr, from, to, onOptimisticApply } = vars
+      if (!from || !to || !dateStr) return
+      const overrideKey = [
+        "professionalOverrides",
+        professionalId,
+        from,
+        to,
+      ] as const
+      const prev = queryClient.getQueryData<AvailabilityOverride[]>(overrideKey)
+      const optimisticOverrides = [
+        ...(prev ?? []).filter(
+          (o) => (o.date?.slice(0, 10) ?? o.date) !== dateStr
+        ),
+        ...addSlots.map((s, i) => ({
+          id: `opt-${dateStr}-${i}-${Date.now()}`,
+          professionalId: professionalId!,
+          date: dateStr,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          slotDurationMin: s.slotDurationMin,
+        })),
+      ]
+      queryClient.setQueryData(overrideKey, optimisticOverrides)
+      onOptimisticApply?.()
+      return { prev, overrideKey }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.overrideKey) {
+        queryClient.setQueryData(ctx.overrideKey, ctx.prev ?? [])
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({
+        queryKey: ["professionalOverrides", professionalId],
+      })
+    },
   })
 
   const removeBlockRange = useMutation({
@@ -116,8 +183,19 @@ export function useProfessionalMutations(professionalId: string | null) {
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
+  const deleteAvailability = useMutation({
+    mutationFn: () => professionalsApi.deleteAvailability(professionalId!),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({
+        queryKey: ["professionalOverrides", professionalId],
+      })
+    },
+  })
+
   return {
     putAvailability,
+    deleteAvailability,
     addException,
     removeException,
     addOverride,
