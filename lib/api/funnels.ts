@@ -81,6 +81,8 @@ export interface StageInput {
 export type AllowedTool =
   | "search_availability"
   | "create_appointment"
+  | "cancel_appointment"
+  | "reschedule_appointment"
   | "move_stage"
   | "send_message"
   | "notify_operator"

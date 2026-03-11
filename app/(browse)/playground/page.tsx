@@ -29,6 +29,8 @@ const ease = [0.33, 1, 0.68, 1] as const
 
 const TOOL_LABELS: Record<string, string> = {
   create_appointment: "Agendar consulta",
+  cancel_appointment: "Cancelar consulta",
+  reschedule_appointment: "Remarcar consulta",
   send_message: "Enviar mensagem",
   notify_operator: "Escalar para humano",
   move_stage: "Mover etapa",

@@ -21,7 +21,7 @@ import { useStageAgentConfig, useFunnelMutations, useTriggers, useFunnels } from
 import type { BoardStage } from "@/lib/api/funnels"
 import type { AllowedTool, Trigger } from "@/lib/api/funnels"
 import { TriggerEditorModal } from "./trigger-editor-modal"
-import { Textarea } from "@/components/ui/textarea"
+import { InstructionTextarea } from "./instruction-textarea"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -34,6 +34,8 @@ const labelCls = "block text-[11px] font-bold text-muted-foreground uppercase tr
 const ALLOWED_TOOLS: { value: AllowedTool; label: string }[] = [
   { value: "search_availability", label: "Buscar disponibilidade por data" },
   { value: "create_appointment", label: "Agendar consulta" },
+  { value: "cancel_appointment", label: "Cancelar consulta" },
+  { value: "reschedule_appointment", label: "Remarcar consulta" },
   { value: "move_stage", label: "Mover entre etapas" },
   { value: "send_message", label: "Enviar mensagem programática" },
   { value: "notify_operator", label: "Escalar para humano" },
@@ -422,32 +424,34 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                       <label className={labelCls}>Tom e personalidade</label>
                       <div className="flex gap-3">
                         <Sparkle className="h-5 w-5 text-muted-foreground shrink-0 mt-1" weight="duotone" />
-                        <Textarea
+                        <InstructionTextarea
                           value={funnelAgentPersonality}
-                          onChange={(e) => setFunnelAgentPersonality(e.target.value)}
-                          placeholder="Ex: Você é cordial e acolhedor. Use linguagem clara e evite termos técnicos. Seja breve e objetivo."
+                          onChange={setFunnelAgentPersonality}
+                          allowedTools={allowedTools}
+                          placeholder="Ex: Você é cordial e acolhedor. Use linguagem clara e evite termos técnicos. Seja breve e objetivo. Digite @ para referenciar ferramentas."
                           rows={5}
                           className={textareaCls}
                         />
                       </div>
                       <p className="text-[11px] text-muted-foreground/80">
-                        Como o assistente fala e age — tom, estilo, regras gerais
+                        Como o assistente fala e age — tom, estilo, regras gerais. Use @ para citar ferramentas.
                       </p>
                     </div>
                     <div className="space-y-2">
                       <label className={labelCls}>Instruções do estágio</label>
                       <div className="flex gap-3">
                         <ListChecks className="h-5 w-5 text-muted-foreground shrink-0 mt-1" weight="duotone" />
-                        <Textarea
+                        <InstructionTextarea
                           value={stageContext}
-                          onChange={(e) => setStageContext(e.target.value)}
-                          placeholder="Ex: Apresente a clínica, colete nome e motivo da consulta. Ofereça horários disponíveis."
+                          onChange={setStageContext}
+                          allowedTools={allowedTools}
+                          placeholder="Ex: Apresente a clínica, colete nome e motivo. Ofereça horários com @search_availability. Digite @ para referenciar ferramentas."
                           rows={5}
                           className={textareaCls}
                         />
                       </div>
                       <p className="text-[11px] text-muted-foreground/80">
-                        O que o assistente deve fazer nesta etapa do funil
+                        O que o assistente deve fazer nesta etapa. Use @ para citar ferramentas habilitadas.
                       </p>
                     </div>
                   </div>
