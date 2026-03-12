@@ -144,7 +144,8 @@ function TemplateFormModal({
         fileName: type === "DOCUMENT" ? fileName.trim() || undefined : undefined,
       }
       if (isEdit) {
-        await update.mutateAsync({ id: template.id, body: { ...input, key: undefined } })
+        const { key: _k, ...rest } = input
+        await update.mutateAsync({ id: template.id, body: rest })
       } else {
         await create.mutateAsync(input)
       }
