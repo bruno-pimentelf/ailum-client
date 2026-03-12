@@ -484,6 +484,9 @@ export default function PlaygroundPage() {
                 <p className="text-[13px] text-muted-foreground/50">
                   Digite uma mensagem abaixo para começar. Ex: &quot;Oi, quero marcar uma consulta&quot;
                 </p>
+                <p className="text-[11px] text-muted-foreground/40 max-w-xs text-center mt-2">
+                  Lembretes (reminder_24h, reminder_1h) e triggers com template aparecem aqui quando houver consulta na janela correta. O job roda a cada 30 min.
+                </p>
               </div>
             )}
 

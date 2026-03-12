@@ -239,12 +239,12 @@ export default function AiAvailabilityPage() {
           className="text-center max-w-xl mb-10"
         >
           <h1 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight">
-            Peça à sua{" "}
-            <span className="text-accent font-display italic">secretária</span>
+            Peça ao seu{" "}
+            <span className="text-accent font-display italic">Concierge</span>
           </h1>
           <p className="mt-3 text-[15px] text-muted-foreground leading-relaxed">
             Descreva em linguagem natural. Bloqueie dias, adicione horários,
-            defina férias — ela entende.
+            defina férias — ele entende.
           </p>
         </motion.div>
 

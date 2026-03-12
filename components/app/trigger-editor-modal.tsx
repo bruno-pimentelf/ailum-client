@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Lightning, Check, Spinner, Warning } from "@phosphor-icons/react"
 import { Textarea } from "@/components/ui/textarea"
+import { useTemplates } from "@/hooks/use-templates"
 import type {
   Trigger,
   TriggerInput,
@@ -53,6 +55,11 @@ function getUseAIFromConfig(config: Record<string, unknown>): boolean {
   return config?.useAI === true
 }
 
+function getTemplateIdFromConfig(config: Record<string, unknown>): string {
+  const id = config?.templateId
+  return typeof id === "string" ? id : ""
+}
+
 export function TriggerEditorModal({
   open,
   onClose,
@@ -62,9 +69,12 @@ export function TriggerEditorModal({
   onSave,
 }: TriggerEditorModalProps) {
   const isEdit = !!trigger
+  const { data: templates = [] } = useTemplates()
   const [event, setEvent] = useState<TriggerEvent>("STAGE_ENTERED")
   const [action, setAction] = useState<TriggerAction>("SEND_MESSAGE")
+  const [messageMode, setMessageMode] = useState<"custom" | "template">("custom")
   const [message, setMessage] = useState("")
+  const [templateId, setTemplateId] = useState("")
   const [useAI, setUseAI] = useState(false)
   const [moveStageId, setMoveStageId] = useState("")
   const [amount, setAmount] = useState("")
@@ -81,7 +91,16 @@ export function TriggerEditorModal({
       setDelayMinutes(trigger.delayMinutes ?? 0)
       setCooldownSeconds(trigger.cooldownSeconds ?? 86400)
       const ac = trigger.actionConfig as Record<string, unknown>
-      setMessage(getMessageFromConfig(ac))
+      const tid = getTemplateIdFromConfig(ac)
+      if (tid) {
+        setMessageMode("template")
+        setTemplateId(tid)
+        setMessage(getMessageFromConfig(ac))
+      } else {
+        setMessageMode("custom")
+        setTemplateId("")
+        setMessage(getMessageFromConfig(ac))
+      }
       setUseAI(getUseAIFromConfig(ac))
       setMoveStageId((ac?.stageId as string) ?? "")
       setAmount(String((ac?.amount as number) ?? ""))
@@ -89,7 +108,9 @@ export function TriggerEditorModal({
     } else if (open) {
       setEvent("STAGE_ENTERED")
       setAction("SEND_MESSAGE")
+      setMessageMode("custom")
       setMessage("")
+      setTemplateId("")
       setUseAI(false)
       setMoveStageId("")
       setAmount("")
@@ -102,6 +123,9 @@ export function TriggerEditorModal({
 
   function buildActionConfig(): Record<string, unknown> {
     if (action === "SEND_MESSAGE") {
+      if (messageMode === "template" && templateId) {
+        return { templateId }
+      }
       return { useAI, message }
     }
     if (action === "MOVE_STAGE") {
@@ -118,6 +142,10 @@ export function TriggerEditorModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (action === "SEND_MESSAGE" && messageMode === "template" && !templateId) {
+      setError("Selecione um template")
+      return
+    }
     setError(null)
     setSaving(true)
     try {
@@ -205,26 +233,77 @@ export function TriggerEditorModal({
               </div>
 
               {action === "SEND_MESSAGE" && (
-                <div className="space-y-2">
-                  <label className={labelCls}>Mensagem</label>
-                  <Textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Olá, tudo bem? Que bom falar com você. Como posso ajudar hoje?"
-                    rows={4}
-                    className={`${inputCls} resize-y min-h-[100px] max-h-[200px]`}
-                  />
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={useAI}
-                      onChange={(e) => setUseAI(e.target.checked)}
-                      className="rounded border-border/60 text-accent focus:ring-accent/30"
-                    />
-                    <span className="text-[12px] text-muted-foreground">
-                      Usar IA para personalizar (variáveis: {`{{name}}`}, {`{{appointmentTime}}`})
-                    </span>
-                  </label>
+                <div className="space-y-3">
+                  <label className={labelCls}>Modo de mensagem</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="messageMode"
+                        checked={messageMode === "custom"}
+                        onChange={() => setMessageMode("custom")}
+                        className="rounded-full border-border/60 text-accent focus:ring-accent/30"
+                      />
+                      <span className="text-[12px]">Texto personalizado</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="messageMode"
+                        checked={messageMode === "template"}
+                        onChange={() => setMessageMode("template")}
+                        className="rounded-full border-border/60 text-accent focus:ring-accent/30"
+                      />
+                      <span className="text-[12px]">Usar template</span>
+                    </label>
+                  </div>
+                  {messageMode === "custom" ? (
+                    <>
+                      <label className={labelCls}>Mensagem</label>
+                      <Textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Olá, tudo bem? Que bom falar com você. Como posso ajudar hoje?"
+                        rows={4}
+                        className={`${inputCls} resize-y min-h-[100px] max-h-[200px]`}
+                      />
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={useAI}
+                          onChange={(e) => setUseAI(e.target.checked)}
+                          className="rounded border-border/60 text-accent focus:ring-accent/30"
+                        />
+                        <span className="text-[12px] text-muted-foreground">
+                          Usar IA para personalizar (variáveis: {`{{name}}`}, {`{{appointmentTime}}`})
+                        </span>
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      <label className={labelCls}>Template</label>
+                      <select
+                        value={templateId}
+                        onChange={(e) => setTemplateId(e.target.value)}
+                        className={inputCls}
+                      >
+                        <option value="">Selecione um template</option>
+                        {templates.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} ({t.type}) — {t.key}
+                          </option>
+                        ))}
+                      </select>
+                      {templates.length === 0 && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Nenhum template.{" "}
+                          <Link href="/settings?tab=templates" target="_blank" className="text-accent hover:underline">
+                            Criar template
+                          </Link>
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 

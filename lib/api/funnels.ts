@@ -128,6 +128,7 @@ export type TriggerAction =
 export interface SendMessageActionConfig {
   useAI?: boolean
   message?: string
+  templateId?: string
 }
 
 export interface MoveStageActionConfig {

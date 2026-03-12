@@ -50,7 +50,7 @@ const baseNavigation: NavEntry[] = [
     ],
   },
   { label: "Calendário", href: "/calendar", icon: CalendarBlank },
-  { label: "Secretária IA", href: "/ai-availability", icon: Sparkle },
+  { label: "Concierge", href: "/ai-availability", icon: Sparkle },
   { label: "Configurações", href: "/settings", icon: Gear },
 ]
 
