@@ -18,6 +18,7 @@ import {
   Phone,
   Robot,
   Sparkle,
+  ChartLineUp,
 } from "@phosphor-icons/react"
 import { useMe } from "@/hooks/use-me"
 
@@ -38,6 +39,7 @@ type NavGroup = {
 type NavEntry = NavItem | (NavGroup & { type: "group" })
 
 const baseNavigation: NavEntry[] = [
+  { label: "Dashboard", href: "/dashboard", icon: ChartLineUp },
   {
     type: "group",
     label: "Atendimento",
