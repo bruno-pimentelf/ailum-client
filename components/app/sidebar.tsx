@@ -19,6 +19,7 @@ import {
   Robot,
   Sparkle,
   ChartLineUp,
+  CurrencyCircleDollar,
 } from "@phosphor-icons/react"
 import { useMe } from "@/hooks/use-me"
 
@@ -52,6 +53,7 @@ const baseNavigation: NavEntry[] = [
     ],
   },
   { label: "Calendário", href: "/calendar", icon: CalendarBlank },
+  { label: "Financeiro", href: "/financeiro", icon: CurrencyCircleDollar },
   { label: "Concierge", href: "/ai-availability", icon: Sparkle },
   { label: "Configurações", href: "/settings", icon: Gear },
 ]

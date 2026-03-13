@@ -1,13 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import {
   ChartContainer,
   ChartTooltip,
@@ -47,49 +41,50 @@ export function AgendaChart({ data, isLoading, className }: AgendaChartProps) {
 
   if (isLoading) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>Agenda</CardTitle>
-          <CardDescription>Consultas por dia no período</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[280px] animate-pulse rounded-lg bg-muted/30" />
-        </CardContent>
-      </Card>
+      <div className={cn("rounded-xl border border-border bg-card/80 backdrop-blur-sm overflow-hidden", className)}>
+        <div className="border-b border-border/50 px-5 py-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">Métricas</p>
+          <h3 className="mt-1 text-[15px] font-semibold tracking-tight text-foreground">Agenda</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">Consultas por dia no período</p>
+        </div>
+        <div className="p-5">
+          <div className="h-[240px] animate-pulse rounded-lg bg-muted/20" />
+        </div>
+      </div>
     )
   }
 
   if (!chartData.length) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>Agenda</CardTitle>
-          <CardDescription>Nenhum dado de agenda no período</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex h-[200px] items-center justify-center text-muted-foreground text-sm">
-            Nenhuma consulta registrada
-          </div>
-        </CardContent>
-      </Card>
+      <div className={cn("rounded-xl border border-border bg-card/80 backdrop-blur-sm overflow-hidden", className)}>
+        <div className="border-b border-border/50 px-5 py-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">Métricas</p>
+          <h3 className="mt-1 text-[15px] font-semibold tracking-tight text-foreground">Agenda</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">Nenhum dado de agenda no período</p>
+        </div>
+        <div className="flex h-[200px] items-center justify-center text-muted-foreground text-sm">
+          Nenhuma consulta registrada
+        </div>
+      </div>
     )
   }
 
   const totalConsultas = chartData.reduce((s, d) => s + d.total, 0)
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+    <div className={cn("rounded-xl border border-border bg-card/80 backdrop-blur-sm overflow-hidden", className)}>
+      <div className="border-b border-border/50 px-5 py-4">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <CardTitle>Agenda</CardTitle>
-            <CardDescription>Consultas por dia no período</CardDescription>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">Métricas</p>
+            <h3 className="mt-1 text-[15px] font-semibold tracking-tight text-foreground">Agenda</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">Consultas por dia no período</p>
           </div>
-          <span className="text-2xl font-bold tabular-nums">{totalConsultas}</span>
+          <span className="shrink-0 text-xl font-bold tabular-nums text-foreground">{totalConsultas}</span>
         </div>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[280px] w-full">
+      </div>
+      <div className="p-5">
+        <ChartContainer config={chartConfig} className="h-[240px] w-full">
           <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
@@ -132,7 +127,7 @@ export function AgendaChart({ data, isLoading, className }: AgendaChartProps) {
             />
           </AreaChart>
         </ChartContainer>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

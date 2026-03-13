@@ -1,11 +1,17 @@
 "use client"
 
+import { motion } from "framer-motion"
 import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card"
+  UserCircle,
+  CalendarCheck,
+  Calendar,
+  CurrencyDollar,
+  Warning,
+  FlowArrow,
+  UserMinus,
+} from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
+import { StaggerContainer, staggerItem } from "@/components/landing/motion"
 import type { StatsOverview } from "@/lib/api/stats"
 
 function formatCurrency(value: number) {
@@ -18,50 +24,87 @@ interface OverviewCardsProps {
   className?: string
 }
 
-const cards = [
-  { key: "leads", label: "Leads", get: (d?: StatsOverview) => d?.leadsTotal ?? 0 },
-  { key: "agendamentos", label: "Agendamentos", get: (d?: StatsOverview) => d?.appointmentScheduledTotal ?? 0 },
-  { key: "hoje", label: "Consultas hoje", get: (d?: StatsOverview) => d?.appointmentsToday ?? 0 },
-  { key: "receita", label: "Receita paga", get: (d?: StatsOverview) => formatCurrency(d?.revenuePaid ?? 0), isCurrency: true },
-  { key: "inadimplente", label: "Inadimplentes", get: (d?: StatsOverview) => d?.chargesOverdueCount ?? 0, sub: (d?: StatsOverview) => (d?.chargesOverdueCount ?? 0) > 0 ? formatCurrency(d?.chargesOverdueAmount ?? 0) : null },
-  { key: "escalacoes", label: "Escalações", get: (d?: StatsOverview) => d?.escalationsCount ?? 0 },
-  { key: "noShow", label: "Taxa no-show", get: (d?: StatsOverview) => d?.noShowRate ?? 0, suffix: "%" },
+const cards: {
+  key: string
+  label: string
+  icon: typeof UserCircle
+  get: (d?: StatsOverview) => number | string
+  sub?: (d?: StatsOverview) => string | null
+  suffix?: string
+  accent?: boolean
+}[] = [
+  { key: "leads", label: "Leads", icon: UserCircle, get: (d) => d?.leadsTotal ?? 0 },
+  { key: "agendamentos", label: "Agendamentos", icon: CalendarCheck, get: (d) => d?.appointmentScheduledTotal ?? 0 },
+  { key: "hoje", label: "Consultas hoje", icon: Calendar, get: (d) => d?.appointmentsToday ?? 0, accent: true },
+  { key: "receita", label: "Receita paga", icon: CurrencyDollar, get: (d) => formatCurrency(d?.revenuePaid ?? 0) },
+  {
+    key: "inadimplente",
+    label: "Inadimplentes",
+    icon: Warning,
+    get: (d) => d?.chargesOverdueCount ?? 0,
+    sub: (d) => (d?.chargesOverdueCount ?? 0) > 0 ? formatCurrency(d?.chargesOverdueAmount ?? 0) : null,
+  },
+  { key: "escalacoes", label: "Escalações", icon: FlowArrow, get: (d) => d?.escalationsCount ?? 0 },
+  { key: "noShow", label: "Taxa no-show", icon: UserMinus, get: (d) => d?.noShowRate ?? 0, suffix: "%" },
 ]
 
 export function OverviewCards({ data, isLoading, className }: OverviewCardsProps) {
   return (
-    <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7", className)}>
+    <StaggerContainer
+      className={cn("grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7", className)}
+      staggerDelay={0.04}
+    >
       {cards.map((card) => {
         const value = card.get(data)
-        const sub = "sub" in card && card.sub ? card.sub(data) : null
-        const suffix = "suffix" in card && card.suffix ? card.suffix : ""
-        const displayValue = typeof value === "number"
-          ? value.toLocaleString("pt-BR") + suffix
-          : String(value)
+        const sub = card.sub?.(data)
+        const suffix = card.suffix ?? ""
+        const displayValue =
+          typeof value === "number"
+            ? value.toLocaleString("pt-BR") + suffix
+            : String(value)
+        const Icon = card.icon
         return (
-          <Card key={card.key} className="border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <span className="text-xs font-medium text-muted-foreground">
+          <motion.div
+            key={card.key}
+            variants={staggerItem}
+            className="group relative overflow-hidden rounded-xl border border-border bg-card/80 backdrop-blur-sm transition-all duration-300 hover:border-accent/20 hover:shadow-md hover:shadow-accent/[0.03]"
+          >
+            <div className="relative p-3.5">
+              <div
+                className={cn(
+                  "mb-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
+                  card.accent
+                    ? "border-accent/20 bg-accent/10"
+                    : "border-border/60 bg-muted/20"
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-4 w-4",
+                    card.accent ? "text-accent" : "text-muted-foreground"
+                  )}
+                  weight="duotone"
+                />
+              </div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {card.label}
-              </span>
-            </CardHeader>
-            <CardContent>
+              </p>
               {isLoading ? (
-                <div className="h-8 w-20 animate-pulse rounded bg-muted/50" />
+                <div className="mt-1.5 h-7 w-20 animate-pulse rounded bg-muted/40" />
               ) : (
                 <>
-                  <span className="text-2xl font-bold tabular-nums">
+                  <p className="mt-1 text-lg font-bold tabular-nums tracking-tight text-foreground">
                     {displayValue}
-                  </span>
+                  </p>
                   {sub && (
-                    <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p>
                   )}
                 </>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         )
       })}
-    </div>
+    </StaggerContainer>
   )
 }

@@ -80,7 +80,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
           variant="outline"
           size="sm"
           className={cn(
-            "gap-2 font-normal text-muted-foreground hover:text-foreground",
+            "cursor-pointer gap-2 rounded-xl font-normal text-muted-foreground hover:text-foreground border-border/60",
             className
           )}
         >

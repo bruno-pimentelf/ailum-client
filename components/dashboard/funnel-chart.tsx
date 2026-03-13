@@ -2,13 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { motion } from "framer-motion"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import {
   ChartContainer,
   ChartTooltip,
@@ -58,15 +52,16 @@ export function FunnelChart({ className }: FunnelChartProps) {
 
   if (isLoadingOrEmpty && !chartData.length) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle>Funil</CardTitle>
-          <CardDescription>Contatos por estágio</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[280px] animate-pulse rounded-lg bg-muted/30" />
-        </CardContent>
-      </Card>
+      <div className={cn("rounded-xl border border-border bg-card/80 backdrop-blur-sm overflow-hidden", className)}>
+        <div className="border-b border-border/50 px-5 py-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">Funil de vendas</p>
+          <h3 className="mt-1 text-[15px] font-semibold tracking-tight text-foreground">Contatos por estágio</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">Configure um funil para ver os dados</p>
+        </div>
+        <div className="p-5">
+          <div className="h-[240px] animate-pulse rounded-lg bg-muted/20" />
+        </div>
+      </div>
     )
   }
 
@@ -74,26 +69,27 @@ export function FunnelChart({ className }: FunnelChartProps) {
   const activeTabId = selectedFunnelId ?? ""
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-2">
+    <div className={cn("rounded-xl border border-border bg-card/80 backdrop-blur-sm overflow-hidden", className)}>
+      <div className="border-b border-border/50 px-5 py-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Funil</CardTitle>
-            <CardDescription>Contatos por estágio</CardDescription>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-accent">Funil de vendas</p>
+            <h3 className="mt-1 text-[15px] font-semibold tracking-tight text-foreground">Contatos por estágio</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">Leads distribuídos por etapa</p>
           </div>
-          <span className="text-2xl font-bold tabular-nums">{total}</span>
+          <span className="text-xl font-bold tabular-nums text-foreground">{total}</span>
         </div>
 
-        {/* Tab selector — mesmo estilo da tela de settings */}
-        <div className="flex items-stretch gap-0 overflow-x-auto scrollbar-none border-b border-border/50 -mx-4 px-4 mt-4 h-11">
+        {/* Tab selector */}
+        <div className="flex items-stretch gap-0 overflow-x-auto scrollbar-none -mx-5 mt-4 px-5 h-10 border-b border-border/50">
           {tabs.map((tab) => {
             const active = activeTabId === tab.id
             return (
               <button
                 key={tab.id || "all"}
                 onClick={() => setSelectedFunnelId(tab.id || null)}
-                className={`relative shrink-0 flex items-center gap-2 px-4 h-full text-[12px] font-bold transition-colors duration-150 cursor-pointer ${
-                  active ? "text-white/90" : "text-white/25 hover:text-white/60"
+                className={`cursor-pointer relative shrink-0 flex items-center gap-2 px-5 h-full text-[12px] font-semibold transition-colors duration-150 ${
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {active && (
@@ -108,17 +104,17 @@ export function FunnelChart({ className }: FunnelChartProps) {
             )
           })}
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent>
+      <div className="p-5">
         {!chartData.length ? (
-          <div className="flex h-[200px] items-center justify-center text-muted-foreground text-sm">
+          <div className="flex h-[200px] items-center justify-center text-muted-foreground text-[13px]">
             {selectedFunnelId
               ? "Nenhum contato neste funil"
               : "Configure um funil para ver os dados"}
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[280px] w-full">
+          <ChartContainer config={chartConfig} className="h-[240px] w-full">
             <BarChart data={chartData} margin={{ left: 8, right: 8 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
@@ -134,7 +130,7 @@ export function FunnelChart({ className }: FunnelChartProps) {
             </BarChart>
           </ChartContainer>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
