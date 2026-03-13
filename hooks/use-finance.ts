@@ -3,6 +3,10 @@ import {
   financeApi,
   type AsaasCustomerListParams,
   type AsaasPaymentListParams,
+  type AsaasPaymentLinkListParams,
+  type AsaasSubscriptionListParams,
+  type CreatePaymentLinkInput,
+  type CreateSubscriptionInput,
   type ScheduleInvoiceInput,
 } from "@/lib/api/finance"
 
@@ -41,6 +45,48 @@ export function useScheduleInvoice() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: ScheduleInvoiceInput) => financeApi.scheduleInvoice(body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: FINANCE_KEY })
+    },
+  })
+}
+
+export function usePaymentLinks(params?: AsaasPaymentLinkListParams) {
+  return useQuery({
+    queryKey: [...FINANCE_KEY, "payment-links", params],
+    queryFn: () => financeApi.paymentLinks(params),
+  })
+}
+
+export function usePaymentLink(id: string | null) {
+  return useQuery({
+    queryKey: [...FINANCE_KEY, "payment-link", id],
+    queryFn: () => (id ? financeApi.paymentLink(id) : Promise.reject()),
+    enabled: !!id,
+  })
+}
+
+export function useCreatePaymentLink() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreatePaymentLinkInput) => financeApi.createPaymentLink(body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: FINANCE_KEY })
+    },
+  })
+}
+
+export function useSubscriptions(params?: AsaasSubscriptionListParams) {
+  return useQuery({
+    queryKey: [...FINANCE_KEY, "subscriptions", params],
+    queryFn: () => financeApi.subscriptions(params),
+  })
+}
+
+export function useCreateSubscription() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreateSubscriptionInput) => financeApi.createSubscription(body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: FINANCE_KEY })
     },

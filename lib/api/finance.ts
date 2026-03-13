@@ -117,9 +117,95 @@ export interface AsaasPaymentListParams {
   paymentDateLe?: string
 }
 
+// ─── Payment Links ─────────────────────────────────────────────────────────────
+
+export interface AsaasPaymentLink {
+  id: string
+  name: string
+  url: string
+  value?: number
+  chargeType: string
+  billingType: string
+  viewCount?: number
+  active: boolean
+  description?: string
+  externalReference?: string
+}
+
+export interface AsaasPaymentLinkList {
+  object: "list"
+  hasMore: boolean
+  totalCount: number
+  limit: number
+  offset: number
+  data: AsaasPaymentLink[]
+}
+
+export interface AsaasPaymentLinkListParams {
+  offset?: number
+  limit?: number
+  active?: boolean
+  name?: string
+  externalReference?: string
+}
+
+export interface CreatePaymentLinkInput {
+  name: string
+  description?: string
+  value?: number
+  billingType: "UNDEFINED" | "PIX" | "BOLETO" | "CREDIT_CARD"
+  chargeType: "DETACHED" | "INSTALLMENT" | "RECURRENT"
+  dueDateLimitDays?: number
+  externalReference?: string
+  subscriptionCycle?: string
+  maxInstallmentCount?: number
+  callback?: { successUrl?: string; autoRedirect?: boolean }
+}
+
+// ─── Subscriptions ─────────────────────────────────────────────────────────────
+
+export interface AsaasSubscription {
+  id: string
+  customer: string
+  value: number
+  cycle: string
+  nextDueDate: string
+  status: string
+  description?: string
+  billingType: string
+}
+
+export interface AsaasSubscriptionList {
+  object: "list"
+  hasMore: boolean
+  totalCount: number
+  limit: number
+  offset: number
+  data: AsaasSubscription[]
+}
+
+export interface AsaasSubscriptionListParams {
+  offset?: number
+  limit?: number
+  customer?: string
+  billingType?: string
+  status?: string
+  externalReference?: string
+}
+
+export interface CreateSubscriptionInput {
+  customer: string
+  billingType: "BOLETO" | "CREDIT_CARD" | "PIX" | "UNDEFINED"
+  value: number
+  nextDueDate: string
+  cycle: "WEEKLY" | "MONTHLY" | "BIMONTHLY" | "QUARTERLY" | "SEMIANNUALLY" | "YEARLY"
+  description?: string
+  externalReference?: string
+}
+
 // ─── Query params builder ──────────────────────────────────────────────────────
 
-function buildQuery(params: Record<string, string | number | undefined>): string {
+function buildQuery(params: Record<string, string | number | boolean | undefined>): string {
   const qs = new URLSearchParams()
   Object.entries(params).forEach(([k, v]) => {
     if (v != null && v !== "") qs.set(k, String(v))
@@ -145,6 +231,27 @@ export const financeApi = {
 
   scheduleInvoice: (body: ScheduleInvoiceInput) =>
     apiFetch<ScheduleInvoiceResult>("/integrations/asaas/invoices", {
+      method: "POST",
+      body,
+    }),
+
+  paymentLinks: (params?: AsaasPaymentLinkListParams) =>
+    apiFetch<AsaasPaymentLinkList>(`/integrations/asaas/payment-links${buildQuery((params ?? {}) as Record<string, string | number | boolean | undefined>)}`),
+
+  paymentLink: (id: string) =>
+    apiFetch<AsaasPaymentLink>(`/integrations/asaas/payment-links/${id}`),
+
+  createPaymentLink: (body: CreatePaymentLinkInput) =>
+    apiFetch<AsaasPaymentLink>("/integrations/asaas/payment-links", {
+      method: "POST",
+      body,
+    }),
+
+  subscriptions: (params?: AsaasSubscriptionListParams) =>
+    apiFetch<AsaasSubscriptionList>(`/integrations/asaas/subscriptions${buildQuery((params ?? {}) as Record<string, string | number | undefined>)}`),
+
+  createSubscription: (body: CreateSubscriptionInput) =>
+    apiFetch<AsaasSubscription>("/integrations/asaas/subscriptions", {
       method: "POST",
       body,
     }),

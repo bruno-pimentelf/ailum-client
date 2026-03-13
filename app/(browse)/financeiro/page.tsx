@@ -14,6 +14,9 @@ import {
   Wallet,
   TrendUp,
   Clock,
+  Warning,
+  LinkSimple,
+  Repeat,
 } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,6 +33,10 @@ import {
   useAsaasCustomers,
 } from "@/hooks/use-finance"
 import { InvoiceModal } from "@/components/finance/invoice-modal"
+import { PaymentLinkModal } from "@/components/finance/payment-link-modal"
+import { PaymentLinksTable } from "@/components/finance/payment-links-table"
+import { SubscriptionModal } from "@/components/finance/subscription-modal"
+import { SubscriptionsTable } from "@/components/finance/subscriptions-table"
 import type { AsaasPayment } from "@/lib/api/finance"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -69,12 +76,14 @@ function FinanceCards({
   balance,
   receivedMonth,
   pending,
+  overdue,
   isLoading,
   onRefresh,
 }: {
   balance?: number
   receivedMonth?: number
   pending?: number
+  overdue?: number
   isLoading?: boolean
   onRefresh: () => void
 }) {
@@ -103,10 +112,18 @@ function FinanceCards({
       color: "text-amber-400",
       gradient: "from-amber-500/10 to-amber-500/5",
     },
+    {
+      key: "vencido",
+      icon: Warning,
+      label: "Vencido",
+      value: overdue ?? 0,
+      color: "text-rose-400",
+      gradient: "from-rose-500/10 to-rose-500/5",
+    },
   ]
 
   return (
-    <StaggerContainer className="grid gap-3 md:grid-cols-3" staggerDelay={0.06}>
+    <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" staggerDelay={0.06}>
       {items.map((item, i) => {
         const Icon = item.icon
         return (
@@ -484,8 +501,12 @@ function EmptyState() {
 // ─── Página principal ───────────────────────────────────────────────────────────
 
 export default function FinanceiroPage() {
-  const [activeTab, setActiveTab] = useState<"cobrancas" | "clientes">("cobrancas")
+  const [activeTab, setActiveTab] = useState<
+    "cobrancas" | "clientes" | "links" | "assinaturas"
+  >("cobrancas")
   const [invoicePayment, setInvoicePayment] = useState<AsaasPayment | null>(null)
+  const [paymentLinkModalOpen, setPaymentLinkModalOpen] = useState(false)
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false)
 
   const { data: integrations } = useIntegrations()
   const asaasIntegration = integrations?.find((i) => i.provider === "asaas")
@@ -498,6 +519,7 @@ export default function FinanceiroPage() {
     paymentDateLe: getMonthEnd(),
   })
   const pendingQuery = useAsaasPayments({ status: "PENDING" })
+  const overdueQuery = useAsaasPayments({ status: "OVERDUE" })
 
   const receivedMonth = useMemo(
     () => receivedQuery.data?.data?.reduce((s, p) => s + (p.value ?? 0), 0) ?? 0,
@@ -507,11 +529,16 @@ export default function FinanceiroPage() {
     () => pendingQuery.data?.data?.reduce((s, p) => s + (p.value ?? 0), 0) ?? 0,
     [pendingQuery.data]
   )
+  const overdueTotal = useMemo(
+    () => overdueQuery.data?.data?.reduce((s, p) => s + (p.value ?? 0), 0) ?? 0,
+    [overdueQuery.data]
+  )
 
   const refreshAll = () => {
     balanceQuery.refetch()
     receivedQuery.refetch()
     pendingQuery.refetch()
+    overdueQuery.refetch()
   }
 
   if (!asaasConfigured) {
@@ -553,44 +580,37 @@ export default function FinanceiroPage() {
           balance={balanceQuery.data?.balance}
           receivedMonth={receivedMonth}
           pending={pendingTotal}
+          overdue={overdueTotal}
           isLoading={balanceQuery.isLoading}
           onRefresh={refreshAll}
         />
 
-        {/* Tabs — compacto */}
-        <div className="flex items-stretch border-b border-border/50 -mb-px">
-          <button
-            onClick={() => setActiveTab("cobrancas")}
-            className={`cursor-pointer relative flex items-center gap-2 px-4 py-2.5 text-[12px] font-semibold transition-colors ${
-              activeTab === "cobrancas" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {activeTab === "cobrancas" && (
-              <motion.div
-                layoutId="finance-tab"
-                className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
-                transition={{ duration: 0.22, ease }}
-              />
-            )}
-            <Receipt className="h-4 w-4" weight="duotone" />
-            <span className="relative">Cobranças</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("clientes")}
-            className={`cursor-pointer relative flex items-center gap-2 px-4 py-2.5 text-[12px] font-semibold transition-colors ${
-              activeTab === "clientes" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {activeTab === "clientes" && (
-              <motion.div
-                layoutId="finance-tab"
-                className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
-                transition={{ duration: 0.22, ease }}
-              />
-            )}
-            <Users className="h-4 w-4" weight="duotone" />
-            <span className="relative">Clientes</span>
-          </button>
+        {/* Tabs — navegação sugerida pela doc */}
+        <div className="flex items-stretch gap-0 overflow-x-auto scrollbar-none border-b border-border/50 -mb-px">
+          {[
+            { id: "cobrancas" as const, icon: Receipt, label: "Cobranças" },
+            { id: "clientes" as const, icon: Users, label: "Clientes" },
+            { id: "links" as const, icon: LinkSimple, label: "Links" },
+            { id: "assinaturas" as const, icon: Repeat, label: "Assinaturas" },
+          ].map(({ id, icon: Icon, label }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`cursor-pointer relative shrink-0 flex items-center gap-2 px-4 py-2.5 text-[12px] font-semibold transition-colors ${
+                activeTab === id ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {activeTab === id && (
+                <motion.div
+                  layoutId="finance-tab"
+                  className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
+                  transition={{ duration: 0.22, ease }}
+                />
+              )}
+              <Icon className="h-4 w-4" weight="duotone" />
+              <span className="relative">{label}</span>
+            </button>
+          ))}
         </div>
 
         <AnimatePresence mode="wait">
@@ -616,6 +636,28 @@ export default function FinanceiroPage() {
               <CustomersTable />
             </motion.div>
           )}
+          {activeTab === "links" && (
+            <motion.div
+              key="links"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3, ease }}
+            >
+              <PaymentLinksTable onCreateClick={() => setPaymentLinkModalOpen(true)} />
+            </motion.div>
+          )}
+          {activeTab === "assinaturas" && (
+            <motion.div
+              key="assinaturas"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3, ease }}
+            >
+              <SubscriptionsTable onCreateClick={() => setSubscriptionModalOpen(true)} />
+            </motion.div>
+          )}
         </AnimatePresence>
         </div>
         </TooltipProvider>
@@ -625,6 +667,14 @@ export default function FinanceiroPage() {
         open={!!invoicePayment}
         onClose={() => setInvoicePayment(null)}
         payment={invoicePayment}
+      />
+      <PaymentLinkModal
+        open={paymentLinkModalOpen}
+        onClose={() => setPaymentLinkModalOpen(false)}
+      />
+      <SubscriptionModal
+        open={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
       />
     </div>
   )
