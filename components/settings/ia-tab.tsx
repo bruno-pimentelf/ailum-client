@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import type React from "react"
 import { motion } from "framer-motion"
-import { Robot, Check, ArrowsClockwise, Warning } from "@phosphor-icons/react"
+import { Robot, Check, ArrowsClockwise, Warning, Bell } from "@phosphor-icons/react"
 import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
 import { useMe } from "@/hooks/use-me"
 
@@ -93,6 +93,16 @@ export function IATab() {
     )
   }
 
+  async function handleSlotRecallToggle() {
+    if (!tenant) return
+    const next = !tenant.isSlotRecallEnabled
+    try {
+      await update.mutateAsync({ isSlotRecallEnabled: next })
+    } catch {
+      // Error handled by mutation
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -100,6 +110,45 @@ export function IATab() {
       transition={{ duration: 0.2 }}
       className="space-y-6 w-full"
     >
+      {/* Recall de vagas */}
+      <div className="rounded-xl border border-border/50 bg-card/30 p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/10">
+              <Bell className="h-4 w-4 text-accent" weight="duotone" />
+            </div>
+            <div>
+              <h3 className="text-[13px] font-semibold text-foreground">
+                Avisar lista de espera ao cancelar
+              </h3>
+              <p className="mt-0.5 text-[12px] text-muted-foreground">
+                Quando alguém cancelar um agendamento, contatos que pediram para ser avisados serão notificados por WhatsApp
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={tenant?.isSlotRecallEnabled ?? false}
+            onClick={handleSlotRecallToggle}
+            disabled={update.isPending}
+            className={`cursor-pointer relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors duration-200 disabled:opacity-50 ${
+              tenant?.isSlotRecallEnabled
+                ? "border-accent bg-accent/20"
+                : "border-border bg-muted/30"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full transition-all duration-200 ${
+                tenant?.isSlotRecallEnabled
+                  ? "left-6 bg-accent"
+                  : "left-0.5 bg-muted-foreground/50"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
       <form onSubmit={handleSave} className="space-y-6">
         <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
           <div className="flex items-center gap-2">
