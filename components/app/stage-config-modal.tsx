@@ -109,6 +109,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [funnelAgentPersonality, setFunnelAgentPersonality] = useState("")
   const [stageContext, setStageContext] = useState("")
   const [allowedTools, setAllowedTools] = useState<AllowedTool[]>([])
+  const [requirePaymentBeforeConfirm, setRequirePaymentBeforeConfirm] = useState(false)
   const [model, setModel] = useState<"HAIKU" | "SONNET">("SONNET")
   const [temperature, setTemperature] = useState(0.4)
   const [saving, setSaving] = useState(false)
@@ -124,6 +125,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setFunnelAgentPersonality(config.funnelAgentPersonality ?? "")
       setStageContext(config.stageContext ?? "")
       setAllowedTools(config.allowedTools ?? [])
+      setRequirePaymentBeforeConfirm(config.requirePaymentBeforeConfirm ?? false)
       setModel(config.model ?? "SONNET")
       setTemperature(config.temperature ?? 0.4)
     } else if (open && !isLoading) {
@@ -131,6 +133,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setFunnelAgentPersonality("")
       setStageContext("")
       setAllowedTools(["search_availability", "create_appointment", "move_stage", "send_message", "notify_operator"])
+      setRequirePaymentBeforeConfirm(false)
       setModel("SONNET")
       setTemperature(0.4)
     }
@@ -148,13 +151,21 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
     setSaving(true)
     setError(null)
     try {
+      // Com requirePaymentBeforeConfirm: backend usa só generate_pix (remove create_appointment)
+      const finalAllowedTools = (requirePaymentBeforeConfirm
+        ? [...allowedTools.filter((t) => t !== "create_appointment"), "generate_pix"].filter(
+            (t, i, a) => a.indexOf(t) === i
+          )
+        : allowedTools) as AllowedTool[]
+
       await upsertAgentConfig.mutateAsync({
         stageId,
         body: {
           funnelAgentName: funnelAgentName.trim() || undefined,
           funnelAgentPersonality: funnelAgentPersonality.trim() || undefined,
           stageContext: stageContext.trim() || undefined,
-          allowedTools,
+          allowedTools: finalAllowedTools,
+          requirePaymentBeforeConfirm: requirePaymentBeforeConfirm || undefined,
           model,
           temperature,
         },
@@ -496,6 +507,34 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                         Sem &quot;Agendar consulta&quot;, a IA não consegue criar consultas.
                       </p>
                     )}
+                  </div>
+
+                  {/* PIX antes de agendar */}
+                  <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-muted/5 px-4 py-3.5">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={requirePaymentBeforeConfirm}
+                      onClick={() => setRequirePaymentBeforeConfirm((v) => !v)}
+                      className={`flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                        requirePaymentBeforeConfirm ? "bg-accent" : "bg-muted"
+                      }`}
+                    >
+                      <motion.div
+                        animate={{ x: requirePaymentBeforeConfirm ? 16 : 2 }}
+                        transition={{ duration: 0.2 }}
+                        className="h-4 w-4 rounded-full bg-white shadow"
+                      />
+                    </button>
+                    <div>
+                      <p className="text-[13px] font-medium text-foreground">
+                        PIX antes de agendar
+                      </p>
+                      <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+                        Contato escolhe horário → agente envia PIX → consulta criada apenas após pagamento.
+                        Desativa &quot;Agendar consulta&quot; e usa apenas &quot;Gerar cobrança PIX&quot;.
+                      </p>
+                    </div>
                   </div>
 
                   {error && (

@@ -14,6 +14,7 @@ import {
   ArrowsClockwise,
   Trash,
 } from "@phosphor-icons/react"
+import { PixChargeBlock } from "@/components/app/pix-charge-block"
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -249,13 +250,16 @@ function MessageBubble({
   isUser,
   animate,
 }: {
-  msg: FirestoreMessage | { id: string; role: string; content: string; createdAt?: { toDate: () => Date } }
+  msg: FirestoreMessage | { id: string; role: string; type?: string; content: string; metadata?: { qrCodeUrl?: string; pixCopyPaste?: string; amount?: string; description?: string }; createdAt?: { toDate: () => Date } }
   isUser: boolean
   animate?: boolean
 }) {
   const time = msg.createdAt?.toDate?.()
     ? new Date(msg.createdAt.toDate()).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
     : ""
+
+  const isPixCharge = "type" in msg && msg.type === "PIX_CHARGE"
+  const pixMeta = "metadata" in msg ? msg.metadata : undefined
 
   return (
     <motion.div
@@ -276,9 +280,16 @@ function MessageBubble({
             : "bg-card border border-border/60 rounded-bl-md"
         }`}
       >
-        <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words text-foreground">
-          {msg.content}
-        </p>
+        {isPixCharge ? (
+          <PixChargeBlock
+            content={msg.content}
+            metadata={pixMeta ? { qrCodeUrl: pixMeta.qrCodeUrl, pixCopyPaste: pixMeta.pixCopyPaste, amount: pixMeta.amount, description: pixMeta.description } : undefined}
+          />
+        ) : (
+          <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words text-foreground">
+            {msg.content}
+          </p>
+        )}
         <span className="text-[10px] text-muted-foreground/40 mt-1 block">{time}</span>
       </div>
     </motion.div>

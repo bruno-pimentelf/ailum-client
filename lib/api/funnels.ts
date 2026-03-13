@@ -95,6 +95,7 @@ export interface StageAgentConfig {
   funnelAgentPersonality: string | null
   stageContext: string | null
   allowedTools: AllowedTool[]
+  requirePaymentBeforeConfirm?: boolean
   model: "HAIKU" | "SONNET"
   temperature: number
 }
@@ -104,6 +105,7 @@ export interface StageAgentConfigInput {
   funnelAgentPersonality?: string
   stageContext?: string
   allowedTools?: AllowedTool[]
+  requirePaymentBeforeConfirm?: boolean
   model?: "HAIKU" | "SONNET"
   temperature?: number
 }

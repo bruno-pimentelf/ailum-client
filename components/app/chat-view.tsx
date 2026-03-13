@@ -27,6 +27,7 @@ import {
   Warning,
   Clock,
 } from "@phosphor-icons/react"
+import { PixChargeBlock } from "./pix-charge-block"
 import { useMessages, useTypingStatus } from "@/hooks/use-chats"
 import { sendMessage, markAsRead } from "@/lib/api/conversations"
 import type { FirestoreContact, FirestoreMessage } from "@/lib/types/firestore"
@@ -329,6 +330,21 @@ function MessageBubble({ msg, animate }: { msg: AnyMessage; animate?: boolean })
             <p className="text-[10px] text-muted-foreground/40">Processando...</p>
           </div>
         </div>
+      )
+    }
+
+    // ── PIX_CHARGE ─────────────────────────────────────────────────────────────
+    if (msg.type === "PIX_CHARGE" && m) {
+      return (
+        <PixChargeBlock
+          content={msg.content}
+          metadata={{
+            qrCodeUrl: m.qrCodeUrl,
+            pixCopyPaste: m.pixCopyPaste,
+            amount: m.amount,
+            description: m.description,
+          }}
+        />
       )
     }
 

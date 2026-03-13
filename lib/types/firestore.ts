@@ -59,7 +59,7 @@ export interface FirestoreContact {
 export interface FirestoreMessage {
   id: string
   role: "CONTACT" | "OPERATOR" | "AGENT"
-  type: "TEXT" | "IMAGE" | "AUDIO" | "DOCUMENT"
+  type: "TEXT" | "IMAGE" | "AUDIO" | "DOCUMENT" | "PIX_CHARGE"
   content: string
   createdAt: Timestamp
   status?: "SENT" | "RECEIVED" | "READ" | "PLAYED"
@@ -99,6 +99,11 @@ export interface FirestoreMessage {
     templateId?: string
     // STICKER
     stickerUrl?: string
+    // PIX_CHARGE
+    qrCodeUrl?: string
+    pixCopyPaste?: string
+    amount?: string
+    description?: string
   }
 }
 

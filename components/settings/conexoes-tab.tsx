@@ -373,7 +373,7 @@ function AsaasCard({ integration, open, onToggle }: { integration: Integration |
                   <div className="relative">
                     <input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); saveAsaas.reset() }} placeholder="$aact_MzkwODA..." className={inputCls} />
                   </div>
-                  <p className="text-[10px] text-white/25 mt-0.5">Encontre sua API key em <span className="text-white/40 font-medium">asaas.com → Configurações → Integrações</span></p>
+                  <p className="text-[10px] text-white/25 mt-0.5">Sandbox: <span className="text-white/40 font-medium">sandbox.asaas.com</span> → Integrações → Chave da API</p>
                 </Field>
                 <div className="flex items-center gap-2 pt-1">
                   <button type="submit" disabled={saveAsaas.isPending || !apiKey.trim()}
