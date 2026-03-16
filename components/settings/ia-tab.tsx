@@ -1,16 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type React from "react"
 import { motion } from "framer-motion"
 import { Robot, Check, ArrowsClockwise, Warning, Bell } from "@phosphor-icons/react"
 import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
 import { useMe } from "@/hooks/use-me"
+import { InstructionTextarea } from "@/components/app/instruction-textarea"
 
-const inputCls =
-  "w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/40 transition-colors disabled:opacity-50"
-const textareaCls =
-  "w-full rounded-lg border border-border bg-muted/20 px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/40 resize-y min-h-[120px] transition-colors disabled:opacity-50"
 const labelCls = "block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
 
 export function IATab() {
@@ -35,9 +31,8 @@ export function IATab() {
     })
   }, [tenant])
 
-  const set = (k: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((prev) => ({ ...prev, [k]: e.target.value }))
+  const set = (k: keyof typeof form) => (val: string) =>
+    setForm((prev) => ({ ...prev, [k]: val }))
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -162,12 +157,11 @@ export function IATab() {
           </p>
           <div>
             <label className={labelCls}>Prompt base</label>
-            <textarea
+            <InstructionTextarea
               value={form.agentBasePrompt}
               onChange={set("agentBasePrompt")}
-              placeholder="Ex: Você representa a clínica X. Seja cordial e profissional..."
+              placeholder="Ex: Você representa a clínica X. Seja cordial e profissional... Use @ para mencionar etapas, profissionais, serviços ou ferramentas."
               rows={4}
-              className={textareaCls}
             />
           </div>
         </div>
@@ -184,12 +178,11 @@ export function IATab() {
           </p>
           <div>
             <label className={labelCls}>Regras</label>
-            <textarea
+            <InstructionTextarea
               value={form.guardrailRules}
               onChange={set("guardrailRules")}
-              placeholder="Ex: Não dê diagnósticos. Não confirme consultas sem verificar disponibilidade..."
+              placeholder="Ex: Não dê diagnósticos. Não confirme consultas sem verificar disponibilidade... Use @ para mencionar etapas ou ferramentas."
               rows={4}
-              className={textareaCls}
             />
           </div>
         </div>

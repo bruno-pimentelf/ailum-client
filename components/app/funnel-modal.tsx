@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, type KeyboardEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   X,
@@ -11,6 +11,7 @@ import {
   Warning,
   Spinner,
   FlowArrow,
+  Tag,
 } from "@phosphor-icons/react"
 import { useFunnelMutations } from "@/hooks/use-board"
 import type { FunnelListItem } from "@/lib/api/funnels"
@@ -167,16 +168,20 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [stages, setStages] = useState<DraftStage[]>([])
+  const [entryKeywords, setEntryKeywords] = useState<string[]>([])
+  const [keywordInput, setKeywordInput] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
+  const keywordInputRef = useRef<HTMLInputElement>(null)
 
   // Populate from existing funnel when editing
   useEffect(() => {
     if (funnel) {
       setName(funnel.name)
       setDescription(funnel.description ?? "")
+      setEntryKeywords(funnel.entryKeywords ?? [])
       setStages(
         funnel.stages.map((s, i) => ({
           _key: s.id,
@@ -190,15 +195,37 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
     } else {
       setName("")
       setDescription("")
+      setEntryKeywords([])
       setStages([
         { _key: "s0", name: "Novo contato", color: "#64748b", isTerminal: false, order: 0 },
         { _key: "s1", name: "Qualificando", color: "#f59e0b", isTerminal: false, order: 1 },
         { _key: "s2", name: "Concluído", color: "#10b981", isTerminal: true, order: 2 },
       ])
     }
+    setKeywordInput("")
     setError(null)
     setDeleteConfirm(false)
   }, [funnel, open])
+
+  function addKeyword(raw: string) {
+    const kw = raw.trim().toLowerCase()
+    if (!kw || entryKeywords.includes(kw)) return
+    setEntryKeywords((prev) => [...prev, kw])
+    setKeywordInput("")
+  }
+
+  function removeKeyword(kw: string) {
+    setEntryKeywords((prev) => prev.filter((k) => k !== kw))
+  }
+
+  function handleKeywordKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault()
+      addKeyword(keywordInput)
+    } else if (e.key === "Backspace" && !keywordInput && entryKeywords.length > 0) {
+      setEntryKeywords((prev) => prev.slice(0, -1))
+    }
+  }
 
   useEffect(() => {
     if (open) setTimeout(() => nameRef.current?.focus(), 60)
@@ -236,7 +263,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
     try {
       if (isEdit && funnel) {
         // ── Edit mode ──
-        await updateFunnel.mutateAsync({ id: funnel.id, body: { name: name.trim(), description: description.trim() || null } })
+        await updateFunnel.mutateAsync({ id: funnel.id, body: { name: name.trim(), description: description.trim() || null, entryKeywords } })
 
         const existingIds = new Set(funnel.stages.map((s) => s.id))
 
@@ -257,7 +284,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
         }
       } else {
         // ── Create mode ──
-        const created = await createFunnel.mutateAsync({ name: name.trim(), description: description.trim() || null })
+        const created = await createFunnel.mutateAsync({ name: name.trim(), description: description.trim() || null, entryKeywords })
         for (const [i, stage] of stages.entries()) {
           await createStage.mutateAsync({
             funnelId: created.id,
@@ -357,6 +384,61 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                     className="mt-1.5 w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                   />
                 </div>
+              </div>
+
+              {/* Entry Keywords */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Tag className="h-3.5 w-3.5 text-muted-foreground/60" weight="duotone" />
+                  <label className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                    Keywords de entrada
+                  </label>
+                </div>
+                <p className="text-[11px] text-muted-foreground/50 mb-2">
+                  Quando um novo contato mencionar alguma dessas palavras na primeira mensagem, será direcionado para este funil automaticamente.
+                </p>
+
+                {/* Chips + input */}
+                <div
+                  className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-muted/20 px-3 py-2 min-h-[42px] cursor-text focus-within:ring-2 focus-within:ring-accent/30 focus-within:border-accent/40 transition-all"
+                  onClick={() => keywordInputRef.current?.focus()}
+                >
+                  <AnimatePresence initial={false}>
+                    {entryKeywords.map((kw) => (
+                      <motion.span
+                        key={kw}
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        transition={{ duration: 0.12 }}
+                        className="inline-flex items-center gap-1 rounded-md border border-accent/25 bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent"
+                      >
+                        {kw}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeKeyword(kw) }}
+                          className="cursor-pointer ml-0.5 text-accent/50 hover:text-accent transition-colors"
+                          aria-label={`Remover ${kw}`}
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
+                  <input
+                    ref={keywordInputRef}
+                    type="text"
+                    value={keywordInput}
+                    onChange={(e) => setKeywordInput(e.target.value)}
+                    onKeyDown={handleKeywordKeyDown}
+                    onBlur={() => { if (keywordInput.trim()) addKeyword(keywordInput) }}
+                    placeholder={entryKeywords.length === 0 ? "Ex: plano, convênio, urgente... (Enter para adicionar)" : "Adicionar..."}
+                    className="flex-1 min-w-[140px] bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
+                  />
+                </div>
+                <p className="mt-1.5 text-[10px] text-muted-foreground/40">
+                  Pressione <kbd className="rounded border border-border/30 bg-muted/20 px-1 font-mono text-[9px]">Enter</kbd> ou <kbd className="rounded border border-border/30 bg-muted/20 px-1 font-mono text-[9px]">,</kbd> para adicionar · <kbd className="rounded border border-border/30 bg-muted/20 px-1 font-mono text-[9px]">Backspace</kbd> para remover o último
+                </p>
               </div>
 
               {/* Stages */}

@@ -55,6 +55,7 @@ export interface FunnelListItem {
   name: string
   description: string | null
   isDefault?: boolean
+  entryKeywords?: string[]
   stages: Array<{
     id: string
     name: string
@@ -69,6 +70,7 @@ export interface FunnelInput {
   description?: string | null
   order?: number
   isDefault?: boolean
+  entryKeywords?: string[]
 }
 
 export interface StageInput {
@@ -87,6 +89,7 @@ export type AllowedTool =
   | "send_message"
   | "notify_operator"
   | "generate_pix"
+  | "collect_info"
 
 export interface StageAgentConfig {
   id: string

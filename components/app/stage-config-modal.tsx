@@ -16,6 +16,7 @@ import {
   Trash,
   ToggleLeft,
   ToggleRight,
+  CurrencyDollar,
 } from "@phosphor-icons/react"
 import { useStageAgentConfig, useFunnelMutations, useTriggers, useFunnels } from "@/hooks/use-board"
 import type { BoardStage } from "@/lib/api/funnels"
@@ -26,25 +27,24 @@ import { InstructionTextarea } from "./instruction-textarea"
 const ease = [0.33, 1, 0.68, 1] as const
 
 const inputCls =
-  "w-full rounded-xl border border-border/60 bg-background/40 px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-200"
-const textareaCls =
-  "w-full rounded-xl border border-border/60 bg-background/40 px-4 py-3 text-[14px] text-foreground leading-relaxed placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-200 resize-y min-h-[140px] max-h-[280px]"
+  "w-full rounded-xl border border-border/60 bg-background/40 px-4 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-200"
 const labelCls = "block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
 
 const ALLOWED_TOOLS: { value: AllowedTool; label: string }[] = [
-  { value: "search_availability", label: "Buscar disponibilidade por data" },
+  { value: "search_availability", label: "Buscar disponibilidade" },
   { value: "create_appointment", label: "Agendar consulta" },
   { value: "cancel_appointment", label: "Cancelar consulta" },
   { value: "reschedule_appointment", label: "Remarcar consulta" },
   { value: "move_stage", label: "Mover entre etapas" },
-  { value: "send_message", label: "Enviar mensagem programática" },
+  { value: "send_message", label: "Enviar mensagem" },
   { value: "notify_operator", label: "Escalar para humano" },
   { value: "generate_pix", label: "Gerar cobrança PIX" },
+  { value: "collect_info", label: "Coletar dados do paciente" },
 ]
 
 const MODELS = [
-  { value: "HAIKU" as const, label: "Haiku (rápido)" },
-  { value: "SONNET" as const, label: "Sonnet (mais preciso)" },
+  { value: "HAIKU" as const, label: "Haiku" },
+  { value: "SONNET" as const, label: "Sonnet" },
 ]
 
 const EVENT_LABELS: Record<string, string> = {
@@ -76,10 +76,12 @@ interface StageConfigModalProps {
 }
 
 type TabId = "agente" | "triggers"
+type PromptTab = "personality" | "context"
 
 export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps) {
   const stageId = stage?.id ?? null
   const [activeTab, setActiveTab] = useState<TabId>("agente")
+  const [promptTab, setPromptTab] = useState<PromptTab>("personality")
   const { data: config, isLoading } = useStageAgentConfig(stageId)
   const { data: triggers = [], isLoading: triggersLoading } = useTriggers(stageId)
   const { data: funnels = [] } = useFunnels()
@@ -116,7 +118,10 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (open) setActiveTab("agente")
+    if (open) {
+      setActiveTab("agente")
+      setPromptTab("personality")
+    }
   }, [open])
 
   useEffect(() => {
@@ -151,7 +156,6 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
     setSaving(true)
     setError(null)
     try {
-      // Com requirePaymentBeforeConfirm: backend usa só generate_pix (remove create_appointment)
       const finalAllowedTools = (requirePaymentBeforeConfirm
         ? [...allowedTools.filter((t) => t !== "create_appointment"), "generate_pix"].filter(
             (t, i, a) => a.indexOf(t) === i
@@ -197,7 +201,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.25, ease }}
-            className="fixed inset-x-5 sm:inset-x-8 top-[4vh] bottom-[4vh] z-50 mx-auto max-w-4xl w-full rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/20 flex flex-col overflow-hidden"
+            className="fixed inset-x-5 sm:inset-x-8 top-[4vh] bottom-[4vh] z-50 mx-auto max-w-5xl w-full rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/20 flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/50 px-6 sm:px-8 py-4 shrink-0">
@@ -222,7 +226,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -233,7 +237,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
               <button
                 type="button"
                 onClick={() => setActiveTab("agente")}
-                className={`px-4 py-3 text-[12px] font-semibold transition-colors border-b-2 -mb-px ${
+                className={`px-4 py-3 text-[12px] font-semibold transition-colors border-b-2 -mb-px cursor-pointer ${
                   activeTab === "agente"
                     ? "border-accent text-accent"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -244,7 +248,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
               <button
                 type="button"
                 onClick={() => setActiveTab("triggers")}
-                className={`px-4 py-3 text-[12px] font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
+                className={`px-4 py-3 text-[12px] font-semibold transition-colors border-b-2 -mb-px flex items-center gap-1.5 cursor-pointer ${
                   activeTab === "triggers"
                     ? "border-accent text-accent"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -260,10 +264,10 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
               </button>
             </div>
 
-            {/* Body — scroll interno */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 sm:px-8 py-6 flex flex-col gap-6">
+            {/* Body */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 sm:px-8 py-5 flex flex-col gap-5">
               {activeTab === "triggers" ? (
-                /* Triggers tab */
+                /* ─── Triggers tab ─── */
                 <>
                   {triggersLoading ? (
                     <div className="flex justify-center py-12">
@@ -278,7 +282,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                         <button
                           type="button"
                           onClick={() => setAddingTrigger(true)}
-                          className="flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-[12px] font-semibold text-accent hover:bg-accent/20 transition-colors"
+                          className="flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-[12px] font-semibold text-accent hover:bg-accent/20 transition-colors cursor-pointer"
                         >
                           <Plus className="h-4 w-4" weight="bold" />
                           Novo trigger
@@ -293,7 +297,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                             <button
                               type="button"
                               onClick={() => setAddingTrigger(true)}
-                              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1.5 text-[12px] font-semibold text-accent hover:bg-accent/20"
+                              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1.5 text-[12px] font-semibold text-accent hover:bg-accent/20 cursor-pointer"
                             >
                               <Plus className="h-3.5 w-3.5" /> Adicionar trigger
                             </button>
@@ -309,7 +313,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                             <button
                               type="button"
                               onClick={() => toggleTrigger.mutate(t.id)}
-                              className="shrink-0"
+                              className="shrink-0 cursor-pointer"
                               title={t.isActive ? "Desativar" : "Ativar"}
                             >
                               {t.isActive ? (
@@ -332,7 +336,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                               <button
                                 type="button"
                                 onClick={() => setEditingTrigger(t)}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
                                 title="Editar"
                               >
                                 <PencilSimple className="h-4 w-4" />
@@ -344,7 +348,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                                     await deleteTrigger.mutateAsync(t.id)
                                 }}
                                 disabled={deleteTrigger.isPending}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
                                 title="Excluir"
                               >
                                 <Trash className="h-4 w-4" />
@@ -377,13 +381,14 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                   <Spinner className="h-6 w-6 text-accent animate-spin" />
                 </div>
               ) : (
+                /* ─── Agente tab ─── */
                 <>
-                  {/* Linha 1: Nome + Modelo + Temperatura */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-1.5">
+                  {/* Row 1: Name + Model + Temperature */}
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-4 items-end">
+                    <div className="space-y-1.5">
                       <label className={labelCls}>Nome do assistente</label>
-                      <div className="flex items-center gap-3">
-                        <TextAa className="h-5 w-5 text-muted-foreground shrink-0" weight="duotone" />
+                      <div className="flex items-center gap-2.5">
+                        <TextAa className="h-4 w-4 text-muted-foreground/60 shrink-0" weight="duotone" />
                         <input
                           type="text"
                           value={funnelAgentName}
@@ -392,148 +397,178 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                           className={inputCls}
                         />
                       </div>
-                      <p className="text-[11px] text-muted-foreground/80">
-                        Nome exibido ao contato quando a IA responder
-                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className={labelCls}>Modelo</label>
-                        <select
-                          value={model}
-                          onChange={(e) => setModel(e.target.value as "HAIKU" | "SONNET")}
-                          className="w-full rounded-xl border border-border/60 bg-background/40 px-4 py-3 text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40"
+                    <div className="space-y-1.5 sm:w-[130px]">
+                      <label className={labelCls}>Modelo</label>
+                      <select
+                        value={model}
+                        onChange={(e) => setModel(e.target.value as "HAIKU" | "SONNET")}
+                        className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer"
+                      >
+                        {MODELS.map((m) => (
+                          <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5 sm:w-[120px]">
+                      <label className={labelCls}>Temp. ({temperature.toFixed(1)})</label>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        value={temperature}
+                        onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                        className="w-full h-2.5 rounded-full accent-accent mt-2 cursor-pointer"
+                      />
+                      <p className="text-[10px] text-muted-foreground/60">0 conservador · 1 criativo</p>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Prompts (left) + Tools (right) — side by side on large screens */}
+                  <div className="flex flex-col lg:flex-row gap-5">
+                    {/* Left: Prompt tabs */}
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      {/* Sub-tabs */}
+                      <div className="flex items-center gap-1 mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setPromptTab("personality")}
+                          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors cursor-pointer ${
+                            promptTab === "personality"
+                              ? "bg-accent/15 text-accent"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                          }`}
                         >
-                          {MODELS.map((m) => (
-                            <option key={m.value} value={m.value}>
-                              {m.label}
-                            </option>
-                          ))}
-                        </select>
+                          <Sparkle className="h-3.5 w-3.5" weight="duotone" />
+                          Personalidade
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPromptTab("context")}
+                          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors cursor-pointer ${
+                            promptTab === "context"
+                              ? "bg-accent/15 text-accent"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                          }`}
+                        >
+                          <ListChecks className="h-3.5 w-3.5" weight="duotone" />
+                          Instruções
+                        </button>
                       </div>
-                      <div className="space-y-2">
-                        <label className={labelCls}>Temperatura ({temperature.toFixed(1)})</label>
-                        <input
-                          type="range"
-                          min={0}
-                          max={1}
-                          step={0.1}
-                          value={temperature}
-                          onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                          className="w-full h-2.5 rounded-full accent-accent mt-1"
-                        />
-                        <p className="text-[11px] text-muted-foreground/80">
-                          0 = conservador · 1 = criativo
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Linha 2: Tom e personalidade + Instruções (2 colunas em telas grandes) */}
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className={labelCls}>Tom e personalidade</label>
-                      <div className="flex gap-3">
-                        <Sparkle className="h-5 w-5 text-muted-foreground shrink-0 mt-1" weight="duotone" />
-                        <InstructionTextarea
-                          value={funnelAgentPersonality}
-                          onChange={setFunnelAgentPersonality}
-                          allowedTools={allowedTools}
-                          placeholder="Ex: Você é cordial e acolhedor. Use linguagem clara e evite termos técnicos. Seja breve e objetivo. Digite @ para referenciar ferramentas."
-                          rows={5}
-                          className={textareaCls}
-                        />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground/80">
-                        Como o assistente fala e age — tom, estilo, regras gerais. Use @ para citar ferramentas.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className={labelCls}>Instruções do estágio</label>
-                      <div className="flex gap-3">
-                        <ListChecks className="h-5 w-5 text-muted-foreground shrink-0 mt-1" weight="duotone" />
-                        <InstructionTextarea
-                          value={stageContext}
-                          onChange={setStageContext}
-                          allowedTools={allowedTools}
-                          placeholder="Ex: Apresente a clínica, colete nome e motivo. Ofereça horários com @search_availability. Digite @ para referenciar ferramentas."
-                          rows={5}
-                          className={textareaCls}
-                        />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground/80">
-                        O que o assistente deve fazer nesta etapa. Use @ para citar ferramentas habilitadas.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Allowed tools — grid 2 colunas em telas médias+ */}
-                  <div>
-                    <h3 className="text-[12px] font-medium text-foreground/90 mb-3">
-                      Ferramentas permitidas
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {ALLOWED_TOOLS.map((tool, i) => {
-                        const checked = allowedTools.includes(tool.value)
-                        return (
-                          <motion.button
-                            key={tool.value}
-                            initial={{ opacity: 0, x: -8 }}
+                      {/* Tab content */}
+                      <AnimatePresence mode="wait">
+                        {promptTab === "personality" ? (
+                          <motion.div
+                            key="personality"
+                            initial={{ opacity: 0, x: -6 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.02 }}
+                            exit={{ opacity: 0, x: 6 }}
+                            transition={{ duration: 0.12 }}
+                            className="flex flex-col gap-2"
+                          >
+                            <p className="text-[11px] text-muted-foreground/70">
+                              Como o assistente fala e age — tom, estilo, regras gerais.
+                            </p>
+                            <InstructionTextarea
+                              value={funnelAgentPersonality}
+                              onChange={setFunnelAgentPersonality}
+                              placeholder="Ex: Você é cordial e acolhedor. Use linguagem clara e evite termos técnicos. Seja breve e objetivo. Use @ para mencionar etapas, profissionais, serviços ou ferramentas."
+                              rows={9}
+                            />
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="context"
+                            initial={{ opacity: 0, x: -6 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 6 }}
+                            transition={{ duration: 0.12 }}
+                            className="flex flex-col gap-2"
+                          >
+                            <p className="text-[11px] text-muted-foreground/70">
+                              O que o assistente deve fazer nesta etapa. Instruções específicas.
+                            </p>
+                            <InstructionTextarea
+                              value={stageContext}
+                              onChange={setStageContext}
+                              placeholder="Ex: Apresente a clínica, colete nome e motivo. Ofereça horários com @tool:search_availability. Use @ para mencionar etapas, profissionais, serviços ou ferramentas."
+                              rows={9}
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Right: Tools + PIX */}
+                    <div className="lg:w-[250px] shrink-0 flex flex-col gap-4">
+                      <div>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                          Ferramentas permitidas
+                        </h3>
+                        <div className="flex flex-col gap-1">
+                          {ALLOWED_TOOLS.map((tool) => {
+                            const checked = allowedTools.includes(tool.value)
+                            return (
+                              <button
+                                key={tool.value}
+                                type="button"
+                                onClick={() => toggleTool(tool.value)}
+                                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-all cursor-pointer ${
+                                  checked
+                                    ? "bg-accent/10 border border-accent/30"
+                                    : "bg-transparent border border-transparent hover:bg-muted/20"
+                                }`}
+                              >
+                                <div
+                                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-[1.5px] transition-colors ${
+                                    checked ? "border-accent bg-accent" : "border-muted-foreground/30"
+                                  }`}
+                                >
+                                  {checked && <Check className="h-2.5 w-2.5 text-accent-foreground" weight="bold" />}
+                                </div>
+                                <span className="text-[12px] font-medium text-foreground">{tool.label}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                        {!allowedTools.includes("create_appointment") && (
+                          <p className="text-[10px] text-amber-500/80 mt-1.5 px-1">
+                            Sem &quot;Agendar consulta&quot;, a IA não consegue criar consultas.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* PIX toggle */}
+                      <div className="rounded-xl border border-border/40 bg-muted/5 px-3 py-3">
+                        <div className="flex items-start gap-2.5">
+                          <button
                             type="button"
-                            onClick={() => toggleTool(tool.value)}
-                            className={`flex items-center gap-3 w-full rounded-xl border px-4 py-3.5 text-left transition-all duration-200 ${
-                              checked
-                                ? "border-accent/40 bg-accent/10"
-                                : "border-border/50 bg-muted/10 hover:bg-muted/20"
+                            role="switch"
+                            aria-checked={requirePaymentBeforeConfirm}
+                            onClick={() => setRequirePaymentBeforeConfirm((v) => !v)}
+                            className={`flex h-5 w-9 shrink-0 mt-0.5 items-center rounded-full transition-colors cursor-pointer ${
+                              requirePaymentBeforeConfirm ? "bg-accent" : "bg-muted"
                             }`}
                           >
                             <motion.div
-                              animate={{ scale: checked ? 1 : 0.8 }}
-                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
-                                checked ? "border-accent bg-accent" : "border-muted-foreground/40"
-                              }`}
-                            >
-                              {checked && <Check className="h-3 w-3 text-accent-foreground" weight="bold" />}
-                            </motion.div>
-                            <span className="text-[13px] font-medium text-foreground">{tool.label}</span>
-                          </motion.button>
-                        )
-                      })}
-                    </div>
-                    {!allowedTools.includes("create_appointment") && (
-                      <p className="text-[11px] text-amber-500/90 mt-2 sm:col-span-2">
-                        Sem &quot;Agendar consulta&quot;, a IA não consegue criar consultas.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* PIX antes de agendar */}
-                  <div className="flex items-start gap-3 rounded-xl border border-border/50 bg-muted/5 px-4 py-3.5">
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={requirePaymentBeforeConfirm}
-                      onClick={() => setRequirePaymentBeforeConfirm((v) => !v)}
-                      className={`flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                        requirePaymentBeforeConfirm ? "bg-accent" : "bg-muted"
-                      }`}
-                    >
-                      <motion.div
-                        animate={{ x: requirePaymentBeforeConfirm ? 16 : 2 }}
-                        transition={{ duration: 0.2 }}
-                        className="h-4 w-4 rounded-full bg-white shadow"
-                      />
-                    </button>
-                    <div>
-                      <p className="text-[13px] font-medium text-foreground">
-                        PIX antes de agendar
-                      </p>
-                      <p className="text-[11px] text-muted-foreground/80 mt-0.5">
-                        Contato escolhe horário → agente envia PIX → consulta criada apenas após pagamento.
-                        Desativa &quot;Agendar consulta&quot; e usa apenas &quot;Gerar cobrança PIX&quot;.
-                      </p>
+                              animate={{ x: requirePaymentBeforeConfirm ? 16 : 2 }}
+                              transition={{ duration: 0.2 }}
+                              className="h-4 w-4 rounded-full bg-white shadow"
+                            />
+                          </button>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <CurrencyDollar className="h-3.5 w-3.5 text-muted-foreground/60" weight="duotone" />
+                              <p className="text-[12px] font-medium text-foreground">PIX antes de agendar</p>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground/60 mt-0.5 leading-relaxed">
+                              Horário → PIX → consulta criada após pagamento.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -552,29 +587,29 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
 
             {/* Footer — only for Agente tab */}
             {activeTab === "agente" && (
-            <div key="footer" className="flex items-center justify-end gap-3 border-t border-border/50 px-6 sm:px-8 py-4 shrink-0 bg-background/95">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Cancelar
-              </button>
-              <motion.button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || isLoading}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-              >
-                {saving ? (
-                  <Spinner className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" weight="bold" />
-                )}
-                Salvar
-              </motion.button>
-            </div>
+              <div key="footer" className="flex items-center justify-end gap-3 border-t border-border/50 px-6 sm:px-8 py-4 shrink-0 bg-background/95">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <motion.button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || isLoading}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  {saving ? (
+                    <Spinner className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" weight="bold" />
+                  )}
+                  Salvar
+                </motion.button>
+              </div>
             )}
           </motion.div>
         </>

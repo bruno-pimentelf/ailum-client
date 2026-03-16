@@ -1,5 +1,26 @@
 import { apiFetch } from "@/lib/api"
 
+// ─── Mentions ─────────────────────────────────────────────────────────────────
+
+export interface MentionItem {
+  mention: string
+  label: string
+  sublabel?: string
+  description?: string
+  id?: string
+}
+
+export interface MentionList {
+  stages: MentionItem[]
+  professionals: MentionItem[]
+  services: MentionItem[]
+  tools: MentionItem[]
+}
+
+export function getAgentMentions() {
+  return apiFetch<MentionList>("/agent/mentions")
+}
+
 // ─── Playground contact ────────────────────────────────────────────────────────
 
 export interface PlaygroundContact {
