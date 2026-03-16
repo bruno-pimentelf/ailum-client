@@ -15,9 +15,15 @@ import {
   Check,
   SignOut,
   LinkSimple,
+  X,
+  WarningCircle,
+  WarningOctagon,
+  Info,
 } from "@phosphor-icons/react"
 import { authClient } from "@/lib/auth-client"
 import { useAuthStore } from "@/lib/auth-store"
+import { useNotifications, type TenantNotification } from "@/hooks/use-notifications"
+import { useTenant } from "@/hooks/use-tenant"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -29,9 +35,17 @@ export function AppHeader() {
   const [searchValue, setSearchValue] = useState("")
   const [clinicOpen, setClinicOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [clinicSearch, setClinicSearch] = useState("")
+  const [notifFilter, setNotifFilter] = useState<"all" | "critical" | "payments" | "agenda" | "automations">("all")
+  const [toasts, setToasts] = useState<Array<{ id: string; title: string; body: string; severity: "critical" | "warning" | "info" }>>([])
   const dropdownRef = useRef<HTMLDivElement>(null)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
+  const notificationsRef = useRef<HTMLDivElement>(null)
+  const seenToastRef = useRef(new Set<string>())
+  const toastTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const { data: tenant } = useTenant()
+  const { items: notificationItems, unreadCount, recentAdded, markAsRead, markAllAsRead } = useNotifications()
 
   const selectedClinic = orgs.find((o) => o.id === activeOrgId) ?? orgs[0] ?? null
 
@@ -49,10 +63,103 @@ export function AppHeader() {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(target)) {
         setProfileOpen(false)
       }
+      if (notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setNotificationsOpen(false)
+      }
     }
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [])
+
+  useEffect(() => {
+    return () => {
+      Object.values(toastTimerRef.current).forEach((t) => clearTimeout(t))
+    }
+  }, [])
+
+  const notificationsEnabled = tenant?.notificationsEnabled ?? true
+  const enabledTypes = tenant?.notificationTypes?.length
+    ? new Set(tenant.notificationTypes)
+    : null
+
+  const effectiveItems = notificationItems.filter((n) => {
+    if (!notificationsEnabled) return false
+    if (enabledTypes && !enabledTypes.has(n.type)) return false
+    return true
+  })
+
+  const effectiveUnread = effectiveItems.filter((n) => !n.read).length
+
+  const filteredNotifications = effectiveItems.filter((n) => {
+    if (notifFilter === "all") return true
+    if (notifFilter === "critical") return n.severity === "critical"
+    if (notifFilter === "payments") return n.type.startsWith("payment.")
+    if (notifFilter === "agenda") return n.type.startsWith("appointment.")
+    if (notifFilter === "automations") {
+      return n.type.startsWith("trigger.") || n.type.startsWith("guardrail.") || n.type.startsWith("slot_recall.")
+    }
+    return true
+  })
+
+  function getNotificationHref(n: TenantNotification) {
+    if (!n.entityType) return null
+    if (n.entityType === "appointment") return "/agenda"
+    if (n.entityType === "charge") return "/financeiro"
+    if (n.entityType === "trigger") return "/boards"
+    if (n.entityType === "contact") return "/conversas"
+    return null
+  }
+
+  function formatRelative(iso: string) {
+    const date = new Date(iso)
+    const diff = Date.now() - date.getTime()
+    const min = Math.floor(diff / 60_000)
+    const hour = Math.floor(diff / 3_600_000)
+    const day = Math.floor(diff / 86_400_000)
+    if (min < 1) return "agora"
+    if (min < 60) return `há ${min}m`
+    if (hour < 24) return `há ${hour}h`
+    return `há ${day}d`
+  }
+
+  function toastIcon(severity: "critical" | "warning" | "info") {
+    if (severity === "critical") return <WarningOctagon className="h-4 w-4 text-rose-400 shrink-0" weight="fill" />
+    if (severity === "warning") return <WarningCircle className="h-4 w-4 text-amber-400 shrink-0" weight="fill" />
+    return <Info className="h-4 w-4 text-sky-400 shrink-0" weight="fill" />
+  }
+
+  useEffect(() => {
+    if (!notificationsEnabled) return
+    for (const n of recentAdded) {
+      const key = n.dedupeKey ?? n.id
+      if (seenToastRef.current.has(key)) continue
+      seenToastRef.current.add(key)
+      const isContextOpen = notificationsOpen
+      const shouldToast =
+        n.severity === "critical" ||
+        (n.severity === "warning" && !isContextOpen)
+      if (!shouldToast) continue
+      setToasts((prev) => [...prev, { id: key, title: n.title, body: n.body, severity: n.severity }].slice(-4))
+      const timer = setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== key))
+        delete toastTimerRef.current[key]
+      }, 4500)
+      toastTimerRef.current[key] = timer
+    }
+  }, [recentAdded, notificationsEnabled, notificationsOpen])
+
+  const handleNotificationClick = useCallback(async (n: TenantNotification) => {
+    try {
+      if (!n.read) await markAsRead(n.id)
+    } catch {
+      // ignore read failures on click
+    }
+    const href = getNotificationHref(n)
+    if (href) {
+      router.push(href)
+      setNotificationsOpen(false)
+    }
+  }, [markAsRead, router])
 
   const handleSwitchOrg = useCallback(async (orgId: string) => {
     const { error } = await authClient.organization.setActive({ organizationId: orgId })
@@ -227,10 +334,121 @@ export function AppHeader() {
         </AnimatePresence>
 
         {/* Bell */}
-        <button className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-accent" />
-        </button>
+        <div className="relative" ref={notificationsRef}>
+          <button
+            onClick={() => setNotificationsOpen((v) => !v)}
+            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200 cursor-pointer"
+          >
+            <Bell className="h-4 w-4" />
+            {effectiveUnread > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-accent px-1 text-[10px] font-bold leading-4 text-accent-foreground text-center">
+                {effectiveUnread > 9 ? "9+" : effectiveUnread}
+              </span>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {notificationsOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                transition={{ duration: 0.2, ease }}
+                className="absolute right-0 top-full mt-2 w-[380px] max-w-[calc(100vw-24px)] rounded-xl border border-border bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+              >
+                <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
+                  <div>
+                    <p className="text-[12px] font-semibold text-foreground">Notificações</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {effectiveUnread > 0 ? `${effectiveUnread} não lidas` : "Tudo em dia"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => void markAllAsRead()}
+                      className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    >
+                      Marcar todas
+                    </button>
+                    <button
+                      onClick={() => setNotificationsOpen(false)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 px-2 py-2 border-b border-border overflow-x-auto">
+                  {[
+                    { id: "all", label: "Todas" },
+                    { id: "critical", label: "Críticas" },
+                    { id: "payments", label: "Pagamentos" },
+                    { id: "agenda", label: "Agenda" },
+                    { id: "automations", label: "Automações" },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setNotifFilter(f.id as typeof notifFilter)}
+                      className={`shrink-0 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
+                        notifFilter === f.id
+                          ? "bg-accent/15 text-accent"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="max-h-[380px] overflow-y-auto p-1.5">
+                  {!notificationsEnabled && (
+                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/60 text-center">
+                      Notificações desativadas nas configurações do tenant.
+                    </p>
+                  )}
+
+                  {notificationsEnabled && filteredNotifications.length === 0 && (
+                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/60 text-center">
+                      Nenhuma notificação nesse filtro.
+                    </p>
+                  )}
+
+                  {notificationsEnabled &&
+                    filteredNotifications.map((n) => (
+                      <button
+                        key={n.id}
+                        onClick={() => void handleNotificationClick(n)}
+                        className={`w-full rounded-lg px-2.5 py-2 text-left transition-colors cursor-pointer ${
+                          n.read
+                            ? "hover:bg-muted/30"
+                            : "bg-accent/5 hover:bg-accent/10"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          {toastIcon(n.severity)}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-[12px] font-semibold text-foreground truncate">{n.title}</p>
+                              {!n.read && (
+                                <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground/80 line-clamp-2 mt-0.5">{n.body}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="text-[10px] font-mono text-muted-foreground/40">{n.type}</span>
+                              <span className="text-[10px] text-muted-foreground/30">·</span>
+                              <span className="text-[10px] text-muted-foreground/40">{formatRelative(n.createdAt)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Help */}
         <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200">

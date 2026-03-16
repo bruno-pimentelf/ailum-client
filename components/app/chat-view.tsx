@@ -19,10 +19,12 @@ import {
   ChatCircleText,
   Phone,
   ArrowCounterClockwise,
+  ArrowBendUpLeft,
   BookmarkSimple,
   Archive,
   DotsThree,
   Smiley,
+  Quotes,
   Star,
   Warning,
   Clock,
@@ -217,11 +219,25 @@ function RecordingIndicator({ seconds }: { seconds: number }) {
 
 type AnyMessage = FirestoreMessage | OptimisticMessage
 
-function MessageBubble({ msg, animate }: { msg: AnyMessage; animate?: boolean }) {
+function MessageBubble({
+  msg,
+  animate,
+  quotedText,
+  onReply,
+  onReact,
+}: {
+  msg: AnyMessage
+  animate?: boolean
+  quotedText?: string | null
+  onReply?: (m: FirestoreMessage) => void
+  onReact?: (m: FirestoreMessage, reaction: string) => void
+}) {
   const isPending = "_optimistic" in msg && msg._optimistic
   const isMe = msg.role === "OPERATOR" || msg.role === "AGENT"
   const isAgent = msg.role === "AGENT"
   const time = formatTime(msg.createdAt)
+  const canReplyOrReact = !isPending && !!msg.zapiMessageId
+  const REACTIONS = ["❤️", "👍", "🙏", "😂"] as const
 
   const bubbleCls = `max-w-[72%] rounded-2xl px-4 py-2.5 transition-opacity duration-300 ${
     isPending ? "opacity-60" : "opacity-100"
@@ -412,12 +428,52 @@ function MessageBubble({ msg, animate }: { msg: AnyMessage; animate?: boolean })
           <Robot className="h-3.5 w-3.5 text-accent" weight="fill" />
         </div>
       )}
-      <div className={bubbleCls}>
+      <div className={`group relative ${bubbleCls}`}>
+        {quotedText && (
+          <div className={`mb-2 rounded-lg border px-2.5 py-1.5 ${
+            isMe
+              ? "border-accent/25 bg-accent/8"
+              : "border-border/50 bg-muted/25"
+          }`}>
+            <div className="flex items-center gap-1.5">
+              <Quotes className="h-3 w-3 text-muted-foreground/50" />
+              <span className="text-[10px] text-muted-foreground/60">Resposta</span>
+            </div>
+            <p className="mt-0.5 text-[11px] text-muted-foreground/75 line-clamp-2">{quotedText}</p>
+          </div>
+        )}
         {content}
         <div className={`mt-1 flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}>
           <span className="text-[10px] text-muted-foreground/40">{time}</span>
           {isMe && <MessageTick status={msg.status} pending={isPending} />}
         </div>
+        {canReplyOrReact && (
+          <div className={`absolute -top-2 ${isMe ? "left-0 -translate-x-[calc(100%+8px)]" : "right-0 translate-x-[calc(100%+8px)]"} opacity-0 group-hover:opacity-100 transition-opacity`}>
+            <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-popover/95 backdrop-blur px-1 py-1 shadow-lg shadow-black/20">
+              <button
+                type="button"
+                onClick={() => onReply?.(msg as FirestoreMessage)}
+                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted/40 transition-colors"
+                title="Responder"
+              >
+                <ArrowBendUpLeft className="h-3.5 w-3.5" />
+              </button>
+              {REACTIONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => onReact?.(msg as FirestoreMessage, r)}
+                  className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-[12px] hover:bg-muted/40 transition-colors"
+                  title={`Reagir com ${r}`}
+                >
+                  {r}
+                </button>
+              ))}
+              <div className="h-4 w-px bg-border/70 mx-0.5" />
+              <Smiley className="h-3.5 w-3.5 text-muted-foreground/40 mx-1" />
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   )
@@ -464,6 +520,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [attachment, setAttachment] = useState<PendingAttachment | null>(null)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
+  const [replyTo, setReplyTo] = useState<FirestoreMessage | null>(null)
 
   // Optimistic messages — keyed by a local temp ID, removed when Firestore confirms
   const [optimisticMsgs, setOptimisticMsgs] = useState<OptimisticMessage[]>([])
@@ -506,6 +563,29 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     ...messages,
     ...optimisticMsgs.filter((opt) => !messages.some((m) => m.content === opt.content && m.role === "OPERATOR")),
   ]
+
+  const messageById = useRef(new Map<string, AnyMessage>())
+  const messageByZapi = useRef(new Map<string, AnyMessage>())
+  useEffect(() => {
+    const byId = new Map<string, AnyMessage>()
+    const byZapi = new Map<string, AnyMessage>()
+    for (const m of allMessages) {
+      byId.set(m.id, m)
+      if (m.zapiMessageId) byZapi.set(m.zapiMessageId, m)
+    }
+    messageById.current = byId
+    messageByZapi.current = byZapi
+  }, [allMessages])
+
+  const previewText = useCallback((m: AnyMessage | null | undefined) => {
+    if (!m) return ""
+    if (m.type === "TEXT") return m.content || "Mensagem"
+    if (m.type === "IMAGE") return "📷 Imagem"
+    if (m.type === "AUDIO") return "🎤 Áudio"
+    if (m.type === "DOCUMENT") return "📄 Documento"
+    if (m.type === "PIX_CHARGE") return "💳 Cobrança PIX"
+    return m.content || "Mensagem"
+  }, [])
 
   // Mark as read when chat is opened
   useEffect(() => {
@@ -551,6 +631,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     setInputValue("")
     setAttachment(null)
     setAttachMenuOpen(false)
+    setReplyTo(null)
     setErrorMsg(null)
     setOptimisticMsgs([])
     stopRecording(false)
@@ -587,7 +668,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     optimisticContent: string,
     restoreText?: string,
   ) => {
-    if (!contact.id) { showError("Contato não encontrado"); return }
+    if (!contact.id) { showError("Contato não encontrado"); return false }
 
     // Instant optimistic bubble
     const type = payload.type === "TEXT" ? "TEXT"
@@ -600,14 +681,43 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       await sendMessage(contact.id, payload)
       setAttachment(null)
       setAttachMenuOpen(false)
+      return true
     } catch (err) {
       // Remove the ghost on failure
       setOptimisticMsgs((prev) => prev.filter((m) => m.id !== tempId))
       const msg = err instanceof Error ? err.message : "Falha ao enviar mensagem"
       showError(msg)
       if (restoreText) setInputValue(restoreText)
+      return false
     }
   }, [contact.id, addOptimistic])
+
+  const handleReplyMessage = useCallback((m: FirestoreMessage) => {
+    if (!m.zapiMessageId) {
+      showError("Essa mensagem ainda não pode ser usada para resposta")
+      return
+    }
+    setReplyTo(m)
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }, [])
+
+  const handleReactToMessage = useCallback(async (m: FirestoreMessage, reaction: string) => {
+    if (!contact.id) return
+    if (!m.zapiMessageId) {
+      showError("Essa mensagem ainda não pode receber reação")
+      return
+    }
+    try {
+      await sendMessage(contact.id, {
+        type: "REACTION",
+        reaction,
+        replyToZapiMessageId: m.zapiMessageId,
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao reagir"
+      showError(msg)
+    }
+  }, [contact.id])
 
   // ── Send text ───────────────────────────────────────────────────────────────
 
@@ -640,8 +750,17 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     setInputValue("")
     // Keep focus on the input so the user can type the next message immediately
     requestAnimationFrame(() => inputRef.current?.focus())
-    await doSend({ type: "TEXT", text }, text, text)
-  }, [attachment, inputValue, doSend])
+    const ok = await doSend(
+      {
+        type: "TEXT",
+        text,
+        replyToZapiMessageId: replyTo?.zapiMessageId,
+      },
+      text,
+      text,
+    )
+    if (ok) setReplyTo(null)
+  }, [attachment, inputValue, doSend, replyTo?.zapiMessageId])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -798,9 +917,22 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           </div>
         )}
 
-        {allMessages.map((msg, i) => (
-          <MessageBubble key={msg.id} msg={msg} animate={i >= allMessages.length - 1} />
-        ))}
+        {allMessages.map((msg, i) => {
+          const refId = msg.referenceMessageId
+          const refMsg = refId
+            ? (messageById.current.get(refId) ?? messageByZapi.current.get(refId) ?? null)
+            : null
+          return (
+            <MessageBubble
+              key={msg.id}
+              msg={msg}
+              animate={i >= allMessages.length - 1}
+              quotedText={previewText(refMsg)}
+              onReply={handleReplyMessage}
+              onReact={handleReactToMessage}
+            />
+          )
+        })}
 
         <AnimatePresence>
           {contactTyping && <TypingIndicator key="ct" label="digitando" />}
@@ -812,6 +944,33 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
 
       {/* ── Input area ── */}
       <div className="shrink-0 border-t border-border">
+        <AnimatePresence>
+          {replyTo && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              className="mx-4 mt-2 rounded-lg border border-accent/20 bg-accent/8 px-3 py-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-accent">Respondendo</p>
+                  <p className="text-[11px] text-foreground/80 truncate">
+                    {previewText(replyTo)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReplyTo(null)}
+                  className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted/30 transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Attachment preview */}
         <AnimatePresence>

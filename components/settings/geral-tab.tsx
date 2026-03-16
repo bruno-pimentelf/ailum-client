@@ -11,12 +11,25 @@ import {
   Check,
   ArrowsClockwise,
   Warning,
+  Bell,
 } from "@phosphor-icons/react"
 import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
 import { uploadTenantLogo } from "@/lib/firebase"
 
 const inputCls = "w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-colors disabled:opacity-50"
 const labelCls = "block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
+const NOTIFICATION_TYPE_OPTIONS = [
+  "integration.whatsapp.disconnected",
+  "trigger.failed",
+  "guardrail.violation",
+  "payment.paid",
+  "payment.overdue",
+  "appointment.created",
+  "appointment.cancelled",
+  "appointment.rescheduled",
+  "slot_recall.sent",
+]
+const ROLE_OPTIONS = ["ADMIN", "SECRETARY", "PROFESSIONAL"]
 
 export function GeralTab() {
   const { data: tenant, isLoading, error } = useTenant()
@@ -31,6 +44,10 @@ export function GeralTab() {
     phone: "", email: "", website: "",
     addressStreet: "", addressNumber: "", addressComplement: "",
     addressNeighborhood: "", addressCity: "", addressState: "", addressZip: "",
+    notificationsEnabled: true,
+    notificationTypes: [] as string[],
+    notificationDigestMinutes: 15,
+    notificationRoles: [] as string[],
   })
 
   useEffect(() => {
@@ -49,11 +66,25 @@ export function GeralTab() {
       addressCity:         tenant.addressCity ?? "",
       addressState:        tenant.addressState ?? "",
       addressZip:          tenant.addressZip ?? "",
+      notificationsEnabled: tenant.notificationsEnabled ?? true,
+      notificationTypes: tenant.notificationTypes ?? [],
+      notificationDigestMinutes: tenant.notificationDigestMinutes ?? 15,
+      notificationRoles: tenant.notificationRoles ?? [],
     })
   }, [tenant])
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((prev) => ({ ...prev, [k]: e.target.value }))
+
+  const toggleArray = (key: "notificationTypes" | "notificationRoles", value: string) => {
+    setForm((prev) => {
+      const has = prev[key].includes(value)
+      return {
+        ...prev,
+        [key]: has ? prev[key].filter((v) => v !== value) : [...prev[key], value],
+      }
+    })
+  }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -97,6 +128,10 @@ export function GeralTab() {
         addressCity:         form.addressCity || undefined,
         addressState:        form.addressState || undefined,
         addressZip:          form.addressZip || undefined,
+        notificationsEnabled: form.notificationsEnabled,
+        notificationTypes: form.notificationTypes,
+        notificationDigestMinutes: Math.max(1, Number(form.notificationDigestMinutes) || 15),
+        notificationRoles: form.notificationRoles,
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
@@ -245,6 +280,98 @@ export function GeralTab() {
             <div>
               <label className={labelCls}>Website</label>
               <input type="url" value={form.website} onChange={set("website")} placeholder="https://..." className={inputCls} />
+            </div>
+          </div>
+        </div>
+
+        {/* Notificações */}
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-muted-foreground" weight="duotone" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Notificações</span>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/15 px-3 py-2.5">
+            <div>
+              <p className="text-[12px] font-medium text-foreground">Ativar notificações do tenant</p>
+              <p className="text-[11px] text-muted-foreground/60">Controla bell, feed e toasts em tempo real</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.notificationsEnabled}
+              onClick={() => setForm((p) => ({ ...p, notificationsEnabled: !p.notificationsEnabled }))}
+              className={`relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors cursor-pointer ${
+                form.notificationsEnabled ? "border-accent bg-accent/20" : "border-border bg-muted/30"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full transition-all ${
+                  form.notificationsEnabled ? "left-6 bg-accent" : "left-0.5 bg-muted-foreground/50"
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Tipos habilitados</label>
+              <div className="space-y-1.5 rounded-lg border border-border/40 bg-muted/10 p-2.5 max-h-52 overflow-y-auto">
+                {NOTIFICATION_TYPE_OPTIONS.map((type) => {
+                  const checked = form.notificationTypes.includes(type)
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => toggleArray("notificationTypes", type)}
+                      className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] transition-colors cursor-pointer ${
+                        checked
+                          ? "bg-accent/15 text-accent"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className={labelCls}>Digest (minutos)</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.notificationDigestMinutes}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, notificationDigestMinutes: Number(e.target.value || 15) }))
+                  }
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Roles (preparação)</label>
+                <div className="space-y-1.5 rounded-lg border border-border/40 bg-muted/10 p-2.5">
+                  {ROLE_OPTIONS.map((role) => {
+                    const checked = form.notificationRoles.includes(role)
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => toggleArray("notificationRoles", role)}
+                        className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] transition-colors cursor-pointer ${
+                          checked
+                            ? "bg-accent/15 text-accent"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
+                        }`}
+                      >
+                        {role}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>

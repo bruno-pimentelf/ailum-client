@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api"
 // ─── Send message ─────────────────────────────────────────────────────────────
 
 export type SendMessageInput =
-  | { type: "TEXT"; text: string }
+  | { type: "TEXT"; text: string; replyToZapiMessageId?: string }
   | { type: "IMAGE"; mediaUrl: string; caption?: string }
   | { type: "AUDIO"; mediaUrl: string }
   | { type: "VIDEO"; mediaUrl: string; caption?: string }

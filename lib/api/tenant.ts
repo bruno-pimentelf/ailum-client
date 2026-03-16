@@ -21,6 +21,10 @@ export interface Tenant {
   guardrailRules: string | null
   isAgentEnabledForWhatsApp?: boolean
   isSlotRecallEnabled?: boolean
+  notificationsEnabled?: boolean
+  notificationTypes?: string[]
+  notificationDigestMinutes?: number
+  notificationRoles?: string[]
   createdAt: string
 }
 
@@ -44,6 +48,10 @@ export type TenantUpdateInput = Partial<
     | "guardrailRules"
     | "isAgentEnabledForWhatsApp"
     | "isSlotRecallEnabled"
+    | "notificationsEnabled"
+    | "notificationTypes"
+    | "notificationDigestMinutes"
+    | "notificationRoles"
   >
 >
 

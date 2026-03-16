@@ -64,6 +64,9 @@ export interface FirestoreMessage {
   createdAt: Timestamp
   status?: "SENT" | "RECEIVED" | "READ" | "PLAYED"
   updatedAt?: Timestamp
+  // New WhatsApp integration fields for reply/reaction
+  zapiMessageId?: string
+  referenceMessageId?: string
   metadata?: {
     // IMAGE
     imageUrl?: string
