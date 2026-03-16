@@ -1,7 +1,6 @@
 "use client"
 
 import { Suspense, useState } from "react"
-import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Eye, EyeSlash, Sparkle, CheckCircle } from "@phosphor-icons/react"
@@ -219,16 +218,6 @@ function LoginContent() {
                   </span>
                 </Button>
 
-                {/* Sign up link */}
-                <p className="mt-2 text-center text-[12px] text-muted-foreground">
-                  Não tem uma conta?{" "}
-                  <Link
-                    href={callbackUrl ? `/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/sign-up"}
-                    className="text-accent hover:text-accent/80 font-medium transition-colors duration-200"
-                  >
-                    Criar conta
-                  </Link>
-                </p>
               </form>
             </motion.div>
           ) : (
