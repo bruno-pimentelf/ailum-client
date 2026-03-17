@@ -6,6 +6,7 @@ export interface Member {
   id: string          // memberId
   userId: string
   role: MemberRole
+  professionalId: string | null
   isActive: boolean
   joinedAt: string
   professional: {
