@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, memo, useCallback } from "react"
+import { useEffect, useState, memo, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   WhatsappLogo,
@@ -198,6 +198,8 @@ export const HeroDashboard = memo(function HeroDashboard() {
   const [scenarioIdx, setScenarioIdx] = useState(0)
   const [visibleMsgs, setVisibleMsgs] = useState(0)
   const [typing, setTyping] = useState(false)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
+  const actionsScrollRef = useRef<HTMLDivElement>(null)
 
   const scenario = SCENARIOS[scenarioIdx]
 
@@ -232,6 +234,24 @@ export const HeroDashboard = memo(function HeroDashboard() {
 
   const messages = scenario.chat.slice(0, visibleMsgs)
 
+  const scrollToBottom = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: "smooth",
+    })
+  }, [])
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => scrollToBottom(chatScrollRef.current))
+    return () => cancelAnimationFrame(raf)
+  }, [messages.length, typing, scenarioIdx, scrollToBottom])
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => scrollToBottom(actionsScrollRef.current))
+    return () => cancelAnimationFrame(raf)
+  }, [visibleActions.length, scenarioIdx, scrollToBottom])
+
   return (
     <div className="relative w-full overflow-hidden h-[760px] sm:h-[700px] md:h-[480px]">
       <div className="grid h-full grid-cols-1 grid-rows-2 gap-6 md:grid-cols-2 md:grid-rows-1 md:gap-14">
@@ -245,7 +265,10 @@ export const HeroDashboard = memo(function HeroDashboard() {
             </span>
           </div>
 
-          <div className="flex min-h-0 flex-col gap-3 overflow-hidden md:gap-3.5">
+          <div
+            ref={chatScrollRef}
+            className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1 md:gap-3.5"
+          >
             <AnimatePresence initial={false}>
               {messages.map((msg, i) => (
                 <motion.div
@@ -306,7 +329,10 @@ export const HeroDashboard = memo(function HeroDashboard() {
             </span>
           </div>
 
-          <div className="flex min-h-0 flex-col gap-2.5 overflow-hidden md:gap-3">
+          <div
+            ref={actionsScrollRef}
+            className="flex min-h-0 flex-col gap-2.5 overflow-y-auto pr-1 md:gap-3"
+          >
             <AnimatePresence initial={false}>
               {visibleActions.map((action, i) => (
                 <motion.div
