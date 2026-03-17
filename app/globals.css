@@ -306,3 +306,23 @@
   color: rgba(255, 255, 255, 0.88);
   font-weight: 800;
 }
+
+/* ── CTA button shimmer ─────────────────────────────────────────────────── */
+@keyframes cta-shimmer {
+  0%   { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(260%)  skewX(-12deg); }
+}
+.cta-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+  animation: cta-shimmer 4.8s ease-in-out infinite;
+  border-radius: inherit;
+  pointer-events: none;
+}

@@ -81,7 +81,7 @@ export function Testimonials() {
           </div>
 
           {/* Quote text */}
-          <div className="relative h-[10rem] md:h-[8rem] w-full flex items-center justify-center">
+          <div className="relative w-full flex items-center justify-center min-h-[6rem] sm:min-h-[8rem]">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.blockquote
                 key={active}
@@ -91,9 +91,9 @@ export function Testimonials() {
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.6, ease }}
-                className="absolute text-center"
+                className="text-center w-full"
               >
-                <p className="font-display text-xl md:text-2xl lg:text-[1.65rem] font-medium tracking-tight leading-[1.35] text-white/75 max-w-2xl mx-auto">
+                <p className="font-display text-lg sm:text-xl md:text-2xl lg:text-[1.65rem] font-medium tracking-tight leading-[1.35] text-white/75 max-w-2xl mx-auto">
                   &ldquo;{quotes[active].text}&rdquo;
                 </p>
               </motion.blockquote>

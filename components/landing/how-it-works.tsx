@@ -187,7 +187,7 @@ function StepPix({ active, t }: { active: boolean; t: ReturnType<typeof useLangu
             </motion.div>
           )}
           {(phase === "qr" || phase === "waiting" || phase === "paid") && (
-            <motion.div key="qr" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease }} className="flex gap-6 items-start">
+            <motion.div key="qr" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease }} className="flex flex-col sm:flex-row gap-5 sm:gap-6 items-center sm:items-start">
               <div className="relative shrink-0 p-3 rounded-xl bg-zinc-950 border border-accent/20">
                 <QRPattern />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -288,8 +288,8 @@ function StepCalendar({ active, t }: { active: boolean; t: ReturnType<typeof use
           )}
         </AnimatePresence>
       </div>
-      <div className="p-4 flex flex-col gap-0.5">
-        <div className="grid grid-cols-4 gap-px mb-2 pl-10">
+      <div className="p-3 sm:p-4 flex flex-col gap-0.5 overflow-x-auto">
+        <div className="grid grid-cols-4 gap-px mb-2 pl-8 sm:pl-10 min-w-[260px]">
           {t.howItWorks.calDays.map((d,i) => (
             <div key={d} className={`text-center text-[9px] font-medium py-1 rounded-sm ${i===3 ? "text-accent bg-accent/8" : "text-muted-foreground/40"}`}>{d}</div>
           ))}
@@ -298,8 +298,8 @@ function StepCalendar({ active, t }: { active: boolean; t: ReturnType<typeof use
           const isScanning = phase === "scanning" && scanRow === rowIdx
           const isTarget = time === "10:00"
           return (
-            <div key={time} className={`flex items-center gap-2 h-11 rounded-md transition-colors duration-150 ${isScanning ? "bg-accent/[0.04]" : ""}`}>
-              <span className="w-9 text-[9px] text-muted-foreground/40 font-mono shrink-0 text-right">{time}</span>
+            <div key={time} className={`flex items-center gap-1.5 sm:gap-2 h-10 sm:h-11 rounded-md transition-colors duration-150 min-w-[260px] ${isScanning ? "bg-accent/[0.04]" : ""}`}>
+              <span className="w-8 sm:w-9 text-[9px] text-muted-foreground/40 font-mono shrink-0 text-right">{time}</span>
               <div className="flex-1 grid grid-cols-4 gap-px h-full">
                 {[0,1,2,3].map(col => {
                   const apt = existingApts.find(a => a.time === time && a.col === col)
@@ -470,7 +470,7 @@ export function HowItWorks() {
         </FadeIn>
 
         {/* Step selector tabs */}
-        <div className="grid grid-cols-3 gap-3 mb-12">
+        <div className="grid grid-cols-1 gap-3 mb-12 sm:grid-cols-3">
           {steps.map((step, i) => {
             const Icon = step.icon
             const isActive = i === activeStep

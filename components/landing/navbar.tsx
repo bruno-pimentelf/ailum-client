@@ -80,6 +80,7 @@ export function Navbar() {
                 <button
                   className="group flex items-center gap-1.5 h-8 px-2.5 rounded-full text-white/40 hover:text-white/70 transition-all duration-300 focus:outline-none"
                   aria-label="Select language"
+                  suppressHydrationWarning
                 >
                   <div className="relative h-4 w-5 rounded-sm overflow-hidden shrink-0 ring-1 ring-white/10">
                     <Image
@@ -132,10 +133,10 @@ export function Navbar() {
               href="https://form.typeform.com/to/d4xLz0DX"
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative flex items-center gap-2 h-9 rounded-full bg-white px-5 text-[13px] font-semibold text-zinc-950 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/90 active:scale-[0.97]"
+              className="cta-shimmer group relative overflow-hidden flex items-center gap-2 h-9 rounded-full border border-white/10 bg-white/[0.04] px-4 text-[13px] font-semibold text-white/75 shadow-[0_0_12px_rgba(0,181,212,0.05)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-accent/25 hover:bg-accent/[0.07] hover:text-white hover:shadow-[0_0_20px_rgba(0,181,212,0.12)] active:scale-[0.97]"
             >
               <span>{t.nav.aplicarSe}</span>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-950/10 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white/50 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105 group-hover:border-accent/20 group-hover:text-accent">
                 <ArrowUpRight className="h-3 w-3" />
               </span>
             </a>
@@ -244,7 +245,7 @@ export function Navbar() {
                   href="https://form.typeform.com/to/d4xLz0DX"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 h-12 w-full rounded-full bg-white text-zinc-950 text-base font-semibold transition-all duration-300 active:scale-[0.97]"
+                  className="cta-shimmer relative overflow-hidden flex items-center justify-center gap-2 h-12 w-full rounded-full border border-accent/30 bg-accent/[0.08] text-white text-base font-semibold shadow-[0_0_24px_rgba(0,181,212,0.12)] transition-all duration-300 active:scale-[0.97]"
                   onClick={() => setMobileOpen(false)}
                 >
                   {t.nav.aplicarSe}

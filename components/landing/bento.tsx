@@ -379,10 +379,10 @@ function AgendaAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLa
   const total = visibleData.reduce((s, d) => s + d.agendamentos, 0)
 
   return (
-    /* Fixed height matching col-span-3 card */
-    <div className="h-[200px] flex gap-4 items-stretch">
+    /* Responsive: stacks on mobile, side-by-side on sm+ */
+    <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-stretch sm:h-[200px]">
       {/* Chart panel */}
-      <div className="flex-1 min-w-0 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 pt-3 pb-2 flex flex-col">
+      <div className="flex-1 min-w-0 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 pt-3 pb-2 flex flex-col h-[160px] sm:h-auto">
         <div className="flex items-center justify-between mb-2 shrink-0">
           <div>
             <span className="text-[9px] text-white/25 uppercase tracking-wider">{t.bento.chartLabel}</span>
@@ -410,7 +410,7 @@ function AgendaAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLa
           </AnimatePresence>
         </div>
         <div className="flex-1 min-h-0">
-          <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
+          <ChartContainer id="bento-agenda" config={chartConfig} className="h-full w-full aspect-auto">
             <AreaChart data={visibleData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
               <defs>
                 <linearGradient id="fillAgend" x1="0" y1="0" x2="0" y2="1">
@@ -439,15 +439,15 @@ function AgendaAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLa
         </div>
       </div>
 
-      {/* Metric pills — fixed width, fixed height rows */}
-      <div className="flex flex-col gap-2 w-[110px] shrink-0">
+      {/* Metric pills — row on mobile, column on sm+ */}
+      <div className="flex flex-row gap-2 sm:flex-col sm:w-[110px] sm:shrink-0">
         {metrics.map((m, i) => (
           <motion.div
             key={m.label}
             initial={{ opacity: 0, x: 8 }}
             animate={metricsVisible ? { opacity: 1, x: 0 } : { opacity: 0, x: 8 }}
             transition={{ duration: 0.35, delay: i * 0.1, ease }}
-            className="flex-1 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 flex flex-col justify-center"
+            className="flex-1 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:py-0 flex flex-col justify-center"
           >
             <p className={`text-[17px] font-bold tabular-nums leading-none ${m.color}`}>{m.value}</p>
             <p className="text-[9px] text-white/25 mt-1.5 leading-tight">{m.label}</p>

@@ -15,7 +15,7 @@ export function Footer() {
   return (
     <footer className="border-t border-white/[0.04]">
       <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
-        <div className="grid grid-cols-2 gap-10 md:grid-cols-5 md:gap-8">
+        <div className="grid grid-cols-2 gap-8 sm:gap-10 md:grid-cols-5 md:gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-flex items-center">
@@ -23,7 +23,7 @@ export function Footer() {
                 AILUM
               </span>
             </Link>
-            <p className="mt-5 max-w-[220px] text-[13px] leading-relaxed text-white/25">
+            <p className="mt-5 text-[13px] leading-relaxed text-white/25 max-w-[220px] md:max-w-none">
               {t.footer.tagline}
             </p>
           </div>

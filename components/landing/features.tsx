@@ -50,9 +50,9 @@ export function Features() {
   ]
 
   return (
-    <section id="recursos" className="py-28 md:py-40">
+    <section id="recursos" className="py-20 md:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <FadeIn className="max-w-lg mb-24">
+        <FadeIn className="max-w-lg mb-16 md:mb-20">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
             {t.features.platforma}
           </p>
@@ -62,7 +62,7 @@ export function Features() {
           </h2>
         </FadeIn>
 
-        <div className="flex flex-col gap-32 md:gap-40">
+        <div className="flex flex-col gap-20 md:gap-28 lg:gap-36">
           {featureSections.map((section) => (
             <div
               key={section.tag}

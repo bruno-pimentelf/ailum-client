@@ -20,125 +20,186 @@ import { useLanguage } from "@/components/providers/language-provider"
 
 const ease = [0.32, 0.72, 0, 1] as const
 
+/* ── Step badge ─────────────────────────────────────────────────────────── */
+function StepBadge({ n }: { n: number }) {
+  return (
+    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-[9px] font-bold tabular-nums text-white/30">
+      {n}
+    </div>
+  )
+}
+
+/*
+ * Wider, more spread-out zigzag layout (460px wide × 560px tall).
+ *
+ *   Card 1 (WhatsApp)  — top: 0,    left: 0,    w: 260,  h ≈ 132
+ *   Card 2 (Pix)       — top: 200,  left: 196,  w: 210,  h ≈ 106
+ *   Card 3 (Confirmed) — top: 374,  left: 24,   w: 260,  h ≈  94
+ *
+ *   Arrow 1→2: bottom-right of Card1 → top-left of Card2 (elegant S-curve)
+ *   Arrow 2→3: bottom-left of Card2  → top-right of Card3 (mirror S-curve)
+ */
 function HeroCards({ parallaxX, parallaxY }: { parallaxX: any; parallaxY: any }) {
-  const p2x = useTransform(parallaxX, (v: number) => v * 0.7)
-  const p2y = useTransform(parallaxY, (v: number) => v * 1.3)
-  const p3x = useTransform(parallaxX, (v: number) => v * 1.2)
-  const p3y = useTransform(parallaxY, (v: number) => v * 0.6)
+  const p2x = useTransform(parallaxX, (v: number) => v * 0.6)
+  const p2y = useTransform(parallaxY, (v: number) => v * 1.2)
+  const p3x = useTransform(parallaxX, (v: number) => v * 1.1)
+  const p3y = useTransform(parallaxY, (v: number) => v * 0.7)
 
   return (
-    <div className="relative w-full h-[480px]">
+    <div className="relative w-[460px] select-none" style={{ height: 560 }}>
       {/* Ambient glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] h-[360px] bg-accent/[0.06] rounded-full blur-[120px]" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-accent/[0.04] rounded-full blur-[120px]" />
 
-      {/* Card 1: WhatsApp conversation */}
+      {/* ── SVG connectors ────────────────────────────────────────────────── */}
+      <svg
+        className="pointer-events-none absolute inset-0 w-full h-full z-[5]"
+        viewBox="0 0 460 560"
+        fill="none"
+      >
+        {/* Arrow 1 → 2
+            Card1 bottom-center: (130, 136)  →  Card2 top-center: (301, 200)
+            Smooth S-curve through the gap */}
+        <path
+          d="M 130 136 C 130 162, 301 170, 301 200"
+          stroke="rgba(255,255,255,0.20)"
+          strokeWidth="1"
+          strokeDasharray="3 5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M 295 194 L 301 200 L 307 194"
+          stroke="rgba(255,255,255,0.30)"
+          strokeWidth="1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Arrow 2 → 3
+            Card2 bottom-center: (301, 306)  →  Card3 top-center: (154, 374)
+            Smooth S-curve through the gap */}
+        <path
+          d="M 301 306 C 301 336, 154 340, 154 374"
+          stroke="rgba(255,255,255,0.20)"
+          strokeWidth="1"
+          strokeDasharray="3 5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M 148 368 L 154 374 L 160 368"
+          stroke="rgba(255,255,255,0.30)"
+          strokeWidth="1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+
+      {/* ── Card 1: WhatsApp conversation ────────────────────────────────── */}
       <motion.div
-        className="absolute top-0 left-0 w-[296px] z-20"
         style={{ x: parallaxX, y: parallaxY }}
-        animate={{ y: [0, -9, 0] }}
-        transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-0 left-0 w-[260px] z-20"
       >
-        {/* Double-bezel outer ring */}
-        <div className="rounded-[1.375rem] bg-white/[0.015] p-px ring-1 ring-white/[0.07] shadow-[0_32px_80px_-20px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.03)_inset]">
-          <div className="rounded-[1.3rem] bg-zinc-950/80 backdrop-blur-2xl overflow-hidden">
-            {/* Top bar */}
-            <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-white/[0.04]">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/20">
-                <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400" weight="fill" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-white/60 leading-none">Clínica Harmonia</p>
-                <p className="text-[9px] text-emerald-400/60 mt-0.5 leading-none">IA ativa · online agora</p>
-              </div>
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-400/70 animate-pulse" />
-            </div>
-            {/* Messages */}
-            <div className="px-4 py-3.5 space-y-2">
-              <div className="flex justify-start">
-                <div className="bg-white/[0.05] rounded-2xl rounded-tl-sm px-3 py-2 max-w-[85%]">
-                  <p className="text-[11px] text-white/50 leading-relaxed">
-                    Oi! Quero marcar uma consulta com a Dra. Marina
-                  </p>
+        <motion.div
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <div className="rounded-[1.25rem] bg-white/[0.015] p-px ring-1 ring-white/[0.07] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
+            <div className="rounded-[calc(1.25rem-1px)] bg-zinc-950/90 backdrop-blur-2xl overflow-hidden">
+              <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2.5 border-b border-white/[0.04]">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/20">
+                  <WhatsappLogo className="h-3 w-3 text-emerald-400" weight="fill" />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-white/55 leading-none">Clínica Harmonia</p>
+                  <p className="text-[8px] text-emerald-400/50 mt-0.5 leading-none">IA ativa</p>
+                </div>
+                <StepBadge n={1} />
               </div>
-              <div className="flex justify-end">
-                <div className="bg-accent/[0.12] rounded-2xl rounded-tr-sm px-3 py-2 max-w-[88%] ring-1 ring-accent/[0.08]">
-                  <p className="text-[11px] text-white/65 leading-relaxed">
-                    Quinta às 10h está livre. Envio o Pix agora para confirmar.
-                  </p>
+              <div className="px-3.5 py-2.5 space-y-1.5">
+                <div className="flex justify-start">
+                  <div className="bg-white/[0.05] rounded-2xl rounded-tl-sm px-3 py-2 max-w-[88%]">
+                    <p className="text-[10px] text-white/45 leading-relaxed">Quero marcar com a Dra. Marina</p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <div className="bg-accent/[0.08] rounded-2xl rounded-tr-sm px-3 py-2 max-w-[90%] ring-1 ring-accent/[0.06]">
+                    <p className="text-[10px] text-white/55 leading-relaxed">Quinta às 10h livre. Envio o Pix.</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
 
-      {/* Card 2: Pix received */}
+      {/* ── Card 2: Pix received ─────────────────────────────────────────── */}
       <motion.div
-        className="absolute top-[195px] right-0 w-[220px] z-30"
         style={{ x: p2x, y: p2y }}
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+        className="absolute top-[200px] left-[196px] w-[210px] z-30"
       >
-        <div className="rounded-[1.375rem] bg-white/[0.015] p-px ring-1 ring-emerald-500/[0.12] shadow-[0_32px_80px_-20px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.03)_inset]">
-          <div className="rounded-[1.3rem] bg-zinc-950/80 backdrop-blur-2xl px-5 py-4">
-            {/* Status row */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/20">
-                <CheckCircle className="h-3 w-3 text-emerald-400" weight="fill" />
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+        >
+          <div className="rounded-[1.25rem] bg-white/[0.015] p-px ring-1 ring-emerald-500/[0.10] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
+            <div className="rounded-[calc(1.25rem-1px)] bg-zinc-950/90 backdrop-blur-2xl px-4 py-3">
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/20">
+                    <CheckCircle className="h-2.5 w-2.5 text-emerald-400" weight="fill" />
+                  </div>
+                  <span className="text-[8px] font-semibold tracking-wider text-emerald-400/70 uppercase">Pix recebido</span>
+                </div>
+                <StepBadge n={2} />
               </div>
-              <span className="text-[10px] font-semibold tracking-wide text-emerald-400/80 uppercase">Pix recebido</span>
+              <p className="font-display text-[1.5rem] font-bold tracking-[-0.04em] leading-none text-white/80">
+                R$&thinsp;150
+                <span className="text-[0.85rem] font-normal text-white/20">,00</span>
+              </p>
+              <div className="mt-2 h-px bg-white/[0.04]" />
+              <p className="mt-1.5 text-[8px] text-white/18 leading-snug">Horário bloqueado</p>
             </div>
-            {/* Amount */}
-            <p className="font-display text-[2rem] font-bold tracking-[-0.04em] leading-none text-white/85">
-              R$&thinsp;150
-              <span className="text-[1rem] font-normal text-white/20">,00</span>
-            </p>
-            {/* Divider */}
-            <div className="my-3 h-px bg-white/[0.05]" />
-            <p className="text-[10px] text-white/25 leading-snug">Horário bloqueado automaticamente</p>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
 
-      {/* Card 3: Appointment confirmed */}
+      {/* ── Card 3: Appointment confirmed ───────────────────────────────── */}
       <motion.div
-        className="absolute bottom-0 left-4 w-[268px] z-10"
         style={{ x: p3x, y: p3y }}
-        animate={{ y: [0, -7, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        className="absolute top-[374px] left-[24px] w-[260px] z-10"
       >
-        <div className="rounded-[1.375rem] bg-white/[0.015] p-px ring-1 ring-white/[0.07] shadow-[0_32px_80px_-20px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.03)_inset]">
-          <div className="rounded-[1.3rem] bg-zinc-950/80 backdrop-blur-2xl px-5 py-4">
-            {/* Header row */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <CalendarCheck className="h-3.5 w-3.5 text-accent/50" weight="fill" />
-                <span className="text-[10px] font-medium text-white/30 tracking-wide">Qui, 13 Março</span>
-              </div>
-              <span className="font-mono text-[11px] text-accent/60 tabular-nums">10:00</span>
-            </div>
-            {/* Doctor row */}
-            <div className="flex items-center gap-3">
-              <div className="relative shrink-0">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 ring-1 ring-accent/20 flex items-center justify-center">
-                  <span className="text-[11px] font-bold text-accent/80">DM</span>
+        <motion.div
+          animate={{ y: [0, -5, 0] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        >
+          <div className="rounded-[1.25rem] bg-white/[0.015] p-px ring-1 ring-white/[0.07] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
+            <div className="rounded-[calc(1.25rem-1px)] bg-zinc-950/90 backdrop-blur-2xl px-4 py-3">
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-2">
+                  <CalendarCheck className="h-3 w-3 text-accent/45" weight="fill" />
+                  <span className="text-[9px] font-medium text-white/25 tracking-wide">Qui, 13 Mar · 10:00</span>
                 </div>
-                {/* Online dot */}
-                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-zinc-950 flex items-center justify-center">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <StepBadge n={3} />
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="relative shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 ring-1 ring-accent/20 flex items-center justify-center">
+                    <span className="text-[9px] font-bold text-accent/75">DM</span>
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-zinc-950 flex items-center justify-center">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-white/70 leading-none">Dra. Marina</p>
-                <p className="text-[10px] text-white/25 mt-1 leading-none">Dermatologia</p>
-              </div>
-              <div className="shrink-0 rounded-full bg-emerald-500/8 px-2.5 py-1 ring-1 ring-emerald-500/15">
-                <span className="text-[9px] font-semibold text-emerald-400/80 tracking-wide">Confirmada</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold text-white/65 leading-none">Dra. Marina</p>
+                  <p className="text-[9px] text-white/25 mt-0.5 leading-none">Dermatologia</p>
+                </div>
+                <div className="shrink-0 rounded-full bg-emerald-500/[0.06] px-2 py-0.5 ring-1 ring-emerald-500/12">
+                  <span className="text-[8px] font-semibold text-emerald-400/70 tracking-wide">Confirmada</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   )
@@ -186,7 +247,7 @@ export function Hero() {
   }, [mouseX, mouseY])
 
   return (
-    <section ref={containerRef} className="relative overflow-hidden pt-32 pb-8 md:pt-44 md:pb-16">
+    <section ref={containerRef} className="relative overflow-hidden pt-28 pb-8 md:pt-44 md:pb-16">
       {/* Ambient glow orbs */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <motion.div
@@ -197,16 +258,16 @@ export function Hero() {
           <motion.div
             animate={isMobile ? undefined : { y: [0, -20, 0], scale: [1, 1.05, 1] }}
             transition={isMobile ? undefined : { duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute left-[15%] top-0 -translate-y-1/2"
+            className="absolute left-[5%] top-0 -translate-y-1/2"
           >
-            <div className="h-[50rem] w-[50rem] rounded-full bg-accent/5 blur-[140px]" />
+            <div className="h-[30rem] w-[30rem] md:h-[50rem] md:w-[50rem] rounded-full bg-accent/5 blur-[120px] md:blur-[140px]" />
           </motion.div>
           <motion.div
             animate={isMobile ? undefined : { y: [0, 15, 0] }}
             transition={isMobile ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute right-[5%] top-[20%]"
+            className="absolute right-[0%] top-[20%]"
           >
-            <div className="h-[30rem] w-[30rem] rounded-full bg-cyan-400/3 blur-[100px]" />
+            <div className="h-[20rem] w-[20rem] md:h-[30rem] md:w-[30rem] rounded-full bg-cyan-400/3 blur-[80px] md:blur-[100px]" />
           </motion.div>
         </motion.div>
       </div>
@@ -216,7 +277,7 @@ export function Hero() {
         className="relative mx-auto max-w-7xl px-6"
       >
         {/* Grid: text left, floating cards right */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-start lg:justify-items-center lg:pt-8">
           {/* Left: Content */}
           <div className="max-w-xl">
             {/* Eyebrow pill */}
@@ -242,7 +303,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 32, filter: "blur(8px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 1, delay: 0.2, ease }}
-              className="font-display text-[clamp(2.5rem,6vw,4.5rem)] font-bold tracking-[-0.04em] leading-[0.95]"
+              className="font-display text-[clamp(1.9rem,5vw,4rem)] font-bold tracking-[-0.04em] leading-[1.05]"
             >
               <span className="text-foreground">{t.hero.headline}</span>
               <br />
@@ -270,10 +331,10 @@ export function Hero() {
                 href="https://form.typeform.com/to/d4xLz0DX"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative inline-flex items-center gap-3 h-14 rounded-full bg-white pl-7 pr-2 text-[15px] font-semibold text-zinc-950 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:shadow-[0_0_40px_rgba(0,181,212,0.15)] active:scale-[0.97]"
+                className="cta-shimmer group relative overflow-hidden inline-flex items-center gap-3 h-14 rounded-full border border-white/10 bg-white/[0.04] pl-7 pr-2 text-[15px] font-semibold text-white/80 shadow-[0_0_20px_rgba(0,181,212,0.06)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-accent/25 hover:bg-accent/[0.07] hover:text-white hover:shadow-[0_0_28px_rgba(0,181,212,0.12)] active:scale-[0.97]"
               >
                 <span>{t.hero.aplicarSe}</span>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-950/10 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105 group-hover:bg-zinc-950/15">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white/60 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105 group-hover:border-accent/20 group-hover:text-accent">
                   <ArrowUpRight className="h-4 w-4" weight="bold" />
                 </span>
               </a>
@@ -299,25 +360,14 @@ export function Hero() {
           </motion.div>
         </div>
 
-        {/* Full-width dashboard showcase below */}
+        {/* Floating AI demo below */}
         <motion.div
-          initial={{ opacity: 0, y: 56, filter: "blur(16px)" }}
+          initial={{ opacity: 0, y: 40, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 1.4, delay: 0.9, ease }}
-          className="relative mt-20 md:mt-28"
+          transition={{ duration: 1.2, delay: 0.9, ease }}
+          className="relative mt-16 md:mt-24"
         >
-          {/* Outer double-bezel frame */}
-          <div className="rounded-[2rem] bg-white/[0.015] p-1.5 ring-1 ring-white/[0.06] shadow-[0_32px_80px_-20px_rgba(0,0,0,0.6)]">
-            <div
-              className="relative overflow-hidden rounded-[calc(2rem-0.375rem)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
-              style={{
-                maskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
-              }}
-            >
-              <HeroDashboard />
-            </div>
-          </div>
+          <HeroDashboard />
         </motion.div>
       </motion.div>
     </section>

@@ -15,13 +15,13 @@ export function Stats() {
   return (
     <section className="relative py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="grid grid-cols-2 gap-8 lg:grid-cols-4 lg:gap-0">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-0">
           {metrics.map((metric, i) => (
             <FadeIn key={metric.label} delay={i * 0.1}>
               <div
                 className={`flex flex-col items-center text-center px-4 py-6 lg:py-0 ${
                   i < metrics.length - 1
-                    ? "lg:border-r lg:border-white/[0.06]"
+                    ? "md:border-r md:border-white/[0.06]"
                     : ""
                 }`}
               >
