@@ -1,5 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { membersApi, type Member, type Invitation, type InviteInput, type UpdateRoleInput } from "@/lib/api/members"
+import {
+  membersApi,
+  type Member,
+  type Invitation,
+  type InviteInput,
+  type UpdateRoleInput,
+  type CreateAccountInput,
+} from "@/lib/api/members"
 
 const KEY = ["members"] as const
 const INVITATIONS_KEY = ["members", "invitations"] as const
@@ -24,6 +31,17 @@ export function useInviteMember() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: InviteInput) => membersApi.invite(body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY })
+      qc.invalidateQueries({ queryKey: INVITATIONS_KEY })
+    },
+  })
+}
+
+export function useCreateMemberAccount() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreateAccountInput) => membersApi.createAccount(body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEY })
       qc.invalidateQueries({ queryKey: INVITATIONS_KEY })

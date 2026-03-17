@@ -52,6 +52,25 @@ export interface UpdateRoleInput {
   professionalId?: string | null
 }
 
+export interface CreateAccountInput {
+  name: string
+  email: string
+  password: string
+  role: MemberRole
+  professionalId?: string
+}
+
+export interface CreateAccountResponse {
+  id: string
+  userId: string
+  email: string
+  name: string
+  role: MemberRole
+  professionalId: string | null
+  isActive: boolean
+  created: boolean
+}
+
 export const membersApi = {
   list: () => apiFetch<Member[]>("/members"),
 
@@ -62,6 +81,9 @@ export const membersApi = {
 
   updateRole: (memberId: string, body: UpdateRoleInput) =>
     apiFetch<Member>(`/members/${memberId}/role`, { method: "PATCH", body }),
+
+  createAccount: (body: CreateAccountInput) =>
+    apiFetch<CreateAccountResponse>("/members/create-account", { method: "POST", body }),
 
   remove: (memberId: string) =>
     apiFetch<void>(`/members/${memberId}`, { method: "DELETE" }),

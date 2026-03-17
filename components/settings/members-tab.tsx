@@ -17,9 +17,16 @@ import {
   Warning,
   ArrowsClockwise,
   X,
+  Key,
 } from "@phosphor-icons/react"
-import { useMembers, useInvitations, useInviteMember, useUpdateMemberRole, useRemoveMember } from "@/hooks/use-members"
-import type { Member as ApiMember, MemberRole, Invitation } from "@/lib/api/members"
+import {
+  useMembers,
+  useCreateMemberAccount,
+  useUpdateMemberRole,
+  useRemoveMember,
+} from "@/hooks/use-members"
+import { useProfessionals } from "@/hooks/use-professionals"
+import type { Member as ApiMember, MemberRole } from "@/lib/api/members"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -31,41 +38,55 @@ export const ROLE_CFG: Record<MemberRole, { label: string; icon: React.ElementTy
   SECRETARY:    { label: "Secretária",    icon: IdentificationCard, bg: "bg-amber-500/10",  border: "border-amber-500/25",  text: "text-amber-300"  },
 }
 
-const STATUS_CFG: Record<Invitation["status"], { label: string; bg: string; border: string; text: string }> = {
-  pending:  { label: "Pendente",  bg: "bg-amber-500/10",  border: "border-amber-500/25",  text: "text-amber-400" },
-  accepted: { label: "Aceito",    bg: "bg-emerald-500/10", border: "border-emerald-500/25", text: "text-emerald-400" },
-  expired:  { label: "Expirado",  bg: "bg-white/5",       border: "border-white/10",      text: "text-white/40" },
-}
-
 function roleLabel(r: string): string {
   return ROLE_CFG[r as MemberRole]?.label ?? r
 }
 
-function roleIcon(r: string): React.ElementType {
-  return ROLE_CFG[r as MemberRole]?.icon ?? IdentificationCard
+function hasProfessionalBadge(member: ApiMember): boolean {
+  return !!member.professionalId
 }
 
-// ── Invite Modal ───────────────────────────────────────────────────────────────
+// ── Create Account Modal ───────────────────────────────────────────────────────
 
-function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [role, setRole] = useState<MemberRole>("SECRETARY")
+  const [professionalId, setProfessionalId] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const invite = useInviteMember()
+  const createAccount = useCreateMemberAccount()
+  const { data: professionals } = useProfessionals()
 
   useEffect(() => {
-    if (open) { setEmail(""); setRole("SECRETARY"); setError(null) }
+    if (open) {
+      setName("")
+      setEmail("")
+      setPassword("")
+      setRole("SECRETARY")
+      setProfessionalId("")
+      setError(null)
+    }
   }, [open])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!email.trim()) { setError("Informe o e-mail."); return }
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError("Preencha nome, e-mail e senha.")
+      return
+    }
     setError(null)
     try {
-      await invite.mutateAsync({ email: email.trim(), role })
+      await createAccount.mutateAsync({
+        name: name.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        role,
+        professionalId: role === "PROFESSIONAL" && professionalId ? professionalId : undefined,
+      })
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao enviar convite")
+      setError(err instanceof Error ? err.message : "Erro ao criar conta")
     }
   }
 
@@ -83,9 +104,9 @@ function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) 
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
-                  <Users className="h-4 w-4 text-accent" weight="duotone" />
+                  <Key className="h-4 w-4 text-accent" weight="duotone" />
                 </div>
-                <h2 className="text-[14px] font-semibold text-foreground">Convidar membro</h2>
+                <h2 className="text-[14px] font-semibold text-foreground">Criar conta de membro</h2>
               </div>
               <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors">
                 <X className="h-4 w-4" />
@@ -94,13 +115,35 @@ function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) 
 
             <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
               <div>
+                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Nome *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Maria Souza"
+                  autoFocus
+                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                />
+              </div>
+
+              <div>
                 <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">E-mail *</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="colaborador@clinica.com"
-                  autoFocus
+                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Senha *</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="SenhaForte123"
                   className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                 />
               </div>
@@ -125,6 +168,24 @@ function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) 
                 </div>
               </div>
 
+              {role === "PROFESSIONAL" && (
+                <div>
+                  <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Profissional (opcional)</label>
+                  <select
+                    value={professionalId}
+                    onChange={(e) => setProfessionalId(e.target.value)}
+                    className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                  >
+                    <option value="">Sem vínculo</option>
+                    {(professionals ?? []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.fullName} {p.specialty ? `· ${p.specialty}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <AnimatePresence>
                 {error && (
                   <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -139,12 +200,12 @@ function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) 
                 <button type="button" onClick={onClose} className="cursor-pointer flex-1 rounded-xl border border-border/60 py-2 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
                   Cancelar
                 </button>
-                <button type="submit" disabled={invite.isPending}
+                <button type="submit" disabled={createAccount.isPending}
                   className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-60">
-                  {invite.isPending
+                  {createAccount.isPending
                     ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} className="h-3.5 w-3.5 rounded-full border-2 border-accent-foreground/30 border-t-accent-foreground" />
                     : <Check className="h-3.5 w-3.5" weight="bold" />}
-                  {invite.isPending ? "Enviando..." : "Enviar convite"}
+                  {createAccount.isPending ? "Criando..." : "Criar conta"}
                 </button>
               </div>
             </form>
@@ -159,18 +220,30 @@ function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) 
 
 function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; open: boolean; onClose: () => void }) {
   const [role, setRole] = useState<MemberRole>("SECRETARY")
+  const [professionalId, setProfessionalId] = useState("")
   const [error, setError] = useState<string | null>(null)
   const updateRole = useUpdateMemberRole()
+  const { data: professionals } = useProfessionals()
 
   useEffect(() => {
-    if (member) { setRole(member.role); setError(null) }
+    if (member) {
+      setRole(member.role)
+      setProfessionalId(member.professional?.id ?? "")
+      setError(null)
+    }
   }, [member])
 
   async function handleSave() {
     if (!member) return
     setError(null)
     try {
-      await updateRole.mutateAsync({ memberId: member.id, body: { role } })
+      await updateRole.mutateAsync({
+        memberId: member.id,
+        body: {
+          role,
+          professionalId: role === "PROFESSIONAL" ? (professionalId || null) : null,
+        },
+      })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao alterar perfil")
@@ -217,6 +290,24 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
                 })}
               </div>
 
+              {role === "PROFESSIONAL" && (
+                <div>
+                  <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Profissional</label>
+                  <select
+                    value={professionalId}
+                    onChange={(e) => setProfessionalId(e.target.value)}
+                    className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                  >
+                    <option value="">Sem vínculo</option>
+                    {(professionals ?? []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.fullName} {p.specialty ? `· ${p.specialty}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <AnimatePresence>
                 {error && (
                   <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -231,7 +322,12 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
                 <button onClick={onClose} className="cursor-pointer flex-1 rounded-xl border border-border/60 py-2 text-[13px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
                   Cancelar
                 </button>
-                <button onClick={handleSave} disabled={updateRole.isPending || role === member.role}
+                <button
+                  onClick={handleSave}
+                  disabled={
+                    updateRole.isPending ||
+                    (role === member.role && professionalId === (member.professional?.id ?? ""))
+                  }
                   className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50">
                   {updateRole.isPending
                     ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} className="h-3.5 w-3.5 rounded-full border-2 border-accent-foreground/30 border-t-accent-foreground" />
@@ -255,6 +351,7 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
   const removeMember = useRemoveMember()
 
   const cfg = ROLE_CFG[member.role]
+  const showProfessionalBadge = hasProfessionalBadge(member)
   const Icon = cfg.icon
 
   const displayName = member.user?.name ?? member.professional?.fullName ?? member.user?.email ?? member.userId
@@ -292,9 +389,17 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
         )}
       </div>
 
-      <div className={`flex items-center gap-1 rounded-md border px-2 py-0.5 shrink-0 ${cfg.bg} ${cfg.border} ${cfg.text}`}>
-        <Icon className="h-3 w-3" weight="fill" />
-        <span className="text-[10px] font-bold">{cfg.label}</span>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <div className={`flex items-center gap-1 rounded-md border px-2 py-0.5 ${cfg.bg} ${cfg.border} ${cfg.text}`}>
+          <Icon className="h-3 w-3" weight="fill" />
+          <span className="text-[10px] font-bold">{cfg.label}</span>
+        </div>
+        {showProfessionalBadge && (
+          <div className="flex items-center gap-1 rounded-md border border-cyan-500/25 bg-cyan-500/10 px-2 py-0.5 text-cyan-300">
+            <Stethoscope className="h-3 w-3" weight="fill" />
+            <span className="text-[10px] font-bold">Profissional</span>
+          </div>
+        )}
       </div>
 
       <div className="relative shrink-0 w-6 flex justify-end">
@@ -332,44 +437,13 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
   )
 }
 
-// ── Invitation Card ────────────────────────────────────────────────────────────
-
-function InvitationCard({ inv, index }: { inv: Invitation; index: number }) {
-  const cfg = ROLE_CFG[inv.role as MemberRole] ?? { bg: "bg-white/5", border: "border-white/10", text: "text-white/50" }
-  const statusCfg = STATUS_CFG[inv.status]
-  const Icon = roleIcon(inv.role)
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.03, ease }}
-      className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 opacity-90"
-    >
-      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${cfg.bg} ${cfg.border} ${cfg.text}`}>
-        <Icon className="h-3.5 w-3.5" weight="regular" />
-      </div>
-      <div className="flex-1 min-w-0 py-0.5">
-        <p className="text-[12px] font-bold text-white/90 truncate">{inv.email}</p>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`text-[9px] font-bold rounded px-1.5 py-0.5 border ${statusCfg.bg} ${statusCfg.border} ${statusCfg.text}`}>
-            {statusCfg.label}
-          </span>
-          <span className="text-[10px] text-white/35">{roleLabel(inv.role)}</span>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
 // ── MembersTab ─────────────────────────────────────────────────────────────────
 
 export function MembersTab() {
   const { data: members, isLoading, error, refetch } = useMembers()
-  const { data: invitations } = useInvitations()
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<ApiRoleFilter>("all")
-  const [inviteOpen, setInviteOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
   const [editMember, setEditMember] = useState<ApiMember | null>(null)
 
   const filtered = (members ?? []).filter((m) => {
@@ -378,13 +452,16 @@ export function MembersTab() {
       || name.toLowerCase().includes(search.toLowerCase())
       || (m.user?.email ?? "").toLowerCase().includes(search.toLowerCase())
       || m.userId.toLowerCase().includes(search.toLowerCase())
-    const matchRole = roleFilter === "all" || m.role === roleFilter
+    const matchRole =
+      roleFilter === "all" ||
+      m.role === roleFilter ||
+      (roleFilter === "PROFESSIONAL" && hasProfessionalBadge(m))
     return matchSearch && matchRole
   })
 
   return (
     <>
-      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <CreateAccountModal open={createOpen} onClose={() => setCreateOpen(false)} />
       <EditRoleModal member={editMember} open={!!editMember} onClose={() => setEditMember(null)} />
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col gap-4">
@@ -412,9 +489,9 @@ export function MembersTab() {
                 </button>
               )
             })}
-            <button onClick={() => setInviteOpen(true)}
+            <button onClick={() => setCreateOpen(true)}
               className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-2.5 py-1.5 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all duration-150">
-              <Plus className="h-3 w-3" weight="bold" /> Convidar
+              <Plus className="h-3 w-3" weight="bold" /> Criar conta
             </button>
           </div>
         </div>
@@ -439,19 +516,6 @@ export function MembersTab() {
 
         {!isLoading && !error && (
           <div className="flex flex-col gap-6 w-full">
-            {/* Convites */}
-            {invitations && invitations.length > 0 && (
-              <div>
-                <h3 className="text-[11px] font-bold text-white/35 uppercase tracking-wider mb-2">Convites</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1">
-                  {invitations.map((inv, i) => (
-                    <InvitationCard key={inv.id} inv={inv} index={i} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Membros */}
             <div>
               <h3 className="text-[11px] font-bold text-white/35 uppercase tracking-wider mb-2">Membros</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
