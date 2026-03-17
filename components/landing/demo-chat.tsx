@@ -69,10 +69,10 @@ export function DemoChat() {
   }, [visibleMessages, isTyping])
 
   return (
-    <div ref={ref} className="w-full max-w-sm mx-auto">
+    <div ref={ref} className="mx-auto w-full max-w-sm">
       <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-foreground/[0.03]">
         {/* WhatsApp header */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-accent/[0.06] border-b border-border">
+        <div className="flex items-center gap-3 border-b border-border bg-accent/[0.06] px-3 py-3 sm:px-4">
           <div className="h-9 w-9 rounded-full bg-accent/15 flex items-center justify-center">
             <span className="text-xs font-semibold text-accent">CH</span>
           </div>
@@ -86,7 +86,7 @@ export function DemoChat() {
         </div>
 
         {/* Messages — fixed height to prevent layout shift */}
-        <div ref={scrollRef} className="flex flex-col gap-2.5 p-4 h-[340px] overflow-y-auto">
+        <div ref={scrollRef} className="flex h-[320px] flex-col gap-2.5 overflow-y-auto p-3 sm:h-[340px] sm:p-4">
           <AnimatePresence mode="popLayout">
             {messages.map((msg) =>
               visibleMessages.includes(msg.id) ? (
@@ -99,7 +99,7 @@ export function DemoChat() {
                   className={`flex ${msg.from === "patient" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${msg.from === "patient"
+                    className={`max-w-[85%] rounded-2xl px-3 py-2 sm:max-w-[80%] sm:px-3.5 sm:py-2.5 ${msg.from === "patient"
                       ? "bg-accent/10 text-foreground rounded-br-md"
                       : "bg-muted text-foreground rounded-bl-md"
                       } ${(msg as { type?: string }).type === "pix" ? "border border-accent/25" : ""}`}
@@ -112,7 +112,7 @@ export function DemoChat() {
                         <span className="text-[10px] font-semibold text-accent">{t.demo.pixPayment}</span>
                       </div>
                     )}
-                    <p className="text-[12px] leading-relaxed whitespace-pre-line">{msg.text}</p>
+                    <p className="whitespace-pre-line text-[11px] leading-relaxed sm:text-[12px]">{msg.text}</p>
                     <div className="flex items-center justify-end gap-1 mt-1.5">
                       <span className="text-[9px] text-muted-foreground">{msg.time}</span>
                       {msg.from === "patient" && <Checks className="h-3 w-3 text-accent/70" />}

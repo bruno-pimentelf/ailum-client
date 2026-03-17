@@ -114,8 +114,8 @@ function PixQR({ amount }: { amount: string }) {
   const cell = 3.5
   const size = 19 * cell
   return (
-    <div className="cta-shimmer relative overflow-hidden rounded-2xl border border-accent/15 bg-white/[0.02] p-4 shadow-[0_0_20px_rgba(0,181,212,0.08)] backdrop-blur-sm">
-      <div className="flex items-center gap-3">
+    <div className="cta-shimmer relative overflow-hidden rounded-2xl border border-accent/15 bg-white/[0.02] p-3 sm:p-4 shadow-[0_0_20px_rgba(0,181,212,0.08)] backdrop-blur-sm">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
         <div className="shrink-0 rounded-xl bg-zinc-950/60 p-2.5 ring-1 ring-accent/10">
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
             {pattern.map((row, r) =>
@@ -135,14 +135,14 @@ function PixQR({ amount }: { amount: string }) {
             )}
           </svg>
         </div>
-        <div className="flex flex-col gap-1.5 min-w-0">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex items-center gap-1.5">
             <CurrencyDollar className="h-3.5 w-3.5 text-emerald-400" weight="fill" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
               Pagamento via Pix
             </span>
           </div>
-          <p className="font-display text-xl font-bold tracking-tight text-white/90">
+          <p className="font-display text-lg font-bold tracking-tight text-white/90 sm:text-xl">
             {amount}
           </p>
           <p className="text-[10px] text-white/30">
@@ -233,19 +233,19 @@ export const HeroDashboard = memo(function HeroDashboard() {
   const messages = scenario.chat.slice(0, visibleMsgs)
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: 480 }}>
-      <div className="grid h-full grid-cols-2 gap-6 md:gap-14">
+    <div className="relative w-full overflow-hidden h-[760px] sm:h-[700px] md:h-[480px]">
+      <div className="grid h-full grid-cols-1 grid-rows-2 gap-6 md:grid-cols-2 md:grid-rows-1 md:gap-14">
 
         {/* ── Left column — WhatsApp chat ─────────────────────────────── */}
-        <div className="flex flex-col overflow-hidden">
-          <div className="flex items-center gap-2.5 mb-6">
+        <div className="flex min-h-0 flex-col overflow-hidden">
+          <div className="mb-4 flex items-center gap-2.5 md:mb-6">
             <WhatsappLogo className="h-4 w-4 text-emerald-400/70" weight="fill" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/35">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/35 md:text-[11px]">
               WhatsApp
             </span>
           </div>
 
-          <div className="flex flex-col gap-3.5 overflow-hidden">
+          <div className="flex min-h-0 flex-col gap-3 overflow-hidden md:gap-3.5">
             <AnimatePresence initial={false}>
               {messages.map((msg, i) => (
                 <motion.div
@@ -256,25 +256,25 @@ export const HeroDashboard = memo(function HeroDashboard() {
                   className={`flex ${msg.from === "ai" ? "justify-end" : "justify-start"}`}
                 >
                   {msg.type === "pix" ? (
-                    <div className="w-full max-w-[95%] ml-auto">
+                    <div className="ml-auto w-full max-w-[95%]">
                       <PixQR amount={msg.amount ?? "R$ 0,00"} />
                     </div>
                   ) : msg.from === "patient" ? (
-                    <div className="flex items-end gap-2.5 max-w-[92%]">
-                      <div className="h-7 w-7 shrink-0 rounded-full bg-white/[0.06] flex items-center justify-center ring-1 ring-white/[0.06]">
-                        <UserCircle className="h-4.5 w-4.5 text-white/50" weight="fill" />
+                    <div className="flex max-w-[96%] items-end gap-2 sm:max-w-[92%]">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] ring-1 ring-white/[0.06] sm:h-7 sm:w-7">
+                        <UserCircle className="h-4 w-4 text-white/50 sm:h-4.5 sm:w-4.5" weight="fill" />
                       </div>
-                      <div className="rounded-2xl rounded-bl-sm bg-white/[0.06] px-4 py-3 backdrop-blur-sm">
-                        <p className="text-[13px] text-white/75 leading-relaxed">{msg.text}</p>
+                      <div className="rounded-2xl rounded-bl-sm bg-white/[0.06] px-3 py-2.5 backdrop-blur-sm sm:px-4 sm:py-3">
+                        <p className="text-[12px] leading-relaxed text-white/75 sm:text-[13px]">{msg.text}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-end gap-2.5 max-w-[92%]">
-                      <div className="rounded-2xl rounded-br-sm bg-accent/[0.08] px-4 py-3 ring-1 ring-accent/[0.06] backdrop-blur-sm">
-                        <p className="text-[13px] text-white/85 leading-relaxed">{msg.text}</p>
+                    <div className="flex max-w-[96%] items-end gap-2 sm:max-w-[92%]">
+                      <div className="rounded-2xl rounded-br-sm bg-accent/[0.08] px-3 py-2.5 ring-1 ring-accent/[0.06] backdrop-blur-sm sm:px-4 sm:py-3">
+                        <p className="text-[12px] leading-relaxed text-white/85 sm:text-[13px]">{msg.text}</p>
                       </div>
-                      <div className="h-7 w-7 shrink-0 rounded-full bg-accent/[0.10] flex items-center justify-center ring-1 ring-accent/[0.08]">
-                        <Sparkle className="h-3.5 w-3.5 text-accent/60" weight="fill" />
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/[0.10] ring-1 ring-accent/[0.08] sm:h-7 sm:w-7">
+                        <Sparkle className="h-3 w-3 text-accent/60 sm:h-3.5 sm:w-3.5" weight="fill" />
                       </div>
                     </div>
                   )}
@@ -298,15 +298,15 @@ export const HeroDashboard = memo(function HeroDashboard() {
         </div>
 
         {/* ── Right column — AI actions ───────────────────────────────── */}
-        <div className="flex flex-col overflow-hidden">
-          <div className="flex items-center gap-2.5 mb-6">
+        <div className="flex min-h-0 flex-col overflow-hidden">
+          <div className="mb-4 flex items-center gap-2.5 md:mb-6">
             <Sparkle className="h-4 w-4 text-accent/60" weight="fill" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/35">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/35 md:text-[11px]">
               Ações da IA
             </span>
           </div>
 
-          <div className="flex flex-col gap-3 overflow-hidden">
+          <div className="flex min-h-0 flex-col gap-2.5 overflow-hidden md:gap-3">
             <AnimatePresence initial={false}>
               {visibleActions.map((action, i) => (
                 <motion.div
@@ -314,14 +314,14 @@ export const HeroDashboard = memo(function HeroDashboard() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ ...actionTransition, delay: 0.1 }}
-                  className="flex items-center gap-3.5 rounded-xl bg-white/[0.03] px-4 py-3 backdrop-blur-sm"
+                  className="flex items-center gap-3 rounded-xl bg-white/[0.03] px-3 py-2.5 backdrop-blur-sm sm:gap-3.5 sm:px-4 sm:py-3"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.04] ring-1 ring-white/[0.06]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.04] ring-1 ring-white/[0.06] sm:h-9 sm:w-9">
                     <ActionIcon type={action.icon} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-white/75 leading-none">{action.label}</p>
-                    <p className="text-[11px] text-white/35 mt-1 leading-none">{action.detail}</p>
+                    <p className="text-[12px] font-medium leading-none text-white/75 sm:text-[13px]">{action.label}</p>
+                    <p className="mt-1 text-[10px] leading-none text-white/35 sm:text-[11px]">{action.detail}</p>
                   </div>
                   <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400/50" weight="fill" />
                 </motion.div>

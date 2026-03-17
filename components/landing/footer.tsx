@@ -14,8 +14,8 @@ export function Footer() {
 
   return (
     <footer className="border-t border-white/[0.04]">
-      <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
-        <div className="grid grid-cols-2 gap-8 sm:gap-10 md:grid-cols-5 md:gap-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-14 md:py-20">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-10 md:grid-cols-5 md:gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-flex items-center">

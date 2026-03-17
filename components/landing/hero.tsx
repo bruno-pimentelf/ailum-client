@@ -274,18 +274,18 @@ export function Hero() {
 
       <motion.div
         style={isMobile ? undefined : { scale: heroScale }}
-        className="relative mx-auto max-w-7xl px-6"
+        className="relative mx-auto max-w-7xl px-4 sm:px-6"
       >
         {/* Grid: text left, floating cards right */}
         <div className="grid grid-cols-1 gap-12 items-start lg:grid-cols-[minmax(0,560px)_minmax(0,460px)] lg:justify-center lg:gap-10 lg:pt-8">
           {/* Left: Content */}
-          <div className="w-full max-w-[560px]">
+          <div className="w-full max-w-[560px] text-center lg:text-left">
             {/* Eyebrow pill */}
             <motion.div
               initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 0.8, delay: 0.1, ease }}
-              className="mb-8"
+              className="mb-8 flex justify-center lg:justify-start"
             >
               <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                 <span className="relative flex h-1.5 w-1.5">
@@ -315,7 +315,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 24, filter: "blur(6px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 0.9, delay: 0.45, ease }}
-              className="mt-7 max-w-md text-[16px] leading-relaxed text-white/35"
+              className="mt-7 mx-auto max-w-md text-[15px] leading-relaxed text-white/35 lg:mx-0 lg:text-[16px]"
             >
               {t.hero.subheadline}
             </motion.p>
@@ -325,13 +325,13 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.65, ease }}
-              className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center"
+              className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center lg:justify-start"
             >
               <a
                 href="https://form.typeform.com/to/d4xLz0DX"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="cta-shimmer group relative overflow-hidden inline-flex items-center gap-3 h-14 rounded-full border border-white/10 bg-white/[0.04] pl-7 pr-2 text-[15px] font-semibold text-white/80 shadow-[0_0_20px_rgba(0,181,212,0.06)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-accent/25 hover:bg-accent/[0.07] hover:text-white hover:shadow-[0_0_28px_rgba(0,181,212,0.12)] active:scale-[0.97]"
+                className="cta-shimmer group relative overflow-hidden inline-flex w-full items-center justify-center gap-3 h-14 rounded-full border border-white/10 bg-white/[0.04] pl-7 pr-2 text-[15px] font-semibold text-white/80 shadow-[0_0_20px_rgba(0,181,212,0.06)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-accent/25 hover:bg-accent/[0.07] hover:text-white hover:shadow-[0_0_28px_rgba(0,181,212,0.12)] active:scale-[0.97] sm:w-auto sm:justify-start"
               >
                 <span>{t.hero.aplicarSe}</span>
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white/60 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105 group-hover:border-accent/20 group-hover:text-accent">
@@ -341,7 +341,7 @@ export function Hero() {
 
               <a
                 href="#como-funciona"
-                className="group inline-flex items-center gap-2 px-6 py-3.5 text-[15px] font-medium text-white/40 hover:text-white/70 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 text-[15px] font-medium text-white/40 hover:text-white/70 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
               >
                 <span>{t.hero.verComoFunciona}</span>
                 <ArrowDown className="h-3.5 w-3.5 transition-transform duration-500 group-hover:translate-y-0.5" />

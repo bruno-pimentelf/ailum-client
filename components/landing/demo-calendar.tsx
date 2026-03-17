@@ -80,12 +80,12 @@ export function DemoCalendar() {
     <div ref={ref} className="w-full">
       <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-foreground/[0.03]">
         {/* Calendar header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+        <div className="flex flex-col gap-2 border-b border-border px-3 py-3 sm:px-5 sm:py-3 md:flex-row md:items-center md:justify-between">
           <p className="text-xs font-medium text-foreground">{t.demo.calMonth}</p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 md:overflow-visible md:pb-0">
             <button
               onClick={() => setActiveDoctor("todos")}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-300 ${activeDoctor === "todos"
+              className={`shrink-0 rounded-md px-2.5 py-1 text-[10px] font-medium transition-all duration-300 ${activeDoctor === "todos"
                 ? "bg-foreground text-background"
                 : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -96,7 +96,7 @@ export function DemoCalendar() {
               <button
                 key={doc.id}
                 onClick={() => setActiveDoctor(doc.id)}
-                className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-300 ${activeDoctor === doc.id
+                className={`shrink-0 rounded-md px-2.5 py-1 text-[10px] font-medium transition-all duration-300 ${activeDoctor === doc.id
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:text-foreground"
                   }`}
@@ -108,7 +108,7 @@ export function DemoCalendar() {
         </div>
 
         {/* AI creating toast */}
-        <div className="relative h-7 border-b border-border bg-muted/30">
+        <div className="relative min-h-8 border-b border-border bg-muted/30">
           <AnimatePresence mode="wait">
             {creatingId ? (
               <motion.div
@@ -117,10 +117,10 @@ export function DemoCalendar() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
                 transition={{ duration: 0.3, ease }}
-                className="absolute inset-0 flex items-center justify-center gap-2"
+                className="absolute inset-0 flex items-center justify-center gap-1.5 px-2 text-center"
               >
                 <Sparkle className="h-3 w-3 text-accent animate-pulse" />
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[9px] text-muted-foreground sm:text-[10px]">
                   {t.demo.calPixFrom}{" "}
                   <span className="font-medium text-foreground">
                     {appointmentSequence.find((a) => a.id === creatingId)?.patient}
@@ -135,10 +135,10 @@ export function DemoCalendar() {
                 key="idle"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="absolute inset-0 flex items-center justify-center gap-2"
+                className="absolute inset-0 flex items-center justify-center gap-1.5 px-2 text-center"
               >
                 <Robot className="h-3 w-3 text-accent" />
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[9px] text-muted-foreground sm:text-[10px]">
                   {visibleAppointments.length} {visibleAppointments.length === 1 ? t.demo.calConfirmed : t.demo.calConfirmedPlural} {t.demo.calToday}
                 </span>
               </motion.div>
@@ -147,66 +147,71 @@ export function DemoCalendar() {
         </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-5 border-b border-border">
-          {days.map((day, i) => (
-            <div key={day} className={`flex flex-col items-center py-2.5 ${i === 2 ? "bg-accent/[0.04]" : ""}`}>
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wider">{day}</span>
-              <span className={`text-sm font-medium mt-0.5 ${i === 2 ? "text-accent" : "text-foreground"}`}>
-                {dates[i]}
-              </span>
+        <div className="overflow-x-auto">
+          <div className="min-w-[520px]">
+            {/* Day headers */}
+            <div className="grid grid-cols-5 border-b border-border">
+              {days.map((day, i) => (
+                <div key={day} className={`flex flex-col items-center py-2.5 ${i === 2 ? "bg-accent/[0.04]" : ""}`}>
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-wider">{day}</span>
+                  <span className={`text-sm font-medium mt-0.5 ${i === 2 ? "text-accent" : "text-foreground"}`}>
+                    {dates[i]}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Time grid */}
-        <div className="flex flex-col">
-          {timeSlots.map((time) => {
-            const apt = filteredAppointments.find((a) => a.time === time)
-            return (
-              <div key={time} className="grid grid-cols-5 border-b border-border/50 last:border-b-0">
-                {days.map((_, dayIndex) => (
-                  <div
-                    key={dayIndex}
-                    className={`relative h-11 px-1 py-0.5 ${dayIndex === 2 ? "bg-accent/[0.02]" : ""} ${dayIndex === 0 ? "flex items-center" : ""}`}
-                  >
-                    {dayIndex === 0 && (
-                      <span className="text-[9px] text-muted-foreground/50 pl-1 tabular-nums">{time}</span>
-                    )}
-                    {dayIndex === 2 && apt && (
-                      <AnimatePresence>
-                        {visibleAppointments.includes(apt.id) && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.85, y: 6 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            transition={{ duration: 0.6, ease }}
-                            className={`absolute inset-x-0.5 inset-y-0.5 rounded-lg border ${apt.color} flex flex-col justify-center px-2`}
-                          >
-                            <span className={`text-[9px] font-medium truncate ${apt.textColor}`}>{apt.patient}</span>
-                            <span className={`text-[7px] truncate ${apt.textColor} opacity-60`}>{apt.type}</span>
-                          </motion.div>
+            {/* Time grid */}
+            <div className="flex flex-col">
+              {timeSlots.map((time) => {
+                const apt = filteredAppointments.find((a) => a.time === time)
+                return (
+                  <div key={time} className="grid grid-cols-5 border-b border-border/50 last:border-b-0">
+                    {days.map((_, dayIndex) => (
+                      <div
+                        key={dayIndex}
+                        className={`relative h-11 px-1 py-0.5 ${dayIndex === 2 ? "bg-accent/[0.02]" : ""} ${dayIndex === 0 ? "flex items-center" : ""}`}
+                      >
+                        {dayIndex === 0 && (
+                          <span className="text-[9px] text-muted-foreground/50 pl-1 tabular-nums">{time}</span>
                         )}
-                        {creatingId === apt.id && !visibleAppointments.includes(apt.id) && (
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-x-0.5 inset-y-0.5 rounded-lg border border-dashed border-accent/30 bg-accent/[0.04] flex items-center justify-center"
-                          >
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                            >
-                              <Sparkle className="h-3 w-3 text-accent/50" />
-                            </motion.div>
-                          </motion.div>
+                        {dayIndex === 2 && apt && (
+                          <AnimatePresence>
+                            {visibleAppointments.includes(apt.id) && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.85, y: 6 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                transition={{ duration: 0.6, ease }}
+                                className={`absolute inset-x-0.5 inset-y-0.5 rounded-lg border ${apt.color} flex flex-col justify-center px-2`}
+                              >
+                                <span className={`text-[9px] font-medium truncate ${apt.textColor}`}>{apt.patient}</span>
+                                <span className={`text-[7px] truncate ${apt.textColor} opacity-60`}>{apt.type}</span>
+                              </motion.div>
+                            )}
+                            {creatingId === apt.id && !visibleAppointments.includes(apt.id) && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-x-0.5 inset-y-0.5 rounded-lg border border-dashed border-accent/30 bg-accent/[0.04] flex items-center justify-center"
+                              >
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                >
+                                  <Sparkle className="h-3 w-3 text-accent/50" />
+                                </motion.div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         )}
-                      </AnimatePresence>
-                    )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>
