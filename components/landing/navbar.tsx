@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { motion, AnimatePresence } from "framer-motion"
-import { List, X, CaretDown, Check } from "@phosphor-icons/react"
+import { motion, AnimatePresence, useMotionValueEvent, useScroll } from "framer-motion"
+import { List, X, CaretDown, Check, ArrowUpRight } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -23,187 +23,238 @@ const navItems = [
   { key: "produto" as const, href: "#produto" },
   { key: "comoFunciona" as const, href: "#como-funciona" },
   { key: "recursos" as const, href: "#recursos" },
-  { key: "listaEspera" as const, href: "#waitlist" },
 ]
+
+const spring = { type: "spring" as const, stiffness: 400, damping: 30 }
+const ease = [0.32, 0.72, 0, 1] as const
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { t, locale, setLocale } = useLanguage()
+  const { scrollY } = useScroll()
+  const [scrolled, setScrolled] = useState(false)
+
+  useMotionValueEvent(scrollY, "change", (v) => {
+    setScrolled(v > 40)
+  })
 
   return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
-      className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-2xl border-b border-border/50"
-    >
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 h-14">
-        <Link href="/" className="flex items-center group">
-          <span
-            className="text-lg font-bold tracking-[0.35em] text-foreground transition-opacity duration-300 group-hover:opacity-80"
-            style={{ fontFamily: "'Inter', sans-serif" }}
-          >
-            A I L U M
-          </span>
-        </Link>
+    <>
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease }}
+        className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4 md:pt-5"
+      >
+        <nav
+          className={`flex items-center gap-1 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            scrolled
+              ? "rounded-full border border-white/[0.08] bg-zinc-950/70 backdrop-blur-2xl px-2 py-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)]"
+              : "rounded-full border border-transparent bg-transparent px-2 py-1.5"
+          }`}
+        >
+          {/* Logo */}
+          <Link href="/" className="flex items-center px-3 py-1.5 group">
+            <span className="text-sm font-display font-bold tracking-[0.3em] text-foreground transition-opacity duration-300 group-hover:opacity-70">
+              AILUM
+            </span>
+          </Link>
 
-        <div className="hidden items-center gap-8 md:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              className="relative text-[13px] text-muted-foreground transition-colors duration-300 hover:text-foreground group"
-            >
-              {t.nav[item.key]}
-              {/* Animated underline */}
-              <span className="absolute -bottom-0.5 left-0 h-px w-0 bg-accent transition-all duration-300 group-hover:w-full" />
-            </Link>
-          ))}
-        </div>
-
-        <div className="hidden items-center gap-3 md:flex">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="group flex items-center gap-2 h-9 pl-2.5 pr-2 rounded-xl border border-border/80 bg-card/40 text-foreground hover:bg-card/70 hover:border-accent/30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:ring-offset-2 focus:ring-offset-background data-[state=open]:border-accent/40 data-[state=open]:bg-card/80"
-                aria-label="Select language"
+          {/* Desktop nav links */}
+          <div className="hidden items-center md:flex">
+            {navItems.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                className="relative px-4 py-2 text-[13px] font-medium text-white/40 transition-colors duration-300 hover:text-white/80"
               >
-                <div className="relative h-5 w-6 rounded overflow-hidden shrink-0 ring-1 ring-black/5">
-                  <Image
-                    src={locale === "pt" ? "/brasil.png" : "/usa.webp"}
-                    alt={locale === "pt" ? "Brasil" : "USA"}
-                    fill
-                    className="object-cover"
-                    sizes="24px"
-                  />
-                </div>
-                <span className="text-[12px] font-medium">{locales.find((l) => l.code === locale)?.label}</span>
-                <CaretDown className="h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[160px] p-1.5 rounded-xl border-border/80 bg-card/95 backdrop-blur-xl shadow-xl shadow-black/10">
-              {locales.map((loc) => (
-                <DropdownMenuItem
-                  key={loc.code}
-                  onClick={() => setLocale(loc.code)}
-                  className="flex items-center gap-3 h-10 px-3 rounded-lg cursor-pointer focus:bg-accent/10 focus:text-accent-foreground data-[highlighted]:bg-accent/10"
+                {t.nav[item.key]}
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop right side */}
+          <div className="hidden items-center gap-1.5 ml-2 md:flex">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="group flex items-center gap-1.5 h-8 px-2.5 rounded-full text-white/40 hover:text-white/70 transition-all duration-300 focus:outline-none"
+                  aria-label="Select language"
                 >
-                  <div className="relative h-5 w-6 rounded overflow-hidden shrink-0 ring-1 ring-black/5">
+                  <div className="relative h-4 w-5 rounded-sm overflow-hidden shrink-0 ring-1 ring-white/10">
                     <Image
-                      src={loc.flag}
-                      alt={loc.alt}
+                      src={locale === "pt" ? "/brasil.png" : "/usa.webp"}
+                      alt={locale === "pt" ? "Brasil" : "USA"}
                       fill
                       className="object-cover"
-                      sizes="24px"
+                      sizes="20px"
                     />
                   </div>
-                  <span className="flex-1 text-[13px] font-medium">{loc.label}</span>
-                  {locale === loc.code && (
-                    <Check className="h-3.5 w-3.5 text-accent shrink-0" weight="bold" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="ghost" size="sm" asChild className="text-[13px] text-muted-foreground hover:text-foreground hover:bg-transparent h-8 transition-all duration-300">
-            <a href="/login">{t.nav.entrar}</a>
-          </Button>
-          <Button size="sm" asChild className="group relative h-8 rounded-lg bg-accent px-4 text-[13px] font-medium text-accent-foreground hover:bg-accent/90 transition-all duration-300 overflow-hidden">
-            <a href="https://form.typeform.com/to/d4xLz0DX" target="_blank" rel="noopener noreferrer">
-              <motion.span
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
-                animate={{ x: ['-100%', '200%'] }}
-                transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 4, ease: "easeInOut" }}
-              />
-              <span className="relative z-10">{t.nav.aplicarSe}</span>
+                  <CaretDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="min-w-[160px] p-1.5 rounded-2xl border-white/[0.08] bg-zinc-950/95 backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.5)]"
+              >
+                {locales.map((loc) => (
+                  <DropdownMenuItem
+                    key={loc.code}
+                    onClick={() => setLocale(loc.code)}
+                    className="flex items-center gap-3 h-10 px-3 rounded-xl cursor-pointer focus:bg-white/[0.05]"
+                  >
+                    <div className="relative h-4 w-5 rounded-sm overflow-hidden shrink-0 ring-1 ring-white/10">
+                      <Image
+                        src={loc.flag}
+                        alt={loc.alt}
+                        fill
+                        className="object-cover"
+                        sizes="20px"
+                      />
+                    </div>
+                    <span className="flex-1 text-[13px] font-medium text-white/70">{loc.label}</span>
+                    {locale === loc.code && (
+                      <Check className="h-3.5 w-3.5 text-accent shrink-0" weight="bold" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Link
+              href="/login"
+              className="px-4 py-2 text-[13px] font-medium text-white/40 hover:text-white/80 transition-colors duration-300"
+            >
+              {t.nav.entrar}
+            </Link>
+
+            <a
+              href="https://form.typeform.com/to/d4xLz0DX"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex items-center gap-2 h-9 rounded-full bg-white px-5 text-[13px] font-semibold text-zinc-950 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/90 active:scale-[0.97]"
+            >
+              <span>{t.nav.aplicarSe}</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-950/10 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105">
+                <ArrowUpRight className="h-3 w-3" />
+              </span>
             </a>
-          </Button>
-        </div>
+          </div>
 
-        <button
-          className="md:hidden text-foreground"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? t.nav.fecharMenu : t.nav.abrirMenu}
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <List className="h-5 w-5" />}
-        </button>
-      </nav>
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden flex items-center justify-center h-9 w-9 rounded-full text-white/60 hover:text-white hover:bg-white/[0.05] transition-all duration-300 ml-1"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? t.nav.fecharMenu : t.nav.abrirMenu}
+          >
+            <div className="relative h-4 w-4">
+              <motion.span
+                animate={mobileOpen ? { rotate: 45, y: 0 } : { rotate: 0, y: -4 }}
+                transition={spring}
+                className="absolute left-0 top-1/2 block h-[1.5px] w-4 bg-current origin-center"
+              />
+              <motion.span
+                animate={mobileOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+                transition={{ duration: 0.2 }}
+                className="absolute left-0 top-1/2 block h-[1.5px] w-4 bg-current origin-center"
+              />
+              <motion.span
+                animate={mobileOpen ? { rotate: -45, y: 0 } : { rotate: 0, y: 4 }}
+                transition={spring}
+                className="absolute left-0 top-1/2 block h-[1.5px] w-4 bg-current origin-center"
+              />
+            </div>
+          </button>
+        </nav>
+      </motion.header>
 
+      {/* Full-screen mobile menu overlay */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.33, 1, 0.68, 1] }}
-            className="overflow-hidden border-t border-border bg-background/95 backdrop-blur-xl md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease }}
+            className="fixed inset-0 z-40 bg-zinc-950/95 backdrop-blur-3xl md:hidden"
           >
-            <div className="flex flex-col gap-1 px-6 py-4">
+            <div className="flex flex-col items-center justify-center h-full gap-2 px-8">
               {navItems.map((item, i) => (
                 <motion.div
                   key={item.key}
-                  initial={{ x: -12, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: i * 0.06, duration: 0.4 }}
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 24 }}
+                  transition={{ delay: 0.1 + i * 0.06, duration: 0.5, ease }}
                 >
                   <Link
                     href={item.href}
-                    className="block py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="block py-3 text-2xl font-display font-semibold tracking-tight text-white/60 hover:text-white transition-colors duration-300"
                     onClick={() => setMobileOpen(false)}
                   >
                     {t.nav[item.key]}
                   </Link>
                 </motion.div>
               ))}
-              <div className="flex items-center gap-2 pt-4 border-t border-border mt-2">
+
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 24 }}
+                transition={{ delay: 0.35, duration: 0.5, ease }}
+                className="flex flex-col items-center gap-4 mt-8 w-full max-w-xs"
+              >
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      className="flex items-center gap-2 h-9 pl-2.5 pr-2 rounded-xl border border-border/80 bg-card/40 text-foreground w-full justify-between"
+                      className="flex items-center gap-2 h-10 px-4 rounded-full border border-white/[0.08] bg-white/[0.03] text-white/50 w-full justify-center"
                       aria-label="Select language"
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="relative h-5 w-6 rounded overflow-hidden shrink-0 ring-1 ring-black/5">
-                          <Image
-                            src={locale === "pt" ? "/brasil.png" : "/usa.webp"}
-                            alt={locale === "pt" ? "Brasil" : "USA"}
-                            fill
-                            className="object-cover"
-                            sizes="24px"
-                          />
-                        </div>
-                        <span className="text-[12px] font-medium">{locales.find((l) => l.code === locale)?.label}</span>
+                      <div className="relative h-4 w-5 rounded-sm overflow-hidden shrink-0 ring-1 ring-white/10">
+                        <Image
+                          src={locale === "pt" ? "/brasil.png" : "/usa.webp"}
+                          alt={locale === "pt" ? "Brasil" : "USA"}
+                          fill
+                          className="object-cover"
+                          sizes="20px"
+                        />
                       </div>
-                      <CaretDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-[13px] font-medium">{locales.find((l) => l.code === locale)?.label}</span>
+                      <CaretDown className="h-3 w-3" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[160px] p-1.5 rounded-xl">
+                  <DropdownMenuContent align="center" className="min-w-[200px] p-1.5 rounded-2xl border-white/[0.08] bg-zinc-950/95 backdrop-blur-2xl">
                     {locales.map((loc) => (
                       <DropdownMenuItem
                         key={loc.code}
                         onClick={() => { setLocale(loc.code); setMobileOpen(false) }}
-                        className="flex items-center gap-3 h-10 px-3 rounded-lg"
+                        className="flex items-center gap-3 h-10 px-3 rounded-xl"
                       >
-                        <div className="relative h-5 w-6 rounded overflow-hidden shrink-0 ring-1 ring-black/5">
-                          <Image src={loc.flag} alt={loc.alt} fill className="object-cover" sizes="24px" />
+                        <div className="relative h-4 w-5 rounded-sm overflow-hidden shrink-0 ring-1 ring-white/10">
+                          <Image src={loc.flag} alt={loc.alt} fill className="object-cover" sizes="20px" />
                         </div>
-                        <span className="flex-1 text-[13px] font-medium">{loc.label}</span>
+                        <span className="flex-1 text-[13px] font-medium text-white/70">{loc.label}</span>
                         {locale === loc.code && <Check className="h-3.5 w-3.5 text-accent" weight="bold" />}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="ghost" size="sm" asChild className="justify-start text-muted-foreground flex-1">
-                  <a href="/login" onClick={() => setMobileOpen(false)}>{t.nav.entrar}</a>
-                </Button>
-                <Button size="sm" asChild className="w-full bg-accent text-accent-foreground rounded-lg">
-                  <a href="https://form.typeform.com/to/d4xLz0DX" target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)}>{t.nav.aplicarSe}</a>
-                </Button>
-              </div>
+
+                <a
+                  href="https://form.typeform.com/to/d4xLz0DX"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 h-12 w-full rounded-full bg-white text-zinc-950 text-base font-semibold transition-all duration-300 active:scale-[0.97]"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {t.nav.aplicarSe}
+                  <ArrowUpRight className="h-4 w-4" />
+                </a>
+              </motion.div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   )
 }

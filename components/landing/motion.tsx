@@ -1,9 +1,34 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { motion, useInView, type Variant } from "framer-motion"
+import { motion, useInView, type Variants } from "framer-motion"
 
-const naturalEase = [0.33, 1, 0.68, 1] as any
+const ease = [0.32, 0.72, 0, 1] as const
+
+/* ─── FadeIn ──────────────────────────────────────────────────────────────── */
+
+const fadeVariants: Record<string, Variants> = {
+  up: {
+    hidden: { opacity: 0, y: 28, filter: "blur(8px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)" },
+  },
+  down: {
+    hidden: { opacity: 0, y: -28, filter: "blur(8px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)" },
+  },
+  left: {
+    hidden: { opacity: 0, x: 28, filter: "blur(8px)" },
+    visible: { opacity: 1, x: 0, filter: "blur(0px)" },
+  },
+  right: {
+    hidden: { opacity: 0, x: -28, filter: "blur(8px)" },
+    visible: { opacity: 1, x: 0, filter: "blur(0px)" },
+  },
+  none: {
+    hidden: { opacity: 0, filter: "blur(8px)" },
+    visible: { opacity: 1, filter: "blur(0px)" },
+  },
+}
 
 export function FadeIn({
   children,
@@ -16,23 +41,16 @@ export function FadeIn({
   direction?: "up" | "down" | "left" | "right" | "none"
   className?: string
 }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-80px" })
-
-  const directions: Record<string, { x?: number; y?: number }> = {
-    up: { y: 30 },
-    down: { y: -30 },
-    left: { x: 30 },
-    right: { x: -30 },
-    none: {},
-  }
+  const ref = useRef<HTMLDivElement>(null)
+  const isInView = useInView(ref, { once: true, margin: "-50px" })
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, ...directions[direction] }}
-      animate={isInView ? { opacity: 1, x: 0, y: 0 } : {}}
-      transition={{ duration: 0.8, delay, ease: naturalEase }}
+      variants={fadeVariants[direction]}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      transition={{ duration: 0.85, delay, ease }}
       className={className}
     >
       {children}
@@ -40,17 +58,19 @@ export function FadeIn({
   )
 }
 
+/* ─── StaggerContainer ────────────────────────────────────────────────────── */
+
 export function StaggerContainer({
   children,
   className = "",
-  staggerDelay = 0.1,
+  staggerDelay = 0.08,
 }: {
   children: ReactNode
   className?: string
   staggerDelay?: number
 }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-80px" })
+  const ref = useRef<HTMLDivElement>(null)
+  const isInView = useInView(ref, { once: true, margin: "-50px" })
 
   return (
     <motion.div
@@ -68,44 +88,43 @@ export function StaggerContainer({
   )
 }
 
-export const staggerItem = {
-  hidden: { opacity: 0, y: 20 } as Variant,
+export const staggerItem: Variants = {
+  hidden: { opacity: 0, y: 20, filter: "blur(6px)" },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: naturalEase },
-  } as Variant,
+    filter: "blur(0px)",
+    transition: { duration: 0.75, ease },
+  },
 }
+
+/* ─── AnimatedCounter ─────────────────────────────────────────────────────── */
 
 export function AnimatedCounter({
   target,
   suffix = "",
   prefix = "",
-  duration = 2.5,
+  duration = 2.2,
 }: {
   target: number
   suffix?: string
   prefix?: string
   duration?: number
 }) {
-  const ref = useRef(null)
+  const ref = useRef<HTMLSpanElement>(null)
   const isInView = useInView(ref, { once: true })
   const [count, setCount] = useState(0)
 
   useEffect(() => {
     if (!isInView) return
-    const startTime = Date.now()
-    const endTime = startTime + duration * 1000
-
-    function update() {
-      const now = Date.now()
-      const progress = Math.min((now - startTime) / (duration * 1000), 1)
+    const start = Date.now()
+    const tick = () => {
+      const progress = Math.min((Date.now() - start) / (duration * 1000), 1)
       const eased = 1 - Math.pow(1 - progress, 3)
       setCount(Math.round(eased * target))
-      if (progress < 1) requestAnimationFrame(update)
+      if (progress < 1) requestAnimationFrame(tick)
     }
-
-    requestAnimationFrame(update)
+    requestAnimationFrame(tick)
   }, [isInView, target, duration])
 
   return (

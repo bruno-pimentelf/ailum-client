@@ -2,13 +2,7 @@
 
 import { useRef, useState, useEffect } from "react"
 import { useLanguage } from "@/components/providers/language-provider"
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useTransform,
-  useMotionValueEvent,
-} from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   ChatCircle,
   CreditCard,
@@ -17,8 +11,9 @@ import {
   CheckCircle,
   WhatsappLogo,
 } from "@phosphor-icons/react"
+import { FadeIn } from "./motion"
 
-const ease = [0.33, 1, 0.68, 1] as const
+const ease = [0.32, 0.72, 0, 1] as const
 
 /* ═══ Step 1: Chat ═══════════════════════════════════════════════════════════ */
 
@@ -360,13 +355,12 @@ function StepCalendar({ active, t }: { active: boolean; t: ReturnType<typeof use
   )
 }
 
-/* ═══ Main component — full-screen scroll-pinned experience ═════════════════ */
-
-const DEMO_HEIGHT = 500
+/* ═══ Main component — interactive tab-based experience ═════════════════════ */
 
 export function HowItWorks() {
   const { t } = useLanguage()
-  const sectionRef = useRef<HTMLDivElement>(null)
+  const [activeStep, setActiveStep] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
 
   const steps = [
     {
@@ -392,171 +386,156 @@ export function HowItWorks() {
     },
   ]
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end end"],
-  })
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const onChange = () => setIsMobile(mq.matches)
+    onChange()
+    mq.addEventListener("change", onChange)
+    return () => mq.removeEventListener("change", onChange)
+  }, [])
 
-  const [activeStep, setActiveStep] = useState(0)
-
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    const raw = v * steps.length
-    const step = Math.min(Math.floor(raw), steps.length - 1)
-    setActiveStep(step)
-  })
-
-  const barHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"])
-
-  const RAIL_HEIGHT = 180
-
-  return (
-    <section
-      ref={sectionRef}
-      id="como-funciona"
-      className="relative"
-      style={{ height: `${(steps.length + 1) * 100}vh` }}
-    >
-      <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
-        {/* Background glows */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/4 top-1/3 h-[400px] w-[400px] rounded-full bg-accent/[0.03] blur-[120px]" />
-          <div className="absolute right-1/4 bottom-1/4 h-[300px] w-[300px] rounded-full bg-accent/[0.02] blur-[100px]" />
-        </div>
-
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-6 md:px-12">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, ease }}
-            className="text-center mb-12"
-          >
+  if (isMobile) {
+    return (
+      <section id="como-funciona" className="relative py-24">
+        <div className="mx-auto w-full max-w-7xl px-6">
+          <div className="mb-10">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
               {t.howItWorks.title}
             </p>
-            <h2 className="mt-3 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+            <h2 className="mt-4 font-display text-2xl font-bold tracking-tight text-foreground">
               {t.howItWorks.subtitle}{" "}
-              <span className="font-display italic text-accent">{t.howItWorks.subtitleAccent}</span>
+              <span className="text-accent">{t.howItWorks.subtitleAccent}</span>
             </h2>
-          </motion.div>
+          </div>
 
-          {/* Content row */}
-          <div className="flex flex-col md:flex-row gap-10 md:gap-16 items-center">
-            {/* ── Left: progress rail + single active step text ── */}
-            <div className="flex items-center gap-6 flex-shrink-0 w-full md:w-auto md:max-w-sm">
-              {/* Vertical rail with evenly-spaced dots */}
-              <div className="relative flex-shrink-0" style={{ width: 20, height: RAIL_HEIGHT }}>
-                {/* Background track */}
-                <div
-                  className="absolute left-1/2 -translate-x-1/2 w-[2px] rounded-full bg-border/30"
-                  style={{ top: 0, bottom: 0 }}
-                />
-                {/* Filled track */}
-                <motion.div
-                  className="absolute left-1/2 -translate-x-1/2 w-[2px] rounded-full bg-accent origin-top"
-                  style={{ top: 0, height: barHeight }}
-                />
+          {/* Mobile: step buttons + demo */}
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            {steps.map((step, i) => {
+              const Icon = step.icon
+              const isActive = i === activeStep
+              return (
+                <button
+                  key={step.number}
+                  onClick={() => setActiveStep(i)}
+                  className={`flex items-center gap-2 shrink-0 px-4 py-2.5 rounded-full border text-[13px] font-medium transition-all duration-300 ${
+                    isActive
+                      ? "border-accent/25 bg-accent/[0.06] text-accent"
+                      : "border-white/[0.06] bg-white/[0.02] text-white/35"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" weight="fill" />
+                  <span>{step.title}</span>
+                </button>
+              )
+            })}
+          </div>
 
-                {/* Step nodes — positioned at 0%, 50%, 100% */}
-                {steps.map((_, i) => {
-                  const topPct = steps.length <= 1 ? 50 : (i / (steps.length - 1)) * 100
-                  return (
-                    <div
-                      key={i}
-                      className="absolute left-1/2"
-                      style={{ top: `${topPct}%`, transform: "translate(-50%, -50%)" }}
-                    >
-                      <motion.div
-                        animate={{
-                          scale: i === activeStep ? 1.15 : 0.85,
-                          backgroundColor:
-                            i < activeStep
-                              ? "rgba(0,181,212,1)"
-                              : i === activeStep
-                              ? "rgba(0,181,212,0.85)"
-                              : "rgba(255,255,255,0.06)",
-                          borderColor:
-                            i <= activeStep
-                              ? "rgba(0,181,212,0.5)"
-                              : "rgba(255,255,255,0.08)",
-                        }}
-                        transition={{ duration: 0.4, ease }}
-                        className="relative h-3.5 w-3.5 rounded-full border-2"
-                      >
-                        {i === activeStep && (
-                          <motion.div
-                            className="absolute -inset-2.5 rounded-full border border-accent/25"
-                            animate={{ scale: [1, 1.9, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          />
-                        )}
-                        {i < activeStep && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="absolute inset-0 flex items-center justify-center"
-                          >
-                            <CheckCircle className="h-3.5 w-3.5 text-white" weight="fill" />
-                          </motion.div>
-                        )}
-                      </motion.div>
-                    </div>
-                  )
-                })}
-              </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeStep}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4, ease }}
+            >
+              <p className="text-[13px] leading-relaxed text-white/30 mb-5">
+                {steps[activeStep].description}
+              </p>
+              {steps[activeStep].demo(true)}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </section>
+    )
+  }
 
-              {/* Single active step text — animated swap */}
-              <div className="relative flex-1 min-h-[120px] flex items-center">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeStep}
-                    initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, y: -16, filter: "blur(4px)" }}
-                    transition={{ duration: 0.4, ease }}
-                    className="flex flex-col gap-2"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-[11px] font-mono text-accent/60 tabular-nums">
-                        {steps[activeStep].number}
-                      </span>
-                      {(() => {
-                        const Icon = steps[activeStep].icon
-                        return <Icon className="h-4.5 w-4.5 text-accent" weight="fill" />
-                      })()}
-                    </div>
-                    <h3 className="text-base font-semibold text-foreground leading-snug">
-                      {steps[activeStep].title}
-                    </h3>
-                    <p className="text-[13px] leading-relaxed text-muted-foreground">
-                      {steps[activeStep].description}
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
+  return (
+    <section id="como-funciona" className="relative py-28 md:py-40">
+      {/* Background glows */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/4 top-1/3 h-[400px] w-[400px] rounded-full bg-accent/[0.03] blur-[120px]" />
+        <div className="absolute right-1/4 bottom-1/4 h-[300px] w-[300px] rounded-full bg-accent/[0.02] blur-[100px]" />
+      </div>
 
-            {/* ── Right: demo card in fixed-height container ── */}
-            <div className="flex-1 min-w-0 w-full">
-              <div
-                className="relative flex items-center justify-center"
-                style={{ height: DEMO_HEIGHT }}
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
+        {/* Header */}
+        <FadeIn className="max-w-lg mb-16">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
+            {t.howItWorks.title}
+          </p>
+          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl leading-[1.1]">
+            {t.howItWorks.subtitle}{" "}
+            <span className="text-accent">{t.howItWorks.subtitleAccent}</span>
+          </h2>
+        </FadeIn>
+
+        {/* Step selector tabs */}
+        <div className="grid grid-cols-3 gap-3 mb-12">
+          {steps.map((step, i) => {
+            const Icon = step.icon
+            const isActive = i === activeStep
+            return (
+              <motion.button
+                key={step.number}
+                onClick={() => setActiveStep(i)}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className={`relative text-left p-6 rounded-2xl border transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
+                  isActive
+                    ? "border-accent/20 bg-accent/[0.04] shadow-[0_0_30px_rgba(0,181,212,0.05)]"
+                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1] hover:bg-white/[0.03]"
+                }`}
               >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeStep}
-                    initial={{ opacity: 0, y: 28, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -28, scale: 0.96 }}
-                    transition={{ duration: 0.5, ease }}
-                    className="w-full"
+                <div className="flex items-center gap-3 mb-3">
+                  <span
+                    className={`text-[11px] font-mono tabular-nums transition-colors duration-300 ${
+                      isActive ? "text-accent" : "text-white/20"
+                    }`}
                   >
-                    {steps[activeStep].demo(true)}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
+                    {step.number}
+                  </span>
+                  <Icon
+                    className={`h-4 w-4 transition-colors duration-300 ${
+                      isActive ? "text-accent" : "text-white/20"
+                    }`}
+                    weight="fill"
+                  />
+                </div>
+                <h3 className="font-display text-[15px] font-bold tracking-tight text-foreground">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-white/25">
+                  {step.description}
+                </p>
+
+                {/* Active indicator line */}
+                {isActive && (
+                  <motion.div
+                    layoutId="how-it-works-indicator"
+                    className="absolute bottom-0 left-6 right-6 h-[2px] rounded-full bg-accent/40"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </motion.button>
+            )
+          })}
+        </div>
+
+        {/* Demo showcase area */}
+        <div className="rounded-[2rem] bg-white/[0.02] p-2 ring-1 ring-white/[0.06]">
+          <div className="rounded-[calc(2rem-0.5rem)] overflow-hidden min-h-[440px] flex items-center justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeStep}
+                initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -24, filter: "blur(8px)" }}
+                transition={{ duration: 0.5, ease }}
+                className="w-full px-4 md:px-8 py-8"
+              >
+                {steps[activeStep].demo(true)}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>

@@ -113,7 +113,7 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col bg-background rounded-lg p-2 transition-all duration-300 ${isOver && manualMode ? "ring-1 ring-accent/30 bg-accent/[0.03]" : ""
+      className={`flex flex-col bg-background rounded-lg p-2 transition-all duration-300 min-w-[220px] md:min-w-0 ${isOver && manualMode ? "ring-1 ring-accent/30 bg-accent/[0.03]" : ""
         }`}
     >
       <div className="flex items-center gap-2 mb-3 px-0.5">
@@ -121,7 +121,7 @@ function KanbanColumn({
         <span className="text-[10px] font-medium text-muted-foreground">{column.label}</span>
         <span className="text-[9px] text-muted-foreground/40 ml-auto tabular-nums">{columnPatients.length}</span>
       </div>
-      <div className="flex flex-col gap-1.5 min-h-[150px]">
+      <div className="flex flex-col gap-1.5 min-h-[140px]">
         <AnimatePresence mode="popLayout">
           {columnPatients.map((patient) => (
             <PatientCard
@@ -241,9 +241,9 @@ export function DemoKanban() {
     <div ref={ref} className="w-full">
       <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-foreground/[0.03]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+        <div className="flex flex-col gap-2 px-4 md:px-5 py-3 border-b border-border md:flex-row md:items-center md:justify-between">
           <p className="text-xs font-medium text-foreground">{t.demo.kanbanTitle}</p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between md:justify-end gap-3">
             <div className="flex items-center gap-1.5">
               {manualMode ? (
                 <HandGrabbing className="h-3 w-3 text-accent" />
@@ -256,7 +256,7 @@ export function DemoKanban() {
             </div>
             <button
               onClick={handleToggleMode}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-medium transition-all duration-300 border ${manualMode
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-medium transition-all duration-300 border shrink-0 ${manualMode
                 ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
                 : "border-border bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }`}
@@ -277,7 +277,7 @@ export function DemoKanban() {
         </div>
 
         {/* AI action toast */}
-        <div className="relative h-8 border-b border-border bg-muted/40">
+        <div className="relative min-h-9 border-b border-border bg-muted/40">
           <AnimatePresence mode="wait">
             {currentAction && !manualMode && (
               <motion.div
@@ -286,10 +286,10 @@ export function DemoKanban() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
                 transition={{ duration: 0.35, ease }}
-                className="absolute inset-0 flex items-center justify-center gap-2 px-4"
+                className="absolute inset-0 flex items-center justify-center gap-2 px-3 py-1 text-center"
               >
                 <Sparkle className="h-3 w-3 text-accent" />
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground leading-tight">
                   <span className="font-medium text-foreground">{currentAction.patient}</span>
                   {" "}{t.demo.kanbanAction} <span className="font-medium text-accent">{currentAction.to}</span> ✓
                 </span>
@@ -313,19 +313,21 @@ export function DemoKanban() {
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <div className="grid grid-cols-4 gap-px bg-border p-3">
-            {columns.map((col) => {
-              const colPatients = patients.filter((p) => positions[p.id] === col.id)
-              return (
-                <KanbanColumn
-                  key={col.id}
-                  column={col}
-                  columnPatients={colPatients}
-                  activeId={activeId}
-                  manualMode={manualMode}
-                />
-              )
-            })}
+          <div className="overflow-x-auto md:overflow-visible">
+            <div className="flex md:grid md:grid-cols-4 gap-px bg-border p-3 min-w-max md:min-w-0">
+              {columns.map((col) => {
+                const colPatients = patients.filter((p) => positions[p.id] === col.id)
+                return (
+                  <KanbanColumn
+                    key={col.id}
+                    column={col}
+                    columnPatients={colPatients}
+                    activeId={activeId}
+                    manualMode={manualMode}
+                  />
+                )
+              })}
+            </div>
           </div>
 
           <DragOverlay dropAnimation={{

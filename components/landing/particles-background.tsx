@@ -21,6 +21,10 @@ export function ParticlesBackground() {
     const glowDivRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
+        const isMobile = window.matchMedia("(max-width: 767px)").matches
+        const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        if (isMobile || prefersReduced) return
+
         const canvas = canvasRef.current
         if (!canvas) return
         const ctx = canvas.getContext("2d")
@@ -156,13 +160,13 @@ export function ParticlesBackground() {
         <div className="pointer-events-none fixed inset-0 -z-10 h-full w-full overflow-hidden">
             <canvas
                 ref={canvasRef}
-                className="absolute inset-0 block h-full w-full"
+                className="absolute inset-0 hidden md:block h-full w-full"
             />
 
             {/* Ambient glow following mouse */}
             <div
                 ref={glowDivRef}
-                className="absolute rounded-full pointer-events-none z-0 transition-opacity duration-300"
+                className="absolute hidden md:block rounded-full pointer-events-none z-0 transition-opacity duration-300"
                 style={{
                     width: '800px',
                     height: '800px',

@@ -13,20 +13,17 @@ export function Footer() {
   ] as const
 
   return (
-    <footer className="border-t border-border">
-      <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
+    <footer className="border-t border-white/[0.04]">
+      <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-5 md:gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center">
-              <span
-                className="text-lg font-bold tracking-[0.35em] text-foreground"
-                style={{ fontFamily: "'Inter', sans-serif" }}
-              >
-                A I L U M
+            <Link href="/" className="inline-flex items-center">
+              <span className="font-display text-sm font-bold tracking-[0.3em] text-foreground">
+                AILUM
               </span>
             </Link>
-            <p className="mt-4 max-w-[200px] text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-5 max-w-[220px] text-[13px] leading-relaxed text-white/25">
               {t.footer.tagline}
             </p>
           </div>
@@ -34,13 +31,15 @@ export function Footer() {
           {/* Link columns */}
           {footerSections.map(({ title, links }) => (
             <div key={title}>
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-foreground">{title}</h4>
-              <ul className="mt-4 flex flex-col gap-2.5">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50">
+                {title}
+              </h4>
+              <ul className="mt-5 flex flex-col gap-3">
                 {links.map((link) => (
                   <li key={link}>
                     <Link
                       href="#"
-                      className="text-xs text-muted-foreground transition-colors duration-300 hover:text-foreground"
+                      className="text-[13px] text-white/25 transition-colors duration-300 hover:text-white/60"
                     >
                       {link}
                     </Link>
@@ -51,15 +50,15 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
-          <p className="text-[11px] text-muted-foreground">
+        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/[0.04] pt-8 md:flex-row">
+          <p className="text-[11px] text-white/20">
             &copy; {new Date().getFullYear()} Ailum. {t.footer.direitos}
           </p>
           <div className="flex items-center gap-6">
-            <Link href="#" className="text-[11px] text-muted-foreground transition-colors duration-300 hover:text-foreground">
+            <Link href="#" className="text-[11px] text-white/20 transition-colors duration-300 hover:text-white/50">
               {t.footer.politica}
             </Link>
-            <Link href="#" className="text-[11px] text-muted-foreground transition-colors duration-300 hover:text-foreground">
+            <Link href="#" className="text-[11px] text-white/20 transition-colors duration-300 hover:text-white/50">
               {t.footer.termos}
             </Link>
           </div>

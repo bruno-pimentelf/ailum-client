@@ -11,25 +11,28 @@ export function Stats() {
     { value: 12, suffix: "s", label: t.stats.tempoResposta },
     { value: 0, prefix: "R$", suffix: "", label: t.stats.noShow },
   ]
+
   return (
-    <section className="border-y border-border">
-      <div className="mx-auto max-w-6xl">
-        <div className="grid grid-cols-2 lg:grid-cols-4">
+    <section className="relative py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid grid-cols-2 gap-8 lg:grid-cols-4 lg:gap-0">
           {metrics.map((metric, i) => (
-            <FadeIn key={metric.label} delay={i * 0.12}>
+            <FadeIn key={metric.label} delay={i * 0.1}>
               <div
-                className={`flex flex-col items-center px-6 py-10 text-center md:px-8 md:py-14 ${
-                  i < metrics.length - 1 ? "border-b lg:border-b-0 lg:border-r border-border" : ""
-                } ${i === 1 ? "border-r border-border lg:border-r" : ""}`}
+                className={`flex flex-col items-center text-center px-4 py-6 lg:py-0 ${
+                  i < metrics.length - 1
+                    ? "lg:border-r lg:border-white/[0.06]"
+                    : ""
+                }`}
               >
-                <span className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+                <span className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">
                   <AnimatedCounter
                     target={metric.value}
                     suffix={metric.suffix}
                     prefix={metric.prefix || ""}
                   />
                 </span>
-                <span className="mt-2 text-xs text-muted-foreground tracking-wide">
+                <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white/25">
                   {metric.label}
                 </span>
               </div>
