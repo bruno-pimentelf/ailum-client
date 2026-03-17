@@ -112,7 +112,7 @@ export default function PrivateCheckoutPage() {
             <h1 className="mt-6 font-display text-[clamp(2rem,4vw,3.4rem)] font-bold leading-[1.03] tracking-[-0.03em] text-foreground">
               Assine o Ailum.
               <br />
-              <span className="text-accent">Comece no nível premium.</span>
+              <span className="text-accent">Comece no nível alto padrão.</span>
             </h1>
 
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/40">
@@ -197,7 +197,7 @@ export default function PrivateCheckoutPage() {
                 >
                   {createCheckout.isPending
                     ? "Preparando seu checkout..."
-                    : "Desbloquear Pagamento Premium"}
+                    : "Ir para o pagamento"}
                 </Button>
 
                 <p className="text-center text-xs text-white/35">

@@ -14,6 +14,7 @@ import {
 import { FadeIn } from "./motion"
 
 const ease = [0.32, 0.72, 0, 1] as const
+const STEP_AUTOPLAY_DURATIONS = [5600, 5400, 6000] as const
 
 /* ═══ Step 1: Chat ═══════════════════════════════════════════════════════════ */
 
@@ -385,6 +386,14 @@ export function HowItWorks() {
       demo: (active: boolean) => <StepCalendar active={active} t={t} />,
     },
   ]
+
+  // Auto-play sincronizado com a duração de cada animação de demo
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setActiveStep((prev) => (prev + 1) % STEP_AUTOPLAY_DURATIONS.length)
+    }, STEP_AUTOPLAY_DURATIONS[activeStep] ?? STEP_AUTOPLAY_DURATIONS[0])
+    return () => window.clearTimeout(timeout)
+  }, [activeStep])
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)")

@@ -277,9 +277,9 @@ export function Hero() {
         className="relative mx-auto max-w-7xl px-6"
       >
         {/* Grid: text left, floating cards right */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-start lg:justify-items-center lg:pt-8">
+        <div className="grid grid-cols-1 gap-12 items-start lg:grid-cols-[minmax(0,560px)_minmax(0,460px)] lg:justify-center lg:gap-10 lg:pt-8">
           {/* Left: Content */}
-          <div className="max-w-xl">
+          <div className="w-full max-w-[560px]">
             {/* Eyebrow pill */}
             <motion.div
               initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
@@ -354,7 +354,7 @@ export function Hero() {
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1.2, delay: 0.4, ease }}
-            className="hidden lg:block"
+            className="hidden w-full lg:block"
           >
             <HeroCards parallaxX={parallaxX} parallaxY={parallaxY} />
           </motion.div>
