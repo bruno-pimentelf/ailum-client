@@ -145,6 +145,45 @@ function getMsgDateKey(ts: { toDate: () => Date } | undefined): string {
   }
 }
 
+// ─── Linkify text ─────────────────────────────────────────────────────────────
+
+// Matches:
+//   - Full URLs: http(s)://... or ftp://...
+//   - www. prefixed: www.example.com
+//   - wa.me/... links (WhatsApp)
+//   - Bare domains with common TLDs (with optional path/query): example.com, example.com.br/path
+const URL_REGEX =
+  /(?:https?:\/\/|ftp:\/\/|www\.)[^\s<>"')\]]+|(?:^|(?<=\s))(?:wa\.me\/[^\s<>"')\]]+)|(?<![/@\w])(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:com|net|org|io|app|dev|ai|br|co|uk|de|fr|pt|me|info|online|store|tech|gov|edu|mil|int|mobi|biz|pro|tv|cc|us|ca|au|jp|cn|in|mx|ar|cl|pe|uy|py|bo|ec|ve|co\.uk|com\.br|com\.ar|com\.mx|com\.au|co\.jp|net\.br|org\.br|gov\.br|edu\.br)(?:\/[^\s<>"')\]]*)?(?=[^\w]|$)/gi
+
+function normalizeHref(url: string): string {
+  if (/^(?:https?|ftp):\/\//i.test(url)) return url
+  return `https://${url}`
+}
+
+function LinkifiedText({ text }: { text: string }) {
+  const parts = text.split(URL_REGEX)
+  const matches = text.match(URL_REGEX) ?? []
+  return (
+    <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+      {parts.map((part, i) => (
+        <span key={i}>
+          {part}
+          {matches[i] && (
+            <a
+              href={normalizeHref(matches[i])}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 text-accent hover:text-accent/80 transition-colors break-all"
+            >
+              {matches[i]}
+            </a>
+          )}
+        </span>
+      ))}
+    </p>
+  )
+}
+
 // ─── Date Divider ─────────────────────────────────────────────────────────────
 
 function DateDivider({ label }: { label: string }) {
@@ -706,7 +745,7 @@ function MessageBubble({
 
     // ── TEXT ───────────────────────────────────────────────────────────────────
     if (msg.type === "TEXT" && !m?.mediaKind) {
-      return <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+      return <LinkifiedText text={msg.content} />
     }
 
     // ── STICKER ────────────────────────────────────────────────────────────────
@@ -753,7 +792,7 @@ function MessageBubble({
     }
 
     // Fallback — render content as plain text
-    return <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+    return <LinkifiedText text={msg.content} />
   })()
 
   return (
