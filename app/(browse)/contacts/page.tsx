@@ -15,6 +15,8 @@ import {
   UploadSimple,
   Copy,
   Check,
+  ChatCircleText,
+  UserCircle,
 } from "@phosphor-icons/react"
 import {
   ResizablePanelGroup,
@@ -22,6 +24,7 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable"
 import { ChatView } from "@/components/app/chat-view"
+import { ContactInfoPanel } from "@/components/app/contact-info-panel"
 import { ContactImportModal } from "@/components/app/contact-import-modal"
 import { useContactsList } from "@/hooks/use-contacts-list"
 import { useAuthStore } from "@/lib/auth-store"
@@ -404,12 +407,15 @@ function ContactsTablePanel({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+type RightTab = "chat" | "info"
+
 export default function ContactsPage() {
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<ApiContact | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [rightTab, setRightTab] = useState<RightTab>("chat")
 
   const tenantId = useAuthStore((s) => s.tenantId)
 
@@ -440,6 +446,12 @@ export default function ContactsPage() {
     [selected]
   )
 
+  // Reset to chat tab when a different contact is selected
+  const handleSelect = (c: ApiContact | null) => {
+    if (c?.id !== selected?.id) setRightTab("chat")
+    setSelected(c)
+  }
+
   return (
     <div className="flex h-full overflow-hidden">
       <ContactImportModal
@@ -461,7 +473,7 @@ export default function ContactsPage() {
               loading={isLoading}
               error={error as Error | null}
               selected={selected}
-              onSelect={setSelected}
+              onSelect={handleSelect}
               page={page}
               pages={pages}
               total={total}
@@ -472,12 +484,48 @@ export default function ContactsPage() {
           </ResizablePanel>
           <ResizableHandle withHandle className="bg-border/60 hover:bg-border transition-colors data-[resize-handle-state=drag]:bg-accent/30" />
           <ResizablePanel defaultSize={45} minSize={30} className="flex flex-col min-w-0 bg-background/50">
+            {/* Tab strip */}
+            <div className="shrink-0 flex items-stretch border-b border-border/50 h-9 px-4 gap-1">
+              {(["chat", "info"] as RightTab[]).map((tab) => {
+                const active = rightTab === tab
+                const Icon = tab === "chat" ? ChatCircleText : UserCircle
+                const label = tab === "chat" ? "Conversa" : "Perfil"
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setRightTab(tab)}
+                    className={`relative flex items-center gap-1.5 px-3 text-[11px] font-bold transition-colors duration-150 cursor-pointer ${
+                      active ? "text-white/90" : "text-white/50 hover:text-white/75"
+                    }`}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="contact-right-tab-indicator"
+                        className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
+                        transition={{ duration: 0.18, ease: [0.33, 1, 0.68, 1] }}
+                      />
+                    )}
+                    <Icon className="h-3.5 w-3.5 shrink-0" weight={active ? "fill" : "regular"} />
+                    <span>{label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
             <AnimatePresence mode="wait">
-              <ChatView
-                key={selected.id}
-                contact={firestoreContact}
-                tenantId={tenantId}
-              />
+              {rightTab === "chat" ? (
+                <ChatView
+                  key={`chat-${selected.id}`}
+                  contact={firestoreContact}
+                  tenantId={tenantId}
+                />
+              ) : (
+                <ContactInfoPanel
+                  key={`info-${selected.id}`}
+                  contactId={selected.id}
+                  initialContact={firestoreContact}
+                />
+              )}
             </AnimatePresence>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -490,7 +538,7 @@ export default function ContactsPage() {
             loading={isLoading}
             error={error as Error | null}
             selected={null}
-            onSelect={setSelected}
+            onSelect={handleSelect}
             page={page}
             pages={pages}
             total={total}

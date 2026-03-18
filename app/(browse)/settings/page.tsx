@@ -14,6 +14,7 @@ import {
   CalendarBlank,
   Robot,
   TextAa,
+  Brain,
 } from "@phosphor-icons/react"
 
 import { GeralTab }            from "@/components/settings/geral-tab"
@@ -25,10 +26,11 @@ import { VozTab }            from "@/components/settings/voz-tab"
 import { DisponibilidadeTab } from "@/components/settings/disponibilidade-tab"
 import { IATab } from "@/components/settings/ia-tab"
 import { TemplatesTab } from "@/components/settings/templates-tab"
+import { CaptacaoTab } from "@/components/settings/captacao-tab"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "disponibilidade" | "templates" | "voz" | "ia"
+type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "disponibilidade" | "templates" | "ia" | "captacao" | "voz"
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "geral",           label: "Geral",         icon: Gear          },
@@ -39,6 +41,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "disponibilidade", label: "Disponibilidade", icon: CalendarBlank },
   { id: "templates",       label: "Templates",     icon: TextAa        },
   { id: "ia",              label: "IA",            icon: Robot         },
+  { id: "captacao",        label: "Captação",      icon: Brain         },
   { id: "voz",             label: "Voz",           icon: Microphone    },
 ]
 
@@ -100,6 +103,7 @@ function SettingsContent() {
             {activeTab === "disponibilidade" && <DisponibilidadeTab key="disponibilidade" />}
             {activeTab === "templates"       && <TemplatesTab       key="templates"       />}
             {activeTab === "ia"              && <IATab              key="ia"              />}
+            {activeTab === "captacao"        && <CaptacaoTab        key="captacao"        />}
             {activeTab === "voz"             && <VozTab             key="voz"             />}
           </AnimatePresence>
         </div>

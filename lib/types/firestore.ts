@@ -52,6 +52,9 @@ export interface FirestoreContact {
   // Sticky routing for multi-instance WhatsApp/Z-API
   zapiInstanceId?: string | null
 
+  // AI-collected memories (synced from agentMemory table)
+  memories?: Record<string, string>
+
   // Metadata
   updatedAt: Timestamp
 }
