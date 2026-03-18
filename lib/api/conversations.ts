@@ -2,16 +2,20 @@ import { apiFetch } from "@/lib/api"
 
 // ─── Send message ─────────────────────────────────────────────────────────────
 
+type SendRoute = {
+  instanceId?: string
+}
+
 export type SendMessageInput =
-  | { type: "TEXT"; text: string; replyToZapiMessageId?: string }
-  | { type: "IMAGE"; mediaUrl: string; caption?: string }
-  | { type: "AUDIO"; mediaUrl: string }
-  | { type: "VIDEO"; mediaUrl: string; caption?: string }
-  | { type: "DOCUMENT"; mediaUrl: string; fileName: string }
-  | { type: "STICKER"; mediaUrl: string }
-  | { type: "LOCATION"; latitude: string; longitude: string; locationTitle?: string; locationAddress?: string }
-  | { type: "CONTACT"; contactName: string; contactPhone: string }
-  | { type: "REACTION"; reaction: string; replyToZapiMessageId: string }
+  | (SendRoute & { type: "TEXT"; text: string; replyToZapiMessageId?: string })
+  | (SendRoute & { type: "IMAGE"; mediaUrl: string; caption?: string })
+  | (SendRoute & { type: "AUDIO"; mediaUrl: string })
+  | (SendRoute & { type: "VIDEO"; mediaUrl: string; caption?: string })
+  | (SendRoute & { type: "DOCUMENT"; mediaUrl: string; fileName: string })
+  | (SendRoute & { type: "STICKER"; mediaUrl: string })
+  | (SendRoute & { type: "LOCATION"; latitude: string; longitude: string; locationTitle?: string; locationAddress?: string })
+  | (SendRoute & { type: "CONTACT"; contactName: string; contactPhone: string })
+  | (SendRoute & { type: "REACTION"; reaction: string; replyToZapiMessageId: string })
 
 export function sendMessage(contactId: string, input: SendMessageInput) {
   return apiFetch<void>(`/conversations/${contactId}/messages`, {

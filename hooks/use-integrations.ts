@@ -4,6 +4,9 @@ import {
   type ZapiSaveInput,
   type AsaasSaveInput,
   type Provider,
+  type ZapiSetDefaultInput,
+  type ZapiSyncRoutingInput,
+  type ZapiContactRoutingInput,
 } from "@/lib/api/integrations"
 
 export const INTEGRATIONS_KEY = ["integrations"] as const
@@ -35,10 +38,10 @@ export function useIntegration(provider: Provider) {
  * `enabled` controls whether polling is active.
  * `refetchInterval` drives automatic polling (e.g. while scanning QR code).
  */
-export function useZapiStatus(options?: { enabled?: boolean; refetchInterval?: number }) {
+export function useZapiStatus(options?: { enabled?: boolean; refetchInterval?: number; instanceId?: string }) {
   return useQuery({
-    queryKey: ZAPI_STATUS_KEY,
-    queryFn: integrationsApi.zapiStatus,
+    queryKey: [...ZAPI_STATUS_KEY, options?.instanceId ?? "default"],
+    queryFn: () => integrationsApi.zapiStatus({ instanceId: options?.instanceId }),
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval,
     refetchOnWindowFocus: true,
@@ -66,6 +69,42 @@ export function useSaveZapi() {
   return useMutation({
     mutationFn: (input: ZapiSaveInput) => integrationsApi.saveZapi(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY }),
+  })
+}
+
+export function useSetZapiDefault() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ZapiSetDefaultInput) => integrationsApi.setZapiDefault(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY })
+      qc.invalidateQueries({ queryKey: ZAPI_STATUS_KEY })
+    },
+  })
+}
+
+export function useSyncZapiContactRouting() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ZapiSyncRoutingInput) => integrationsApi.zapiSyncContactRouting(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contacts-list"] })
+      qc.invalidateQueries({ queryKey: ["contacts"] })
+    },
+  })
+}
+
+export function useOverrideContactZapiRouting(contactId: string | null) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ZapiContactRoutingInput) => {
+      if (!contactId) throw new Error("Contato inválido")
+      return integrationsApi.zapiOverrideContactRouting(contactId, input)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contacts-list"] })
+      qc.invalidateQueries({ queryKey: ["contacts"] })
+    },
   })
 }
 

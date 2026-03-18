@@ -20,6 +20,8 @@ import {
 import {
   useIntegrations,
   useSaveZapi,
+  useSetZapiDefault,
+  useSyncZapiContactRouting,
   useZapiStatus,
   useZapiQrCode,
   useZapiDisconnect,
@@ -65,11 +67,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 // ── Z-API Card ─────────────────────────────────────────────────────────────────
 
-function ZapiCard({ integration, open, onToggle }: { integration: Integration | null; open: boolean; onToggle: () => void }) {
-  const isConfigured = !!(integration?.isActive && integration?.hasApiKey)
+function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[]; open: boolean; onToggle: () => void }) {
+  const defaultIntegration = integrations.find((i) => i.isDefault) ?? integrations[0] ?? null
+  const integration = defaultIntegration
+  const isConfigured = integrations.some((i) => i.isActive && i.hasApiKey && i.instanceId)
   const [view, setView] = useState<ZapiView>(isConfigured ? "status" : "credentials")
   const [instanceId, setInstanceId] = useState(integration?.instanceId ?? "")
   const [instanceToken, setInstanceToken] = useState("")
+  const [label, setLabel] = useState(integration?.label ?? "")
+  const [syncOnlyUnknown, setSyncOnlyUnknown] = useState(true)
+  const [syncPageSize, setSyncPageSize] = useState(100)
+  const [syncMaxPages, setSyncMaxPages] = useState(3)
 
   useEffect(() => {
     if (isConfigured && view === "credentials" && !instanceToken) {
@@ -81,6 +89,7 @@ function ZapiCard({ integration, open, onToggle }: { integration: Integration | 
   const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useZapiStatus({
     enabled: isConfigured,
     refetchInterval: isConfigured ? 15_000 : undefined,
+    instanceId: integration?.instanceId ?? undefined,
   })
 
   const whatsappConnected = status?.connected === true
@@ -98,6 +107,8 @@ function ZapiCard({ integration, open, onToggle }: { integration: Integration | 
   }, [whatsappConnected, view])
 
   const saveZapi = useSaveZapi()
+  const setDefault = useSetZapiDefault()
+  const syncRouting = useSyncZapiContactRouting()
   const disconnect = useZapiDisconnect()
   const restart = useZapiRestart()
   const removeIntegration = useRemoveIntegration()
@@ -106,7 +117,7 @@ function ZapiCard({ integration, open, onToggle }: { integration: Integration | 
     e.preventDefault()
     if (!instanceId.trim() || !instanceToken.trim()) return
     saveZapi.mutate(
-      { instanceId: instanceId.trim(), instanceToken: instanceToken.trim() },
+      { instanceId: instanceId.trim(), instanceToken: instanceToken.trim(), label: label.trim() || undefined },
       { onSuccess: () => { setInstanceToken(""); setView("status") } }
     )
   }
@@ -136,8 +147,8 @@ function ZapiCard({ integration, open, onToggle }: { integration: Integration | 
           <p className="text-[11px] text-white/40 truncate">
             {isConfigured
               ? whatsappConnected
-                ? `Conectado — instância ${integration?.instanceId}`
-                : statusLoading ? "Verificando status..." : "Instância configurada — WhatsApp desconectado"
+                ? `Conectado — ${integration?.label || integration?.instanceId}`
+                : statusLoading ? "Verificando status..." : `${integrations.length} instância(s) configuradas`
               : "Integre o WhatsApp para atendimentos automáticos"}
           </p>
         </div>
@@ -173,6 +184,36 @@ function ZapiCard({ integration, open, onToggle }: { integration: Integration | 
 
               {view === "status" && (
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Instâncias</p>
+                    <div className="space-y-1.5">
+                      {integrations.length === 0 ? (
+                        <p className="text-[11px] text-white/30">Nenhuma instância cadastrada.</p>
+                      ) : integrations.map((inst, idx) => (
+                        <div key={`${inst.instanceId}-${idx}`} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2">
+                          <span className={`h-2 w-2 rounded-full ${(inst.isActive && inst.hasApiKey) ? "bg-emerald-400" : "bg-white/25"}`} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[11px] font-semibold text-white/75">{inst.label || inst.instanceId}</p>
+                            <p className="truncate text-[10px] font-mono text-white/30">{inst.instanceId}</p>
+                          </div>
+                          {inst.isDefault && (
+                            <span className="rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
+                              Padrão
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setDefault.mutate({ instanceId: inst.instanceId ?? "" })}
+                            disabled={!inst.instanceId || inst.isDefault || setDefault.isPending}
+                            className="cursor-pointer rounded-md border border-white/[0.09] bg-white/[0.03] px-2 py-1 text-[10px] font-bold text-white/55 hover:text-white/80 disabled:cursor-default disabled:opacity-40"
+                          >
+                            Tornar padrão
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className={`flex items-center gap-3 rounded-lg border px-3 py-3 ${whatsappConnected ? "border-emerald-500/25 bg-emerald-500/[0.06]" : "border-amber-500/20 bg-amber-500/[0.04]"}`}>
                     <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${whatsappConnected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
                     <div className="flex-1 min-w-0">
@@ -215,6 +256,63 @@ function ZapiCard({ integration, open, onToggle }: { integration: Integration | 
                       {disconnect.isSuccess ? "Desconectado. Escaneie o QR Code para reconectar." : "Instância reiniciada com sucesso."}
                     </p>
                   )}
+                  <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Sincronizar roteamento por chats</p>
+                    <div className="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                      <Field label="Page Size">
+                        <input
+                          type="number"
+                          min={10}
+                          max={100}
+                          value={syncPageSize}
+                          onChange={(e) => setSyncPageSize(Number(e.target.value || 100))}
+                          className={inputCls}
+                        />
+                      </Field>
+                      <Field label="Max Pages">
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={syncMaxPages}
+                          onChange={(e) => setSyncMaxPages(Number(e.target.value || 3))}
+                          className={inputCls}
+                        />
+                      </Field>
+                      <Field label="Filtro">
+                        <button
+                          type="button"
+                          onClick={() => setSyncOnlyUnknown((v) => !v)}
+                          className="cursor-pointer h-10 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3 text-[12px] font-semibold text-white/70 text-left"
+                        >
+                          {syncOnlyUnknown ? "Somente desconhecidos" : "Todos os contatos"}
+                        </button>
+                      </Field>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => syncRouting.mutate({
+                          instanceId: integration?.instanceId ?? undefined,
+                          page: 1,
+                          pageSize: syncPageSize,
+                          maxPages: syncMaxPages,
+                          onlyUnknown: syncOnlyUnknown,
+                          upsertMissingContacts: false,
+                        })}
+                        disabled={syncRouting.isPending}
+                        className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-[11px] font-bold text-accent-foreground hover:bg-accent/90 transition-all disabled:opacity-40"
+                      >
+                        {syncRouting.isPending ? <Spinner /> : <ArrowsClockwise className="h-3 w-3" />}
+                        Sincronizar roteamento
+                      </button>
+                      {syncRouting.data && (
+                        <p className="text-[10px] text-white/45">
+                          {syncRouting.data.syncedContacts} contatos roteados de {syncRouting.data.scannedChats} chats lidos
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -285,6 +383,11 @@ function ZapiCard({ integration, open, onToggle }: { integration: Integration | 
                       <Field label="Instance ID">
                         <input value={instanceId} onChange={(e) => setInstanceId(e.target.value)} placeholder="3EE8E4989B..." className={inputCls} />
                       </Field>
+                      <Field label="Rótulo">
+                        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Recepção Principal" className={inputCls} />
+                      </Field>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
                       <Field label="Instance Token">
                         <input type="password" value={instanceToken} onChange={(e) => setInstanceToken(e.target.value)} placeholder="••••••••••••••••" className={inputCls} />
                       </Field>
@@ -405,8 +508,11 @@ export function ConexoesTab() {
 
   const toggle = (id: string) => setOpenCard((v) => (v === id ? null : id))
   const get = (provider: string) => integrations?.find((i) => i.provider === provider) ?? null
+  const zapiIntegrations = (integrations ?? []).filter((i) => i.provider === "zapi")
 
-  const activeCount = integrations?.filter((i) => i.isActive && i.hasApiKey).length ?? 0
+  const hasActiveZapi = zapiIntegrations.some((i) => i.isActive && i.hasApiKey)
+  const hasActiveAsaas = (integrations ?? []).some((i) => i.provider === "asaas" && i.isActive && i.hasApiKey)
+  const activeCount = Number(hasActiveZapi) + Number(hasActiveAsaas)
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="space-y-6 w-full">
@@ -447,7 +553,7 @@ export function ConexoesTab() {
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <ZapiCard integration={get("zapi")} open={openCard === "zapi"} onToggle={() => toggle("zapi")} />
+          <ZapiCard integrations={zapiIntegrations} open={openCard === "zapi"} onToggle={() => toggle("zapi")} />
           <AsaasCard integration={get("asaas")} open={openCard === "asaas"} onToggle={() => toggle("asaas")} />
         </div>
       )}

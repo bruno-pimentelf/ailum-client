@@ -49,6 +49,8 @@ export interface FirestoreContact {
   // Presence indicators
   contactTyping?: boolean
   agentTyping?: boolean
+  // Sticky routing for multi-instance WhatsApp/Z-API
+  zapiInstanceId?: string | null
 
   // Metadata
   updatedAt: Timestamp

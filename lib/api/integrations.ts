@@ -5,8 +5,11 @@ import { apiFetch } from "@/lib/api"
 export type Provider = "zapi" | "asaas" | "infinitepay" | "elevenlabs"
 
 export type Integration = {
+  id?: string
   provider: Provider
   instanceId: string | null
+  label?: string | null
+  isDefault?: boolean
   webhookToken: string | null
   isActive: boolean
   hasApiKey: boolean
@@ -15,6 +18,7 @@ export type Integration = {
 export type ZapiSaveInput = {
   instanceId: string
   instanceToken: string
+  label?: string
 }
 
 export type ZapiSaveResult = Integration & {
@@ -26,6 +30,58 @@ export type ZapiStatus = {
   connected: boolean
   smartphoneConnected: boolean
   error: string | null
+}
+
+export type ZapiSetDefaultInput = {
+  instanceId: string
+}
+
+export type ZapiSetDefaultResult = {
+  instanceId: string
+  isDefault: true
+}
+
+export type ZapiSyncRoutingInput = {
+  instanceId?: string
+  page?: number
+  pageSize?: number
+  maxPages?: number
+  onlyUnknown?: boolean
+  upsertMissingContacts?: boolean
+}
+
+export type ZapiSyncRoutingResult = {
+  scannedChats: number
+  matchedContacts: number
+  updatedContacts: number
+  updatedContactIds: string[]
+  createdContacts: number
+  createdContactIds: string[]
+  skippedAlreadyRouted: number
+  unmatchedPhones: string[]
+  syncedContacts: number
+}
+
+export type ZapiContactRoutingInput = {
+  instanceId: string | null
+}
+
+export type ZapiContactRoutingResult = {
+  id: string
+  phone: string
+  zapiInstanceId: string | null
+  updatedAt: string
+}
+
+export type ZapiChatModifyInput = {
+  instanceId?: string
+  phone: string
+  action: "read" | "unread"
+}
+
+export type ZapiProfilePictureBatchInput = {
+  instanceId?: string
+  phones: string[]
 }
 
 export type ZapiQrCode = {
@@ -136,8 +192,53 @@ export const integrationsApi = {
   saveZapi: (body: ZapiSaveInput) =>
     apiFetch<ZapiSaveResult>("/integrations/zapi", { method: "PUT", body }),
 
-  zapiStatus: () =>
-    apiFetch<ZapiStatus>("/integrations/zapi/status"),
+  setZapiDefault: (body: ZapiSetDefaultInput) =>
+    apiFetch<ZapiSetDefaultResult>("/integrations/zapi/default", { method: "PATCH", body }),
+
+  zapiStatus: (params?: { instanceId?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.instanceId) qs.set("instanceId", params.instanceId)
+    const suffix = qs.toString()
+    return apiFetch<ZapiStatus>(`/integrations/zapi/status${suffix ? `?${suffix}` : ""}`)
+  },
+
+  zapiMe: (params?: { instanceId?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.instanceId) qs.set("instanceId", params.instanceId)
+    const suffix = qs.toString()
+    return apiFetch<Record<string, unknown>>(`/integrations/zapi/me${suffix ? `?${suffix}` : ""}`)
+  },
+
+  zapiChats: (params?: { page?: number; pageSize?: number; instanceId?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.page) qs.set("page", String(params.page))
+    if (params?.pageSize) qs.set("pageSize", String(params.pageSize))
+    if (params?.instanceId) qs.set("instanceId", params.instanceId)
+    const suffix = qs.toString()
+    return apiFetch<Record<string, unknown>>(`/integrations/zapi/chats${suffix ? `?${suffix}` : ""}`)
+  },
+
+  zapiModifyChat: (body: ZapiChatModifyInput) =>
+    apiFetch<Record<string, unknown>>("/integrations/zapi/chats/modify", { method: "POST", body }),
+
+  zapiProfilePicture: (params: { phone: string; instanceId?: string }) => {
+    const qs = new URLSearchParams()
+    qs.set("phone", params.phone)
+    if (params.instanceId) qs.set("instanceId", params.instanceId)
+    return apiFetch<Record<string, unknown>>(`/integrations/zapi/profile-picture?${qs.toString()}`)
+  },
+
+  zapiProfilePicturesBatch: (body: ZapiProfilePictureBatchInput) =>
+    apiFetch<{ results: Array<{ phone: string; link?: string | null; error?: string | null }> }>(
+      "/integrations/zapi/profile-pictures/batch",
+      { method: "POST", body }
+    ),
+
+  zapiSyncContactRouting: (body: ZapiSyncRoutingInput) =>
+    apiFetch<ZapiSyncRoutingResult>("/integrations/zapi/chats/sync-contact-routing", { method: "POST", body }),
+
+  zapiOverrideContactRouting: (contactId: string, body: ZapiContactRoutingInput) =>
+    apiFetch<ZapiContactRoutingResult>(`/integrations/zapi/contacts/${contactId}/routing`, { method: "PATCH", body }),
 
   zapiQrCode: () =>
     apiFetch<ZapiQrCode>("/integrations/zapi/qrcode"),

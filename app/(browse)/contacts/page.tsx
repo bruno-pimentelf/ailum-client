@@ -68,6 +68,7 @@ function toFirestoreContact(c: ApiContact): FirestoreContact {
     unreadCount: 0,
     contactTyping: false,
     agentTyping: false,
+    zapiInstanceId: c.zapiInstanceId ?? null,
     updatedAt: { toDate: () => new Date() } as never,
   }
 }

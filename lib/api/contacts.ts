@@ -15,6 +15,7 @@ export interface ApiContact {
   name: string | null
   email: string | null
   photoUrl: string | null
+  zapiInstanceId?: string | null
   lastMessageAt: string | null
   status: ContactStatus
   currentFunnel: { id: string; name: string } | null

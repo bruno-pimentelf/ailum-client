@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   PaperPlaneTilt,
@@ -28,9 +28,16 @@ import {
   Star,
   Warning,
   Clock,
+  Play,
+  Pause,
+  ArrowsOutSimple,
+  DownloadSimple,
+  FilmStrip,
 } from "@phosphor-icons/react"
 import { PixChargeBlock } from "./pix-charge-block"
 import { useMessages, useTypingStatus } from "@/hooks/use-chats"
+import { useIntegrations, useOverrideContactZapiRouting } from "@/hooks/use-integrations"
+import type { Integration } from "@/lib/api/integrations"
 import { sendMessage, markAsRead } from "@/lib/api/conversations"
 import type { FirestoreContact, FirestoreMessage } from "@/lib/types/firestore"
 
@@ -219,18 +226,253 @@ function RecordingIndicator({ seconds }: { seconds: number }) {
 
 type AnyMessage = FirestoreMessage | OptimisticMessage
 
+type MediaViewerPayload =
+  | { type: "image"; url: string; caption?: string | null }
+  | { type: "video"; url: string; caption?: string | null }
+  | { type: "audio"; url: string; caption?: string | null }
+  | { type: "document"; url: string; fileName?: string | null }
+
+function formatAudioTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00"
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${String(secs).padStart(2, "0")}`
+}
+
+function isMediaPlaceholder(value?: string | null) {
+  if (!value) return false
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) return false
+  return [
+    "[imagem]",
+    "imagem",
+    "[image]",
+    "image",
+    "[áudio]",
+    "áudio",
+    "[audio]",
+    "audio",
+    "[vídeo]",
+    "vídeo",
+    "[video]",
+    "video",
+    "[documento]",
+    "documento",
+    "[document]",
+    "document",
+    "[arquivo]",
+    "arquivo",
+    "[file]",
+    "file",
+  ].includes(normalized)
+}
+
+function AudioMessagePlayer({
+  url,
+  compact,
+  onOpenFull,
+}: {
+  url: string
+  compact?: boolean
+  onOpenFull?: () => void
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+
+  useEffect(() => {
+    const el = audioRef.current
+    if (!el) return
+
+    const onLoaded = () => setDuration(el.duration || 0)
+    const onTime = () => setCurrentTime(el.currentTime || 0)
+    const onEnded = () => setPlaying(false)
+    const onPause = () => setPlaying(false)
+    const onPlay = () => setPlaying(true)
+
+    el.addEventListener("loadedmetadata", onLoaded)
+    el.addEventListener("timeupdate", onTime)
+    el.addEventListener("ended", onEnded)
+    el.addEventListener("pause", onPause)
+    el.addEventListener("play", onPlay)
+
+    return () => {
+      el.removeEventListener("loadedmetadata", onLoaded)
+      el.removeEventListener("timeupdate", onTime)
+      el.removeEventListener("ended", onEnded)
+      el.removeEventListener("pause", onPause)
+      el.removeEventListener("play", onPlay)
+    }
+  }, [])
+
+  const togglePlay = async () => {
+    const el = audioRef.current
+    if (!el) return
+    if (el.paused) {
+      try {
+        await el.play()
+      } catch {
+        // Ignore autoplay/device restrictions in inline player.
+      }
+      return
+    }
+    el.pause()
+  }
+
+  const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0
+
+  return (
+    <div className={`min-w-[190px] rounded-xl border border-border/60 bg-muted/20 p-2.5 ${compact ? "w-[230px]" : "w-full max-w-[300px]"}`}>
+      <audio ref={audioRef} src={url} preload="metadata" />
+      <div className="flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={togglePlay}
+          className="cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/90 text-foreground/85 hover:bg-accent/15 hover:text-accent transition-colors"
+          aria-label={playing ? "Pausar áudio" : "Reproduzir áudio"}
+        >
+          {playing ? <Pause className="h-3.5 w-3.5" weight="fill" /> : <Play className="h-3.5 w-3.5 ml-0.5" weight="fill" />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex h-4 items-end gap-0.5">
+            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+              <motion.span
+                key={i}
+                className="w-0.5 rounded-full bg-muted-foreground/45"
+                animate={playing ? { height: ["4px", "11px", "4px"] } : { height: "4px" }}
+                transition={playing ? { duration: 0.9, repeat: Infinity, delay: i * 0.1, ease: "easeInOut" } : { duration: 0.2 }}
+              />
+            ))}
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/60">
+            <motion.div
+              className="h-full rounded-full bg-accent/80"
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.15, ease: "linear" }}
+            />
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-[10px] font-mono text-muted-foreground/60">{formatAudioTime(currentTime)}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/50">{formatAudioTime(duration)}</span>
+          </div>
+        </div>
+        {onOpenFull && (
+          <button
+            type="button"
+            onClick={onOpenFull}
+            className="cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground/55 hover:text-foreground hover:bg-muted/50 transition-colors"
+            aria-label="Abrir áudio em destaque"
+            title="Abrir em destaque"
+          >
+            <ArrowsOutSimple className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MediaViewerModal({
+  media,
+  onClose,
+}: {
+  media: MediaViewerPayload | null
+  onClose: () => void
+}) {
+  if (!media) return null
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        key={`${media.type}-${media.url}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="absolute inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.98 }}
+          transition={{ duration: 0.2, ease }}
+          className="relative w-full max-w-[840px] overflow-hidden rounded-2xl border border-white/10 bg-[oklch(0.18_0.02_260)] shadow-2xl"
+        >
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
+            <p className="truncate text-[12px] font-medium text-white/75">
+              {media.type === "document" ? media.fileName || "Documento" : "Visualização de mídia"}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <a
+                href={media.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                title="Abrir em nova aba"
+              >
+                <ArrowsOutSimple className="h-4 w-4" />
+              </a>
+              {media.type === "document" && (
+                <a
+                  href={media.url}
+                  download={media.fileName ?? undefined}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                  title="Baixar"
+                >
+                  <DownloadSimple className="h-4 w-4" />
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label="Fechar visualizador"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="max-h-[80vh] overflow-auto p-4">
+            {media.type === "image" && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={media.url} alt={media.caption || "imagem"} className="mx-auto max-h-[72vh] w-auto max-w-full rounded-xl object-contain" />
+            )}
+            {media.type === "video" && (
+              <video controls src={media.url} className="mx-auto max-h-[72vh] w-full rounded-xl" />
+            )}
+            {media.type === "audio" && (
+              <div className="mx-auto w-full max-w-[520px] py-3">
+                <AudioMessagePlayer url={media.url} />
+              </div>
+            )}
+            {media.type === "document" && (
+              <div className="h-[72vh] overflow-hidden rounded-xl border border-white/10 bg-black/20">
+                <iframe src={media.url} className="h-full w-full" title={media.fileName || "Documento"} />
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
 function MessageBubble({
   msg,
   animate,
   quotedText,
   onReply,
   onReact,
+  onOpenMedia,
 }: {
   msg: AnyMessage
   animate?: boolean
   quotedText?: string | null
   onReply?: (m: FirestoreMessage) => void
   onReact?: (m: FirestoreMessage, reaction: string) => void
+  onOpenMedia?: (media: MediaViewerPayload) => void
 }) {
   const isPending = "_optimistic" in msg && msg._optimistic
   const isMe = msg.role === "OPERATOR" || msg.role === "AGENT"
@@ -253,18 +495,29 @@ function MessageBubble({
     // ── IMAGE ──────────────────────────────────────────────────────────────────
     if (msg.type === "IMAGE") {
       // Caption: prefer metadata.caption, fallback to msg.content
-      const caption = m?.caption || msg.content || null
+      const caption = (m?.caption && !isMediaPlaceholder(m.caption))
+        ? m.caption
+        : (!isMediaPlaceholder(msg.content) ? msg.content : null)
 
       if (m?.imageUrl) {
         return (
           <div className="space-y-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={m.imageUrl}
-              alt={caption || "imagem"}
-              className="rounded-xl max-w-[260px] w-full object-cover cursor-pointer"
-              onClick={() => window.open(m.imageUrl, "_blank")}
-            />
+            <button
+              type="button"
+              onClick={() => onOpenMedia?.({ type: "image", url: m.imageUrl as string, caption })}
+              className="group relative cursor-pointer overflow-hidden rounded-xl"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={m.imageUrl}
+                alt={caption || "imagem"}
+                className="max-w-[260px] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+              <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80" />
+              <span className="pointer-events-none absolute bottom-2 right-2 rounded-full border border-white/20 bg-black/40 px-2 py-1 text-[10px] text-white/85">
+                Toque para ampliar
+              </span>
+            </button>
             {caption && <p className="text-[12px] text-foreground/80">{caption}</p>}
           </div>
         )
@@ -285,11 +538,11 @@ function MessageBubble({
     if (msg.type === "AUDIO") {
       if (m?.audioUrl) {
         return (
-          <div className="flex items-center gap-2 min-w-[180px]">
-            <SpeakerHigh className="h-4 w-4 text-muted-foreground/60 shrink-0" />
-            <audio controls src={m.audioUrl} className="h-8 flex-1" />
-            {m.ptt && <span className="text-[10px] text-muted-foreground/40 shrink-0">voz</span>}
-          </div>
+          <AudioMessagePlayer
+            url={m.audioUrl}
+            compact
+            onOpenFull={() => onOpenMedia?.({ type: "audio", url: m.audioUrl as string })}
+          />
         )
       }
       // Sent by operator — audioUrl not yet populated
@@ -305,8 +558,19 @@ function MessageBubble({
     if (msg.type === "DOCUMENT") {
       if (m?.mediaKind === "video" && m.videoUrl) {
         return (
-          <div className="space-y-1">
-            <video controls src={m.videoUrl} className="rounded-xl max-w-[260px]" />
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => onOpenMedia?.({ type: "video", url: m.videoUrl as string, caption: m.caption })}
+              className="group relative cursor-pointer overflow-hidden rounded-xl"
+            >
+              <video controls={false} src={m.videoUrl} className="max-w-[260px] rounded-xl" />
+              <span className="pointer-events-none absolute inset-0 bg-black/30 transition-colors duration-300 group-hover:bg-black/40" />
+              <span className="pointer-events-none absolute inset-x-0 bottom-2 mx-auto flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-black/45 px-2.5 py-1 text-[10px] text-white/85">
+                <FilmStrip className="h-3 w-3" />
+                Abrir vídeo
+              </span>
+            </button>
             {m.caption && <p className="text-[12px] text-foreground/80">{m.caption}</p>}
           </div>
         )
@@ -315,11 +579,9 @@ function MessageBubble({
       const fileName = m?.fileName || msg.content || "Documento"
       if (m?.documentUrl) {
         return (
-          <a
-            href={m.documentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            download={m.fileName}
+          <button
+            type="button"
+            onClick={() => onOpenMedia?.({ type: "document", url: m.documentUrl as string, fileName })}
             className="flex items-center gap-2.5 group"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/30 group-hover:bg-accent/10 transition-colors">
@@ -329,9 +591,9 @@ function MessageBubble({
               <p className="text-[12px] font-medium truncate max-w-[180px] group-hover:text-accent transition-colors">
                 {fileName}
               </p>
-              <p className="text-[10px] text-muted-foreground/40">Toque para abrir</p>
+              <p className="text-[10px] text-muted-foreground/40">Toque para visualizar</p>
             </div>
-          </a>
+          </button>
         )
       }
 
@@ -521,6 +783,8 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const [attachment, setAttachment] = useState<PendingAttachment | null>(null)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [replyTo, setReplyTo] = useState<FirestoreMessage | null>(null)
+  const [mediaViewer, setMediaViewer] = useState<MediaViewerPayload | null>(null)
+  const [routeInstanceId, setRouteInstanceId] = useState("")
 
   // Optimistic messages — keyed by a local temp ID, removed when Firestore confirms
   const [optimisticMsgs, setOptimisticMsgs] = useState<OptimisticMessage[]>([])
@@ -544,9 +808,20 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     contact.id ?? null
   )
   const { contactTyping, agentTyping } = useTypingStatus(tenantId, contact.id ?? null)
+  const { data: integrations } = useIntegrations()
+  const overrideRouting = useOverrideContactZapiRouting(contact.id ?? null)
 
   const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
   const displayPhone = contact.contactPhone ?? contact.phone ?? ""
+  const preferredInstanceId = contact.zapiInstanceId ?? ""
+  const zapiInstances: Integration[] = useMemo(
+    () => (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId),
+    [integrations]
+  )
+
+  useEffect(() => {
+    setRouteInstanceId(preferredInstanceId)
+  }, [contact.id, preferredInstanceId])
 
   // Remove optimistic messages that have been confirmed by Firestore
   // (matched by content to avoid keeping ghosts)
@@ -632,6 +907,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     setAttachment(null)
     setAttachMenuOpen(false)
     setReplyTo(null)
+    setMediaViewer(null)
     setErrorMsg(null)
     setOptimisticMsgs([])
     stopRecording(false)
@@ -678,7 +954,8 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     const tempId = addOptimistic(optimisticContent, type as FirestoreMessage["type"])
 
     try {
-      await sendMessage(contact.id, payload)
+      const routedPayload = routeInstanceId ? { ...payload, instanceId: routeInstanceId } : payload
+      await sendMessage(contact.id, routedPayload)
       setAttachment(null)
       setAttachMenuOpen(false)
       return true
@@ -690,7 +967,16 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       if (restoreText) setInputValue(restoreText)
       return false
     }
-  }, [contact.id, addOptimistic])
+  }, [contact.id, addOptimistic, routeInstanceId])
+
+  const handleSaveRouting = useCallback(async () => {
+    if (!contact.id) return
+    try {
+      await overrideRouting.mutateAsync({ instanceId: routeInstanceId || null })
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Não foi possível atualizar a rota do contato")
+    }
+  }, [contact.id, overrideRouting, routeInstanceId])
 
   const handleReplyMessage = useCallback((m: FirestoreMessage) => {
     if (!m.zapiMessageId) {
@@ -842,6 +1128,8 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       transition={{ duration: 0.2 }}
       className="flex flex-1 flex-col min-h-0 overflow-hidden relative"
     >
+      <MediaViewerModal media={mediaViewer} onClose={() => setMediaViewer(null)} />
+
       {/* ── Toast ── */}
       <AnimatePresence>
         {errorMsg && (
@@ -850,7 +1138,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       </AnimatePresence>
 
       {/* ── Header ── */}
-      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-5">
+      <div className="flex min-h-16 shrink-0 items-center justify-between border-b border-border px-5 py-2">
         <div className="flex items-center gap-3">
           <div className="relative">
             <Avatar name={displayName} photoUrl={contact.photoUrl} size="sm" />
@@ -863,6 +1151,31 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
             <p className="text-[11px] text-muted-foreground/50 leading-tight font-mono">
               {contactTyping ? "digitando..." : agentTyping ? "agente escrevendo..." : displayPhone}
             </p>
+            {zapiInstances.length > 0 && (
+              <div className="mt-1 flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground/40">Rota WA</span>
+                <select
+                  value={routeInstanceId}
+                  onChange={(e) => setRouteInstanceId(e.target.value)}
+                  className="h-6 rounded-md border border-border/60 bg-card/60 px-2 text-[10px] text-foreground/80 outline-none focus:border-accent/30"
+                >
+                  <option value="">Automático</option>
+                  {zapiInstances.map((inst: Integration, idx: number) => (
+                    <option key={`${inst.instanceId}-${idx}`} value={inst.instanceId ?? ""}>
+                      {inst.label || inst.instanceId}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleSaveRouting}
+                  disabled={overrideRouting.isPending || routeInstanceId === preferredInstanceId}
+                  className="cursor-pointer rounded-md border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent transition-colors hover:bg-accent/15 disabled:cursor-default disabled:opacity-50"
+                >
+                  {overrideRouting.isPending ? "..." : "Salvar"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -930,6 +1243,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
               quotedText={previewText(refMsg)}
               onReply={handleReplyMessage}
               onReact={handleReactToMessage}
+              onOpenMedia={setMediaViewer}
             />
           )
         })}
