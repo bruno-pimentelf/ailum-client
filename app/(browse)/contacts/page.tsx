@@ -13,6 +13,8 @@ import {
   Warning,
   X,
   UploadSimple,
+  Copy,
+  Check,
 } from "@phosphor-icons/react"
 import {
   ResizablePanelGroup,
@@ -103,6 +105,66 @@ function Avatar({ name, photoUrl }: { name: string; photoUrl?: string | null }) 
   )
 }
 
+// ─── Phone display (formatted + copy) ──────────────────────────────────────────
+
+function formatPhoneParts(phone: string): { country: string; ddd: string; number: string } | null {
+  const digits = phone.replace(/\D/g, "")
+  if (!digits) return null
+  let rest = digits
+  if (rest.startsWith("55") && rest.length >= 12) rest = rest.slice(2)
+  if (rest.length >= 11 && rest[2] === "9") {
+    return { country: "+55", ddd: rest.slice(0, 2), number: `${rest.slice(2, 7)}-${rest.slice(7)}` }
+  }
+  if (rest.length >= 10) {
+    return { country: "+55", ddd: rest.slice(0, 2), number: `${rest.slice(2, 6)}-${rest.slice(6, 10)}` }
+  }
+  return null
+}
+
+function PhoneDisplay({ phone }: { phone: string }) {
+  const [copied, setCopied] = useState(false)
+  const raw = phone.replace(/\D/g, "").replace(/^0+/, "") || phone
+  const toCopy = raw.startsWith("55") ? raw : `55${raw}`
+  const parts = formatPhoneParts(phone)
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(toCopy).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    })
+  }
+
+  if (!parts) {
+    return (
+      <span className="text-[12px] font-mono text-muted-foreground/80 tabular-nums truncate">
+        {phone}
+      </span>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="cursor-pointer inline-flex items-center gap-2 group text-left"
+      title="Copiar telefone"
+    >
+      <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400/80 group-hover:bg-emerald-500/15 group-hover:text-emerald-400 transition-colors">
+        <WhatsappLogo className="h-3.5 w-3.5" weight="fill" />
+      </span>
+      <span className="inline-flex items-baseline gap-0.5 tabular-nums text-[12px] font-mono">
+        <span className="text-muted-foreground/55">{parts.country}</span>
+        <span className="text-muted-foreground/70">({parts.ddd})</span>
+        <span className="text-foreground/95 font-medium">{parts.number}</span>
+      </span>
+      <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded transition-all ${copied ? "text-accent" : "text-muted-foreground/40 opacity-0 group-hover:opacity-100"}`}>
+        {copied ? <Check className="h-3 w-3" weight="bold" /> : <Copy className="h-3 w-3" />}
+      </span>
+    </button>
+  )
+}
+
 // ─── Stage pill ───────────────────────────────────────────────────────────────
 
 function StagePill({ stage }: { stage: { name: string; color: string } }) {
@@ -143,11 +205,8 @@ function ContactRow({ contact, active, onClick }: { contact: ApiContact; active:
       </td>
 
       {/* Phone */}
-      <td className="py-2.5 px-3">
-        <div className="flex items-center gap-1.5">
-          <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400/60 shrink-0" weight="fill" />
-          <span className="text-[12px] font-mono text-muted-foreground/85">{contact.phone}</span>
-        </div>
+      <td className="py-2.5 px-3 w-[1%] whitespace-nowrap align-middle">
+        <PhoneDisplay phone={contact.phone} />
       </td>
 
       {/* Funnel / Stage */}
@@ -289,7 +348,7 @@ function ContactsTablePanel({
                   <th className="w-8" />
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="[&_tr]:cursor-pointer">
                 <AnimatePresence initial={false}>
                   {contacts.map((c) => (
                     <ContactRow
