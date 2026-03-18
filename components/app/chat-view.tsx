@@ -36,7 +36,7 @@ import {
 } from "@phosphor-icons/react"
 import { PixChargeBlock } from "./pix-charge-block"
 import { useMessages, useTypingStatus } from "@/hooks/use-chats"
-import { useIntegrations, useOverrideContactZapiRouting } from "@/hooks/use-integrations"
+import { useIntegrations } from "@/hooks/use-integrations"
 import type { Integration } from "@/lib/api/integrations"
 import { sendMessage, markAsRead } from "@/lib/api/conversations"
 import type { FirestoreContact, FirestoreMessage } from "@/lib/types/firestore"
@@ -784,7 +784,6 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [replyTo, setReplyTo] = useState<FirestoreMessage | null>(null)
   const [mediaViewer, setMediaViewer] = useState<MediaViewerPayload | null>(null)
-  const [routeInstanceId, setRouteInstanceId] = useState("")
 
   // Optimistic messages — keyed by a local temp ID, removed when Firestore confirms
   const [optimisticMsgs, setOptimisticMsgs] = useState<OptimisticMessage[]>([])
@@ -809,7 +808,6 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   )
   const { contactTyping, agentTyping } = useTypingStatus(tenantId, contact.id ?? null)
   const { data: integrations } = useIntegrations()
-  const overrideRouting = useOverrideContactZapiRouting(contact.id ?? null)
 
   const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
   const displayPhone = contact.contactPhone ?? contact.phone ?? ""
@@ -818,10 +816,16 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     () => (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId),
     [integrations]
   )
-
-  useEffect(() => {
-    setRouteInstanceId(preferredInstanceId)
-  }, [contact.id, preferredInstanceId])
+  const fallbackInstance = useMemo(
+    () => zapiInstances.find((i) => i.isDefault) ?? zapiInstances[0] ?? null,
+    [zapiInstances]
+  )
+  const routedInstanceId = preferredInstanceId || fallbackInstance?.instanceId || ""
+  const routedInstanceLabel = useMemo(() => {
+    if (!routedInstanceId) return null
+    const exact = zapiInstances.find((i) => i.instanceId === routedInstanceId)
+    return exact?.label || exact?.instanceId || routedInstanceId
+  }, [routedInstanceId, zapiInstances])
 
   // Remove optimistic messages that have been confirmed by Firestore
   // (matched by content to avoid keeping ghosts)
@@ -954,7 +958,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     const tempId = addOptimistic(optimisticContent, type as FirestoreMessage["type"])
 
     try {
-      const routedPayload = routeInstanceId ? { ...payload, instanceId: routeInstanceId } : payload
+      const routedPayload = routedInstanceId ? { ...payload, instanceId: routedInstanceId } : payload
       await sendMessage(contact.id, routedPayload)
       setAttachment(null)
       setAttachMenuOpen(false)
@@ -967,16 +971,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       if (restoreText) setInputValue(restoreText)
       return false
     }
-  }, [contact.id, addOptimistic, routeInstanceId])
-
-  const handleSaveRouting = useCallback(async () => {
-    if (!contact.id) return
-    try {
-      await overrideRouting.mutateAsync({ instanceId: routeInstanceId || null })
-    } catch (err) {
-      showError(err instanceof Error ? err.message : "Não foi possível atualizar a rota do contato")
-    }
-  }, [contact.id, overrideRouting, routeInstanceId])
+  }, [contact.id, addOptimistic, routedInstanceId])
 
   const handleReplyMessage = useCallback((m: FirestoreMessage) => {
     if (!m.zapiMessageId) {
@@ -1151,31 +1146,6 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
             <p className="text-[11px] text-muted-foreground/50 leading-tight font-mono">
               {contactTyping ? "digitando..." : agentTyping ? "agente escrevendo..." : displayPhone}
             </p>
-            {zapiInstances.length > 0 && (
-              <div className="mt-1 flex items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground/40">Rota WA</span>
-                <select
-                  value={routeInstanceId}
-                  onChange={(e) => setRouteInstanceId(e.target.value)}
-                  className="h-6 rounded-md border border-border/60 bg-card/60 px-2 text-[10px] text-foreground/80 outline-none focus:border-accent/30"
-                >
-                  <option value="">Automático</option>
-                  {zapiInstances.map((inst: Integration, idx: number) => (
-                    <option key={`${inst.instanceId}-${idx}`} value={inst.instanceId ?? ""}>
-                      {inst.label || inst.instanceId}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={handleSaveRouting}
-                  disabled={overrideRouting.isPending || routeInstanceId === preferredInstanceId}
-                  className="cursor-pointer rounded-md border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent transition-colors hover:bg-accent/15 disabled:cursor-default disabled:opacity-50"
-                >
-                  {overrideRouting.isPending ? "..." : "Salvar"}
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1252,6 +1222,17 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           {contactTyping && <TypingIndicator key="ct" label="digitando" />}
           {agentTyping && <TypingIndicator key="at" label="agente escrevendo" />}
         </AnimatePresence>
+
+        {/* Instance routing hint — only shown when tenant has multiple Z-API instances */}
+        {zapiInstances.length > 1 && routedInstanceLabel && (
+          <div className="flex items-center justify-center gap-1.5 py-1">
+            <span className="h-px w-8 bg-border/40" />
+            <span className="text-[10px] text-muted-foreground/35 select-none">
+              via {routedInstanceLabel}
+            </span>
+            <span className="h-px w-8 bg-border/40" />
+          </div>
+        )}
 
         <div ref={messagesEndRef} />
       </div>

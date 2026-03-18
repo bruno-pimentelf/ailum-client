@@ -203,11 +203,6 @@ function ConversationItem({
             <span className="text-[11px] text-muted-foreground/50 truncate">
               {contact.status?.replace(/_/g, " ") || ""}
             </span>
-            {contact.zapiInstanceId && (
-              <span className="max-w-[110px] truncate rounded-md border border-accent/20 bg-accent/8 px-1.5 py-0.5 text-[9px] font-mono text-accent/80">
-                {contact.zapiInstanceId}
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {displayPhone && <PhoneCopy phone={displayPhone} />}
