@@ -71,7 +71,7 @@ export function Testimonials() {
         </FadeIn>
 
         {/* Quote carousel */}
-        <div className="relative flex flex-col items-center">
+        <FadeIn delay={0.15} direction="none" className="relative flex flex-col items-center w-full">
           {/* Large decorative quote mark */}
           <div
             className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 select-none font-display text-[9rem] leading-none text-white/[0.03]"
@@ -183,7 +183,7 @@ export function Testimonials() {
               transition={{ duration: INTERVAL_MS / 1000, ease: "linear" }}
             />
           </div>
-        </div>
+        </FadeIn>
       </div>
     </section>
   )

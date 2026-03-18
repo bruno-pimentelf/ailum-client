@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+import { useInView } from "framer-motion"
 import { useLanguage } from "@/components/providers/language-provider"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -362,6 +363,8 @@ export function HowItWorks() {
   const { t } = useLanguage()
   const [activeStep, setActiveStep] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
+  const isInView = useInView(sectionRef, { once: false, margin: "-100px" })
 
   const steps = [
     {
@@ -387,13 +390,21 @@ export function HowItWorks() {
     },
   ]
 
-  // Auto-play sincronizado com a duração de cada animação de demo
+  // Reset para o step 0 quando a seção sai da viewport
   useEffect(() => {
+    if (!isInView) {
+      setActiveStep(0)
+    }
+  }, [isInView])
+
+  // Auto-play só roda quando a seção está visível
+  useEffect(() => {
+    if (!isInView) return
     const timeout = window.setTimeout(() => {
       setActiveStep((prev) => (prev + 1) % STEP_AUTOPLAY_DURATIONS.length)
     }, STEP_AUTOPLAY_DURATIONS[activeStep] ?? STEP_AUTOPLAY_DURATIONS[0])
     return () => window.clearTimeout(timeout)
-  }, [activeStep])
+  }, [activeStep, isInView])
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)")
@@ -405,7 +416,7 @@ export function HowItWorks() {
 
   if (isMobile) {
     return (
-      <section id="como-funciona" className="relative py-24">
+      <section ref={sectionRef} id="como-funciona" className="relative py-24">
         <div className="mx-auto w-full max-w-7xl px-6">
           <div className="mb-10">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
@@ -459,7 +470,7 @@ export function HowItWorks() {
   }
 
   return (
-    <section id="como-funciona" className="relative py-28 md:py-40">
+    <section ref={sectionRef} id="como-funciona" className="relative py-28 md:py-40">
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/4 top-1/3 h-[400px] w-[400px] rounded-full bg-accent/[0.03] blur-[120px]" />
@@ -479,7 +490,7 @@ export function HowItWorks() {
         </FadeIn>
 
         {/* Step selector tabs */}
-        <div className="grid grid-cols-1 gap-3 mb-12 sm:grid-cols-3">
+        <FadeIn delay={0.15} className="grid grid-cols-1 gap-3 mb-12 sm:grid-cols-3">
           {steps.map((step, i) => {
             const Icon = step.icon
             const isActive = i === activeStep
@@ -495,6 +506,7 @@ export function HowItWorks() {
                     : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1] hover:bg-white/[0.03]"
                 }`}
               >
+
                 <div className="flex items-center gap-3 mb-3">
                   <span
                     className={`text-[11px] font-mono tabular-nums transition-colors duration-300 ${
@@ -528,9 +540,10 @@ export function HowItWorks() {
               </motion.button>
             )
           })}
-        </div>
+        </FadeIn>
 
         {/* Demo showcase area */}
+        <FadeIn delay={0.3} direction="none">
         <div className="rounded-[2rem] bg-white/[0.02] p-2 ring-1 ring-white/[0.06]">
           <div className="rounded-[calc(2rem-0.5rem)] overflow-hidden min-h-[440px] flex items-center justify-center">
             <AnimatePresence mode="wait">
@@ -547,6 +560,7 @@ export function HowItWorks() {
             </AnimatePresence>
           </div>
         </div>
+        </FadeIn>
       </div>
     </section>
   )

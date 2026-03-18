@@ -42,7 +42,7 @@ export function FadeIn({
   className?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const isInView = useInView(ref, { once: true, margin: "-50px" })
+  const isInView = useInView(ref, { once: true, margin: "-80px" })
 
   return (
     <motion.div
@@ -70,7 +70,7 @@ export function StaggerContainer({
   staggerDelay?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const isInView = useInView(ref, { once: true, margin: "-50px" })
+  const isInView = useInView(ref, { once: true, margin: "-80px" })
 
   return (
     <motion.div
