@@ -240,8 +240,12 @@ export const integrationsApi = {
   zapiOverrideContactRouting: (contactId: string, body: ZapiContactRoutingInput) =>
     apiFetch<ZapiContactRoutingResult>(`/integrations/zapi/contacts/${contactId}/routing`, { method: "PATCH", body }),
 
-  zapiQrCode: () =>
-    apiFetch<ZapiQrCode>("/integrations/zapi/qrcode"),
+  zapiQrCode: (instanceId?: string) => {
+    const qs = new URLSearchParams()
+    if (instanceId) qs.set("instanceId", instanceId)
+    const suffix = qs.toString()
+    return apiFetch<ZapiQrCode>(`/integrations/zapi/qrcode${suffix ? `?${suffix}` : ""}`)
+  },
 
   zapiDisconnect: () =>
     apiFetch<{ disconnected: boolean }>("/integrations/zapi/disconnect", { method: "POST" }),

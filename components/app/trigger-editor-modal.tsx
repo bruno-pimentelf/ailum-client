@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Lightning, Check, Spinner, Warning } from "@phosphor-icons/react"
+import { X, Lightning, Check, Spinner, Warning, ShieldWarning } from "@phosphor-icons/react"
 import { Textarea } from "@/components/ui/textarea"
 import { useTemplates } from "@/hooks/use-templates"
 import type {
@@ -13,6 +13,11 @@ import type {
   TriggerAction,
 } from "@/lib/api/funnels"
 import type { BoardStage } from "@/lib/api/funnels"
+
+// Mínimos de segurança anti-ban (espelham os valores do backend)
+const MIN_COOLDOWN_SECONDS = 3600      // 1h
+const MIN_STALE_DELAY_MINUTES = 30     // 30min
+const MIN_WAIT_REPEAT_MINUTES = 60     // 1h
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -80,7 +85,7 @@ export function TriggerEditorModal({
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [delayMinutes, setDelayMinutes] = useState(0)
-  const [cooldownSeconds, setCooldownSeconds] = useState(86400)
+  const [cooldownSeconds, setCooldownSeconds] = useState(MIN_COOLDOWN_SECONDS)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -116,7 +121,7 @@ export function TriggerEditorModal({
       setAmount("")
       setDescription("")
       setDelayMinutes(0)
-      setCooldownSeconds(86400)
+      setCooldownSeconds(MIN_COOLDOWN_SECONDS)
     }
     setError(null)
   }, [trigger, open])
@@ -144,6 +149,18 @@ export function TriggerEditorModal({
     e.preventDefault()
     if (action === "SEND_MESSAGE" && messageMode === "template" && !templateId) {
       setError("Selecione um template")
+      return
+    }
+    if (cooldownSeconds < MIN_COOLDOWN_SECONDS) {
+      setError(`Cooldown mínimo é ${MIN_COOLDOWN_SECONDS} segundos (1 hora) para evitar spam.`)
+      return
+    }
+    if (action === "WAIT_AND_REPEAT" && delayMinutes < MIN_WAIT_REPEAT_MINUTES) {
+      setError(`Atraso mínimo para "Aguardar e repetir" é ${MIN_WAIT_REPEAT_MINUTES} minutos (1 hora).`)
+      return
+    }
+    if (event === "STALE_IN_STAGE" && delayMinutes < MIN_STALE_DELAY_MINUTES) {
+      setError(`Atraso mínimo para "Contato parado na etapa" é ${MIN_STALE_DELAY_MINUTES} minutos.`)
       return
     }
     setError(null)
@@ -352,26 +369,61 @@ export function TriggerEditorModal({
                 </div>
               )}
 
+              {/* Aviso anti-ban para eventos/ações de risco */}
+              {(event === "STALE_IN_STAGE" || action === "WAIT_AND_REPEAT") && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/8 px-3 py-2.5">
+                  <ShieldWarning className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" weight="fill" />
+                  <div className="space-y-0.5">
+                    <p className="text-[12px] font-semibold text-amber-400">Risco de ban no WhatsApp</p>
+                    <p className="text-[11px] text-amber-400/80 leading-relaxed">
+                      {action === "WAIT_AND_REPEAT"
+                        ? "Repetições muito frequentes são detectadas como spam pela Meta. Use no mínimo 1h de intervalo e 1h de cooldown."
+                        : "Mensagens automáticas para contatos parados podem ser marcadas como spam. Use no mínimo 30min de atraso e 1h de cooldown."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Atraso (min)</label>
+                  <label className={labelCls}>
+                    Atraso (min)
+                    {event === "STALE_IN_STAGE" && (
+                      <span className="ml-1 text-[10px] text-amber-400 font-normal normal-case tracking-normal">mín. 30</span>
+                    )}
+                    {action === "WAIT_AND_REPEAT" && (
+                      <span className="ml-1 text-[10px] text-amber-400 font-normal normal-case tracking-normal">mín. 60</span>
+                    )}
+                  </label>
                   <input
                     type="number"
-                    min={0}
+                    min={
+                      action === "WAIT_AND_REPEAT"
+                        ? MIN_WAIT_REPEAT_MINUTES
+                        : event === "STALE_IN_STAGE"
+                          ? MIN_STALE_DELAY_MINUTES
+                          : 0
+                    }
                     value={delayMinutes}
                     onChange={(e) => setDelayMinutes(Number(e.target.value) || 0)}
                     className={inputCls}
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Cooldown (seg)</label>
+                  <label className={labelCls}>
+                    Cooldown (seg)
+                    <span className="ml-1 text-[10px] text-amber-400 font-normal normal-case tracking-normal">mín. 3600</span>
+                  </label>
                   <input
                     type="number"
-                    min={0}
+                    min={MIN_COOLDOWN_SECONDS}
                     value={cooldownSeconds}
-                    onChange={(e) => setCooldownSeconds(Number(e.target.value) || 0)}
+                    onChange={(e) => setCooldownSeconds(Number(e.target.value) || MIN_COOLDOWN_SECONDS)}
                     className={inputCls}
                   />
+                  <p className="mt-1 text-[10px] text-muted-foreground/60">
+                    Tempo mínimo entre disparos para o mesmo contato (1h = 3600)
+                  </p>
                 </div>
               </div>
               </div>

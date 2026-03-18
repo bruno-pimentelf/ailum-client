@@ -94,7 +94,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
 
   const whatsappConnected = status?.connected === true
 
-  const { data: qrData, isFetching: qrFetching, isError: qrError, refetch: refetchQr } = useZapiQrCode({ enabled: open && view === "qrcode" })
+  const { data: qrData, isFetching: qrFetching, isError: qrError, refetch: refetchQr } = useZapiQrCode({ enabled: open && view === "qrcode", instanceId: integration?.instanceId ?? undefined })
 
   useEffect(() => {
     if (!open || view !== "qrcode" || whatsappConnected) return

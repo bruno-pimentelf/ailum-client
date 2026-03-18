@@ -52,10 +52,10 @@ export function useZapiStatus(options?: { enabled?: boolean; refetchInterval?: n
  * Z-API QR code (base64 image). Fetched on demand — not cached long.
  * The caller should poll manually or use refetch().
  */
-export function useZapiQrCode(options?: { enabled?: boolean }) {
+export function useZapiQrCode(options?: { enabled?: boolean; instanceId?: string }) {
   return useQuery({
-    queryKey: ["integrations", "zapi", "qrcode"],
-    queryFn: integrationsApi.zapiQrCode,
+    queryKey: ["integrations", "zapi", "qrcode", options?.instanceId ?? "default"],
+    queryFn: () => integrationsApi.zapiQrCode(options?.instanceId),
     enabled: options?.enabled ?? false,
     // QR code expires every 20s — keep stale immediately so refetch always fires
     staleTime: 0,
