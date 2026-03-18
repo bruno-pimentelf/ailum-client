@@ -90,7 +90,7 @@ function SelectOrgContent() {
 
     // Activate org — hard navigate so the browser commits the updated cookie
     await authClient.organization.setActive({ organizationId: data.id })
-    window.location.href = callbackUrl ?? "/chats"
+    window.location.href = callbackUrl ?? "/dashboard"
   }
 
   const handleActivate = async () => {
@@ -109,7 +109,7 @@ function SelectOrgContent() {
     // Hard navigate so the browser commits the updated cookie before the
     // next request hits the server — router.push can race against Set-Cookie
     // in cross-site (ailum.io → api.ailum.io) production environments.
-    window.location.href = callbackUrl ?? "/chats"
+    window.location.href = callbackUrl ?? "/dashboard"
   }
 
   return (

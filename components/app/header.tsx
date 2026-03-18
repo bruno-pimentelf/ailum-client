@@ -45,7 +45,15 @@ export function AppHeader() {
   const seenToastRef = useRef(new Set<string>())
   const toastTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const { data: tenant } = useTenant()
-  const { items: notificationItems, unreadCount, recentAdded, markAsRead, markAllAsRead } = useNotifications()
+  const {
+    items: notificationItems,
+    unreadCount,
+    recentAdded,
+    markAsRead,
+    markAllAsRead,
+    markAllPending,
+    readPendingIds,
+  } = useNotifications()
 
   const selectedClinic = orgs.find((o) => o.id === activeOrgId) ?? orgs[0] ?? null
 
@@ -103,10 +111,10 @@ export function AppHeader() {
 
   function getNotificationHref(n: TenantNotification) {
     if (!n.entityType) return null
-    if (n.entityType === "appointment") return "/agenda"
+    if (n.entityType === "appointment") return "/calendar"
     if (n.entityType === "charge") return "/financeiro"
     if (n.entityType === "trigger") return "/boards"
-    if (n.entityType === "contact") return "/conversas"
+    if (n.entityType === "contact") return "/chats"
     return null
   }
 
@@ -150,7 +158,7 @@ export function AppHeader() {
 
   const handleNotificationClick = useCallback(async (n: TenantNotification) => {
     try {
-      if (!n.read) await markAsRead(n.id)
+      if (!n.read && !readPendingIds.has(n.id)) await markAsRead(n.id)
     } catch {
       // ignore read failures on click
     }
@@ -159,7 +167,7 @@ export function AppHeader() {
       router.push(href)
       setNotificationsOpen(false)
     }
-  }, [markAsRead, router])
+  }, [markAsRead, readPendingIds, router])
 
   const handleSwitchOrg = useCallback(async (orgId: string) => {
     const { error } = await authClient.organization.setActive({ organizationId: orgId })
@@ -366,9 +374,10 @@ export function AppHeader() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => void markAllAsRead()}
-                      className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      disabled={markAllPending || effectiveUnread === 0}
+                      className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
                     >
-                      Marcar todas
+                      {markAllPending ? "Marcando..." : "Marcar todas"}
                     </button>
                     <button
                       onClick={() => setNotificationsOpen(false)}
@@ -419,17 +428,21 @@ export function AppHeader() {
                       <button
                         key={n.id}
                         onClick={() => void handleNotificationClick(n)}
+                        disabled={readPendingIds.has(n.id)}
                         className={`w-full rounded-lg px-2.5 py-2 text-left transition-colors cursor-pointer ${
                           n.read
                             ? "hover:bg-muted/30"
                             : "bg-accent/5 hover:bg-accent/10"
-                        }`}
+                        } disabled:opacity-70`}
                       >
                         <div className="flex items-start gap-2.5">
                           {toastIcon(n.severity)}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-[12px] font-semibold text-foreground truncate">{n.title}</p>
+                              {readPendingIds.has(n.id) && (
+                                <span className="text-[10px] text-muted-foreground/55">...</span>
+                              )}
                               {!n.read && (
                                 <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
                               )}

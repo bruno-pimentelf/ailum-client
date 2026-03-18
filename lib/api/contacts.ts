@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api"
+import { API_BASE, ApiError, apiFetch } from "@/lib/api"
 
 export type ContactStatus =
   | "NEW_LEAD"
@@ -68,6 +68,59 @@ export interface CreateContactResponse {
   updatedAt: string
 }
 
+export type ContactImportDelimiter = ";" | ","
+
+export type ContactImportMode = "create_only" | "skip_existing" | "upsert"
+
+export interface ContactImportIssue {
+  rowNumber: number
+  reason: string
+}
+
+export interface ContactImportSampleRow {
+  rowNumber: number
+  phone: string
+  name: string | null
+  email: string | null
+  notes: string | null
+  status: string | null
+}
+
+export interface ContactImportPreviewInput {
+  fileName: string
+  contentBase64: string
+  delimiter?: ContactImportDelimiter
+}
+
+export interface ContactImportPreviewResponse {
+  previewId: string
+  expiresInSec: number
+  totalRows: number
+  validRows: number
+  invalidRows: number
+  wouldCreate: number
+  wouldMatchExisting: number
+  issues: ContactImportIssue[]
+  sample: ContactImportSampleRow[]
+}
+
+export interface ContactImportCommitInput {
+  previewId: string
+  mode?: ContactImportMode
+}
+
+export interface ContactImportCommitResponse {
+  previewId: string
+  mode: ContactImportMode
+  totalProcessed: number
+  created: number
+  updated: number
+  skippedExisting: number
+  failed: number
+  changedContactIds: string[]
+  errors: Array<{ rowNumber?: number; reason: string }>
+}
+
 export const contactsApi = {
   list: (params: ContactsParams = {}) => {
     const qs = new URLSearchParams()
@@ -83,4 +136,30 @@ export const contactsApi = {
 
   create: (body: CreateContactInput) =>
     apiFetch<CreateContactResponse>("/contacts", { method: "POST", body }),
+
+  importPreview: (body: ContactImportPreviewInput) =>
+    apiFetch<ContactImportPreviewResponse>("/contacts/imports/preview", { method: "POST", body }),
+
+  importCommit: (body: ContactImportCommitInput) =>
+    apiFetch<ContactImportCommitResponse>("/contacts/imports/commit", { method: "POST", body }),
+
+  downloadImportTemplate: async () => {
+    const res = await fetch(`${API_BASE}/contacts/import-template.csv`, {
+      credentials: "include",
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      const message =
+        (data as { message?: string } | null)?.message ??
+        `API error ${res.status}`
+      throw new ApiError(res.status, message, data)
+    }
+    const blob = await res.blob()
+    const filenameHeader = res.headers.get("content-disposition") ?? ""
+    const filenameMatch = filenameHeader.match(/filename="?([^"]+)"?/)
+    return {
+      blob,
+      filename: filenameMatch?.[1] ?? "contacts-import-template.csv",
+    }
+  },
 }

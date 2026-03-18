@@ -12,6 +12,7 @@ import {
   ArrowsClockwise,
   Warning,
   X,
+  UploadSimple,
 } from "@phosphor-icons/react"
 import {
   ResizablePanelGroup,
@@ -19,6 +20,7 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable"
 import { ChatView } from "@/components/app/chat-view"
+import { ContactImportModal } from "@/components/app/contact-import-modal"
 import { useContactsList } from "@/hooks/use-contacts-list"
 import { useAuthStore } from "@/lib/auth-store"
 import type { ApiContact } from "@/lib/api/contacts"
@@ -200,6 +202,7 @@ function ContactsTablePanel({
   total,
   onPage,
   onRetry,
+  onOpenImport,
 }: {
   search: string
   setSearch: (v: string) => void
@@ -213,6 +216,7 @@ function ContactsTablePanel({
   total: number
   onPage: (p: number) => void
   onRetry: () => void
+  onOpenImport: () => void
 }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -232,6 +236,13 @@ function ContactsTablePanel({
             </button>
           )}
         </div>
+        <button
+          onClick={onOpenImport}
+          className="cursor-pointer inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-3 text-[12px] font-semibold text-accent hover:bg-accent/15 transition-colors"
+        >
+          <UploadSimple className="h-3.5 w-3.5" />
+          Importar CSV
+        </button>
         {total > 0 && (
           <span className="text-[11px] text-muted-foreground/40 shrink-0">{total} contatos</span>
         )}
@@ -339,6 +350,7 @@ export default function ContactsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<ApiContact | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   const tenantId = useAuthStore((s) => s.tenantId)
 
@@ -371,6 +383,15 @@ export default function ContactsPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
+      <ContactImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => {
+          refetch()
+          setPage(1)
+        }}
+      />
+
       {selected && firestoreContact && tenantId ? (
         <ResizablePanelGroup className="h-full w-full">
           <ResizablePanel defaultSize={55} minSize={32} className="flex flex-col min-w-0">
@@ -387,6 +408,7 @@ export default function ContactsPage() {
               total={total}
               onPage={setPage}
               onRetry={refetch}
+              onOpenImport={() => setImportOpen(true)}
             />
           </ResizablePanel>
           <ResizableHandle withHandle className="bg-border/60 hover:bg-border transition-colors data-[resize-handle-state=drag]:bg-accent/30" />
@@ -415,6 +437,7 @@ export default function ContactsPage() {
             total={total}
             onPage={setPage}
             onRetry={refetch}
+            onOpenImport={() => setImportOpen(true)}
           />
         </div>
       )}

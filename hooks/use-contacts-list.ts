@@ -1,5 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { contactsApi, type ContactsParams, type ContactsResponse, type CreateContactInput } from "@/lib/api/contacts"
+import {
+  contactsApi,
+  type ContactsParams,
+  type ContactsResponse,
+  type CreateContactInput,
+  type ContactImportCommitInput,
+  type ContactImportPreviewInput,
+} from "@/lib/api/contacts"
 
 export function useContactsList(params: ContactsParams = {}) {
   return useQuery<ContactsResponse>({
@@ -19,6 +26,23 @@ export function useCreateContact() {
       if (variables.funnelId) {
         qc.invalidateQueries({ queryKey: ["board", variables.funnelId] })
       }
+    },
+  })
+}
+
+export function useContactsImportPreview() {
+  return useMutation({
+    mutationFn: (body: ContactImportPreviewInput) => contactsApi.importPreview(body),
+  })
+}
+
+export function useContactsImportCommit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: ContactImportCommitInput) => contactsApi.importCommit(body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contacts-list"] })
+      qc.invalidateQueries({ queryKey: ["contacts"] })
     },
   })
 }

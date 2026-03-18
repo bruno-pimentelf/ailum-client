@@ -58,7 +58,7 @@ function LoginContent() {
       await authClient.organization.setActive({ organizationId: orgs[0].id })
       // Hard navigate — gives the browser time to commit the Set-Cookie
       // before the next request, avoiding race conditions in production
-      window.location.href = callbackUrl ?? "/chats"
+      window.location.href = callbackUrl ?? "/dashboard"
       return
     }
 

@@ -3,18 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   collection,
-  doc,
   limit,
   onSnapshot,
   orderBy,
   query,
   Timestamp,
-  updateDoc,
   where,
-  writeBatch,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuthStore } from "@/lib/auth-store"
+import { tenantNotificationsApi } from "@/lib/api/tenant-notifications"
 
 export type NotificationSeverity = "critical" | "warning" | "info"
 
@@ -52,6 +50,8 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [recentAdded, setRecentAdded] = useState<TenantNotification[]>([])
+  const [markAllPending, setMarkAllPending] = useState(false)
+  const [readPendingIds, setReadPendingIds] = useState<Set<string>>(new Set())
   const didInitialLoadRef = useRef(false)
 
   useEffect(() => {
@@ -140,23 +140,36 @@ export function useNotifications() {
 
   const markAsRead = useCallback(
     async (notificationId: string) => {
-      if (!tenantId) return
-      await updateDoc(doc(db, "tenants", tenantId, "notifications", notificationId), {
-        read: true,
-      })
+      if (!tenantId) return null
+      setReadPendingIds((prev) => new Set(prev).add(notificationId))
+      try {
+        const res = await tenantNotificationsApi.markAsRead(notificationId, { read: true })
+        // Optimistic local update while snapshot catches up.
+        setItems((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)))
+        return res
+      } finally {
+        setReadPendingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(notificationId)
+          return next
+        })
+      }
     },
     [tenantId],
   )
 
   const markAllAsRead = useCallback(async () => {
-    if (!tenantId) return
-    const unreadIds = items.filter((n) => !n.read).map((n) => n.id)
-    if (unreadIds.length === 0) return
-    const batch = writeBatch(db)
-    unreadIds.forEach((id) => {
-      batch.update(doc(db, "tenants", tenantId, "notifications", id), { read: true })
-    })
-    await batch.commit()
+    if (!tenantId) return null
+    if (items.every((n) => n.read)) return null
+    setMarkAllPending(true)
+    try {
+      const res = await tenantNotificationsApi.markAllAsRead({ maxDocs: 1000 })
+      // Optimistic local update while snapshot catches up.
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })))
+      return res
+    } finally {
+      setMarkAllPending(false)
+    }
   }, [items, tenantId])
 
   // Optional helper if caller wants server-side unread query later.
@@ -178,6 +191,8 @@ export function useNotifications() {
     recentAdded,
     markAsRead,
     markAllAsRead,
+    markAllPending,
+    readPendingIds,
     getUnreadQuery,
   }
 }
