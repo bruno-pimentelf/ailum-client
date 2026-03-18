@@ -145,7 +145,7 @@ export function AvailabilityWeekGrid({
             className="grid grid-cols-8 border-b border-border/30 last:border-b-0"
           >
             <div className="w-12 shrink-0 flex items-center justify-end pr-2 py-1">
-              <span className="text-[10px] font-semibold text-muted-foreground/70 tabular-nums">
+              <span className="text-[10px] font-semibold text-muted-foreground/85 tabular-nums">
                 {String(hour).padStart(2, "0")}:00
               </span>
             </div>
@@ -180,7 +180,7 @@ export function AvailabilityWeekGrid({
 
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border/30">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground/60">Preencher rápido:</span>
+          <span className="text-[11px] text-muted-foreground/90">Preencher rápido:</span>
           {!disabled && (
             <>
               <button
@@ -208,7 +208,7 @@ export function AvailabilityWeekGrid({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground/60">Duração do slot:</span>
+          <span className="text-[11px] text-muted-foreground/90">Duração do slot:</span>
           {!disabled ? (
             <select
               value={slotDurationMin}

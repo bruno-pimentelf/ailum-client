@@ -138,14 +138,14 @@ function PixQR({ amount }: { amount: string }) {
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex items-center gap-1.5">
             <CurrencyDollar className="h-3.5 w-3.5 text-emerald-400" weight="fill" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/90">
               Pagamento via Pix
             </span>
           </div>
           <p className="font-display text-lg font-bold tracking-tight text-white/90 sm:text-xl">
             {amount}
           </p>
-          <p className="text-[10px] text-white/30">
+          <p className="text-[10px] text-white/85">
             Clínica Harmonia LTDA
           </p>
         </div>
@@ -260,7 +260,7 @@ export const HeroDashboard = memo(function HeroDashboard() {
         <div className="flex min-h-0 flex-col overflow-hidden">
           <div className="mb-4 flex items-center gap-2.5 md:mb-6">
             <WhatsappLogo className="h-4 w-4 text-emerald-400/70" weight="fill" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/35 md:text-[11px]">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/88 md:text-[11px]">
               WhatsApp
             </span>
           </div>
@@ -285,10 +285,10 @@ export const HeroDashboard = memo(function HeroDashboard() {
                   ) : msg.from === "patient" ? (
                     <div className="flex max-w-[96%] items-end gap-2 sm:max-w-[92%]">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] ring-1 ring-white/[0.06] sm:h-7 sm:w-7">
-                        <UserCircle className="h-4 w-4 text-white/50 sm:h-4.5 sm:w-4.5" weight="fill" />
+                        <UserCircle className="h-4 w-4 text-white/85 sm:h-4.5 sm:w-4.5" weight="fill" />
                       </div>
                       <div className="rounded-2xl rounded-bl-sm bg-white/[0.06] px-3 py-2.5 backdrop-blur-sm sm:px-4 sm:py-3">
-                        <p className="text-[12px] leading-relaxed text-white/75 sm:text-[13px]">{msg.text}</p>
+                        <p className="text-[12px] leading-relaxed text-white/88 sm:text-[13px]">{msg.text}</p>
                       </div>
                     </div>
                   ) : (
@@ -324,7 +324,7 @@ export const HeroDashboard = memo(function HeroDashboard() {
         <div className="flex min-h-0 flex-col overflow-hidden">
           <div className="mb-4 flex items-center gap-2.5 md:mb-6">
             <Sparkle className="h-4 w-4 text-accent/60" weight="fill" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/35 md:text-[11px]">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/88 md:text-[11px]">
               Ações da IA
             </span>
           </div>
@@ -346,8 +346,8 @@ export const HeroDashboard = memo(function HeroDashboard() {
                     <ActionIcon type={action.icon} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-medium leading-none text-white/75 sm:text-[13px]">{action.label}</p>
-                    <p className="mt-1 text-[10px] leading-none text-white/35 sm:text-[11px]">{action.detail}</p>
+                    <p className="text-[12px] font-medium leading-none text-white/88 sm:text-[13px]">{action.label}</p>
+                    <p className="mt-1 text-[10px] leading-none text-white/88 sm:text-[11px]">{action.detail}</p>
                   </div>
                   <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400/50" weight="fill" />
                 </motion.div>

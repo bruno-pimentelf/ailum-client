@@ -100,8 +100,8 @@ type AptColorStyle = {
 
 // Appointment color styles — fallbacks when professional has no calendarColor
 const DEFAULT_PRO_COLORS: AptColorStyle[] = [
-  { bg: "bg-white/[0.05]", border: "border-white/[0.10]", dot: "bg-white/50", text: "text-white/80" },
-  { bg: "bg-white/[0.03]", border: "border-white/[0.07]", dot: "bg-white/30", text: "text-white/60" },
+  { bg: "bg-white/[0.05]", border: "border-white/[0.10]", dot: "bg-white/50", text: "text-white/90" },
+  { bg: "bg-white/[0.06]", border: "border-white/[0.12]", dot: "bg-white/30", text: "text-white/90" },
 ]
 
 function buildProfessionalColorMap(
@@ -132,10 +132,10 @@ function hashCode(str: string): number {
 }
 
 const STATUS_CONFIG: Record<AppointmentStatus, { label: string; badge: string }> = {
-  confirmed: { label: "Confirmado", badge: "bg-white/[0.06] text-white/50 border-white/[0.10]" },
-  pending:   { label: "Pendente",   badge: "bg-white/[0.04] text-white/35 border-white/[0.07]" },
-  done:      { label: "Realizado",  badge: "bg-white/[0.03] text-white/25 border-white/[0.05]" },
-  cancelled: { label: "Cancelado",  badge: "bg-white/[0.02] text-white/20 border-white/[0.04]" },
+  confirmed: { label: "Confirmado", badge: "bg-white/[0.08] text-white/85 border-white/[0.14]" },
+  pending:   { label: "Pendente",   badge: "bg-white/[0.06] text-white/85 border-white/[0.10]" },
+  done:      { label: "Realizado",  badge: "bg-white/[0.05] text-white/88 border-white/[0.08]" },
+  cancelled: { label: "Cancelado",  badge: "bg-white/[0.04] text-white/85 border-white/[0.07]" },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -159,8 +159,8 @@ function PaidBadge({ paid }: { paid: boolean }) {
   return (
     <span className={`inline-flex items-center rounded-full border px-1.5 py-px text-[8px] font-bold tracking-wide shrink-0 ${
       paid
-        ? "bg-white/[0.06] border-white/[0.12] text-white/50"
-        : "bg-white/[0.02] border-white/[0.06] text-white/25"
+        ? "bg-white/[0.06] border-white/[0.12] text-white/85"
+        : "bg-white/[0.05] border-white/[0.10] text-white/85"
     }`}>
       {paid ? "Pago" : "Pendente"}
     </span>
@@ -231,19 +231,19 @@ function DayAptCard({
           </div>
           {height > 38 && (
             <div className="flex items-center gap-1.5 pl-3">
-              <span className="text-[10px] text-white/40">{apt.type}</span>
-              <span className="text-white/15">·</span>
-              <span className="text-[10px] text-white/30">{apt.doctorName}</span>
+              <span className="text-[10px] text-white/90">{apt.type}</span>
+              <span className="text-white/80">·</span>
+              <span className="text-[10px] text-white/85">{apt.doctorName}</span>
             </div>
           )}
         </div>
         <div className="flex flex-col items-end justify-between h-full">
           <div className="flex flex-col items-end gap-1">
-            <span className="text-[9px] text-white/30 font-mono shrink-0">{apt.time}</span>
+            <span className="text-[9px] text-white/85 font-mono shrink-0">{apt.time}</span>
             <PaidBadge paid={apt.paid} />
           </div>
           <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-0.5 rounded hover:bg-white/5">
-            <DotsThree className="h-3 w-3 text-white/30" />
+            <DotsThree className="h-3 w-3 text-white/85" />
           </button>
         </div>
       </div>
@@ -278,24 +278,24 @@ function SidePanel({
     <div className="flex flex-col h-full">
       {/* Date heading */}
       <div className="px-5 pt-5 pb-4 border-b border-border/40">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-1">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/85 mb-1">
           {WEEKDAYS[selectedDate.getDay()]}
         </p>
         <p className={`text-3xl font-black tabular-nums leading-none ${isToday ? "text-accent" : "text-white/90"}`}>
           {selectedDate.getDate()}
         </p>
-        <p className="text-[12px] font-semibold text-white/50 mt-1">
+        <p className="text-[12px] font-semibold text-white/85 mt-1">
           {MONTHS_PT[selectedDate.getMonth()]} {selectedDate.getFullYear()}
         </p>
         <div className="flex items-center gap-3 mt-3">
           <div className="flex items-center gap-1.5">
-            <CheckCircle className={`h-3 w-3 ${isToday ? "text-accent" : "text-white/30"}`} weight="fill" />
-            <span className="text-[11px] font-semibold text-white/50">{confirmed} confirmados</span>
+            <CheckCircle className={`h-3 w-3 ${isToday ? "text-accent" : "text-white/85"}`} weight="fill" />
+            <span className="text-[11px] font-semibold text-white/85">{confirmed} confirmados</span>
           </div>
-          <span className="text-white/15">·</span>
+          <span className="text-white/80">·</span>
           <div className="flex items-center gap-1.5">
-            <Circle className="h-3 w-3 text-white/20" />
-            <span className="text-[11px] text-white/30">{total} total</span>
+            <Circle className="h-3 w-3 text-white/90" />
+            <span className="text-[11px] text-white/85">{total} total</span>
           </div>
         </div>
       </div>
@@ -310,10 +310,10 @@ function SidePanel({
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center gap-3 py-12 text-center"
             >
-              <div className="h-10 w-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
-                <CalendarBlank className="h-5 w-5 text-white/20" weight="duotone" />
+              <div className="h-10 w-10 rounded-xl bg-white/[0.07] border border-white/[0.08] flex items-center justify-center">
+                <CalendarBlank className="h-5 w-5 text-white/90" weight="duotone" />
               </div>
-              <p className="text-[12px] font-medium text-white/25">Sem consultas neste dia</p>
+              <p className="text-[12px] font-medium text-white/85">Sem consultas neste dia</p>
             </motion.div>
           ) : (
             dayApts.map((apt, i) => {
@@ -339,14 +339,14 @@ function SidePanel({
                         <span className="text-[12px] font-bold text-white/90 truncate">{apt.patientName}</span>
                       </div>
                       <div className="flex items-center gap-1.5 pl-3">
-                        <Clock className="h-2.5 w-2.5 text-white/20" />
-                        <span className="text-[10px] font-semibold text-white/40 font-mono">{apt.time}</span>
-                        <span className="text-white/15">·</span>
-                        <span className="text-[10px] text-white/25">{apt.duration}min</span>
+                        <Clock className="h-2.5 w-2.5 text-white/90" />
+                        <span className="text-[10px] font-semibold text-white/90 font-mono">{apt.time}</span>
+                        <span className="text-white/80">·</span>
+                        <span className="text-[10px] text-white/85">{apt.duration}min</span>
                       </div>
                       <div className="flex items-center gap-1.5 pl-3">
-                        <User className="h-2.5 w-2.5 text-white/20" />
-                        <span className="text-[10px] text-white/35 truncate">{apt.doctorName}</span>
+                        <User className="h-2.5 w-2.5 text-white/90" />
+                        <span className="text-[10px] text-white/88 truncate">{apt.doctorName}</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
@@ -355,7 +355,7 @@ function SidePanel({
                         {cfg.label}
                       </span>
                       <button className="p-0.5 rounded hover:bg-white/5 transition-colors">
-                        <WhatsappLogo className="h-3 w-3 text-white/20 hover:text-white/50 transition-colors" />
+                        <WhatsappLogo className="h-3 w-3 text-white/90 hover:text-white/85 transition-colors" />
                       </button>
                     </div>
                   </div>
@@ -438,14 +438,14 @@ export default function CalendarPage() {
   const doctorsList = useMemo(() => {
     if (!professionals) return []
     if (professionals.length === 0) {
-      return [{ id: "all", name: "Todos", color: "text-white/60" }]
+      return [{ id: "all", name: "Todos", color: "text-white/90" }]
     }
     return [
-      { id: "all", name: "Todos", color: "text-white/60" },
+      { id: "all", name: "Todos", color: "text-white/90" },
       ...professionals.map((p, i) => ({
         id: p.id,
         name: p.fullName,
-        color: i === 0 ? "text-accent" : "text-white/60",
+        color: i === 0 ? "text-accent" : "text-white/90",
       })),
     ]
   }, [professionals])
@@ -530,13 +530,13 @@ export default function CalendarPage() {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => navigate(-1)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/30 hover:text-white/70 hover:border-white/[0.14] hover:bg-white/[0.04] transition-all duration-200"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85 hover:border-white/[0.14] hover:bg-white/[0.07] transition-all duration-200"
               >
                 <CaretLeft className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => navigate(1)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/30 hover:text-white/70 hover:border-white/[0.14] hover:bg-white/[0.04] transition-all duration-200"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85 hover:border-white/[0.14] hover:bg-white/[0.07] transition-all duration-200"
               >
                 <CaretRight className="h-3.5 w-3.5" />
               </button>
@@ -552,7 +552,7 @@ export default function CalendarPage() {
                 className="text-[16px] font-black text-white/90 tracking-tight"
               >
                 {MONTHS_PT[month]}{" "}
-                <span className="text-white/35 font-semibold">{year}</span>
+                <span className="text-white/88 font-semibold">{year}</span>
               </motion.h1>
             </AnimatePresence>
 
@@ -569,25 +569,25 @@ export default function CalendarPage() {
 
           <div className="flex items-center gap-2">
             <div className="relative hidden sm:block">
-              <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-white/20 pointer-events-none" />
+              <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-white/90 pointer-events-none" />
               <input
                 placeholder="Buscar paciente..."
-                className="h-8 w-44 rounded-lg border border-white/[0.08] bg-white/[0.03] pl-7 pr-3 text-[12px] font-medium text-white/70 placeholder:text-white/20 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/30 transition-all duration-200"
+                className="h-8 w-44 rounded-lg border border-white/[0.08] bg-white/[0.06] pl-7 pr-3 text-[12px] font-medium text-white/85 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/30 transition-all duration-200"
               />
             </div>
 
-            <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/25 hover:text-white/60 hover:bg-white/[0.04] transition-all duration-200">
+            <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/90 hover:bg-white/[0.07] transition-all duration-200">
               <Funnel className="h-3.5 w-3.5" />
             </button>
 
             {/* View mode toggle */}
-            <div className="flex items-center rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5">
+            <div className="flex items-center rounded-lg border border-white/[0.08] bg-white/[0.05] p-0.5">
               {(["month", "week", "day"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`relative px-3 py-1 text-[11px] font-bold rounded-md transition-all duration-200 ${
-                    viewMode === mode ? "text-white/90" : "text-white/25 hover:text-white/50"
+                    viewMode === mode ? "text-white/90" : "text-white/85 hover:text-white/85"
                   }`}
                 >
                   {viewMode === mode && (
@@ -622,7 +622,7 @@ export default function CalendarPage() {
             {loadingProfessionals ? (
               <div className="flex items-center gap-2">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent/30 border-t-accent shrink-0" />
-                <span className="text-[11px] font-medium text-white/40">Carregando profissionais...</span>
+                <span className="text-[11px] font-medium text-white/90">Carregando profissionais...</span>
               </div>
             ) : (
               doctorsList.map((doc) => (
@@ -630,7 +630,7 @@ export default function CalendarPage() {
                   key={doc.id}
                   onClick={() => setActiveDoctor(doc.id)}
                   className={`relative px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
-                    activeDoctor === doc.id ? "text-white/90" : "text-white/25 hover:text-white/50"
+                    activeDoctor === doc.id ? "text-white/90" : "text-white/85 hover:text-white/85"
                   }`}
                 >
                   {activeDoctor === doc.id && (
@@ -666,9 +666,9 @@ export default function CalendarPage() {
                 transition={{ duration: 0.3, ease }}
                 className="h-full flex flex-col"
               >
-                <div className="grid grid-cols-7 border-b border-white/[0.05]">
+                <div className="grid grid-cols-7 border-b border-white/[0.14]">
                   {WEEKDAYS.map((d) => (
-                    <div key={d} className="py-2.5 text-center text-[10px] font-extrabold uppercase tracking-widest text-white/20">
+                    <div key={d} className="py-2.5 text-center text-[10px] font-extrabold uppercase tracking-widest text-white/90">
                       {d}
                     </div>
                   ))}
@@ -688,9 +688,9 @@ export default function CalendarPage() {
                       <motion.div
                         key={idx}
                         onClick={() => day && setSelectedDate(new Date(year, month, day))}
-                        className={`relative border-b border-r border-white/[0.05] p-1.5 flex flex-col gap-1 min-h-[90px] ${
-                          day ? "cursor-pointer hover:bg-white/[0.02]" : ""
-                        } ${selected && !today ? "bg-white/[0.02]" : ""} ${
+                        className={`relative border-b border-r border-white/[0.12] p-1.5 flex flex-col gap-1 min-h-[90px] ${
+                          day ? "cursor-pointer hover:bg-white/[0.05]" : ""
+                        } ${selected && !today ? "bg-white/[0.05]" : ""} ${
                           isPast && !today ? "opacity-40" : ""
                         }`}
                       >
@@ -703,13 +703,13 @@ export default function CalendarPage() {
                                     ? "bg-accent text-accent-foreground"
                                     : selected
                                     ? "bg-white/[0.10] text-white/90"
-                                    : "text-white/50 hover:text-white/80"
+                                    : "text-white/85 hover:text-white/90"
                                 }`}
                               >
                                 {day}
                               </span>
                               {apts.length > 0 && (
-                                <span className="text-[9px] font-bold text-white/20 font-mono pr-0.5">
+                                <span className="text-[9px] font-bold text-white/90 font-mono pr-0.5">
                                   {apts.length}
                                 </span>
                               )}
@@ -724,7 +724,7 @@ export default function CalendarPage() {
                                 />
                               ))}
                               {apts.length > 3 && (
-                                <span className="text-[8px] font-semibold text-white/20 pl-1">
+                                <span className="text-[8px] font-semibold text-white/90 pl-1">
                                   +{apts.length - 3} mais
                                 </span>
                               )}
@@ -748,42 +748,42 @@ export default function CalendarPage() {
                 transition={{ duration: 0.3, ease }}
                 className="flex flex-col"
               >
-                <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.05]">
+                <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.09]">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1))}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04] transition-all duration-200"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/90 hover:bg-white/[0.07] transition-all duration-200"
                     >
                       <CaretLeft className="h-3 w-3" />
                     </button>
-                    <span className="text-[14px] font-black text-white/80">
+                    <span className="text-[14px] font-black text-white/90">
                       {WEEKDAYS[selectedDate.getDay()]},{" "}
-                      <span className="text-white/50 font-semibold">
+                      <span className="text-white/85 font-semibold">
                         {selectedDate.getDate()} de {MONTHS_PT[selectedDate.getMonth()]}
                       </span>
                     </span>
                     <button
                       onClick={() => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1))}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-white/25 hover:text-white/60 hover:bg-white/[0.04] transition-all duration-200"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/90 hover:bg-white/[0.07] transition-all duration-200"
                     >
                       <CaretRight className="h-3 w-3" />
                     </button>
                   </div>
-                  <span className="text-[11px] font-semibold text-white/25">
+                  <span className="text-[11px] font-semibold text-white/85">
                     {dayViewApts.length} consulta{dayViewApts.length !== 1 ? "s" : ""}
                   </span>
                 </div>
 
                 <div className="relative">
                   {HOURS.map((hour) => (
-                    <div key={hour} className="flex border-b border-white/[0.04]" style={{ height: 64 }}>
+                    <div key={hour} className="flex border-b border-white/[0.12]" style={{ height: 64 }}>
                       <div className="w-16 shrink-0 flex items-start justify-end pr-3 pt-1">
-                        <span className="text-[10px] font-bold text-white/20 font-mono tabular-nums">
+                        <span className="text-[10px] font-bold text-white/90 font-mono tabular-nums">
                           {String(hour).padStart(2, "0")}:00
                         </span>
                       </div>
-                      <div className="flex-1 relative border-l border-white/[0.04]">
-                        <div className="absolute top-1/2 left-0 right-0 border-t border-dashed border-white/[0.03]" />
+                      <div className="flex-1 relative border-l border-white/[0.10]">
+                        <div className="absolute top-1/2 left-0 right-0 border-t border-dashed border-white/[0.06]" />
                       </div>
                     </div>
                   ))}
@@ -841,7 +841,7 @@ export default function CalendarPage() {
                   })
                   return (
                     <>
-                      <div className="grid grid-cols-8 border-b border-white/[0.05]">
+                      <div className="grid grid-cols-8 border-b border-white/[0.14]">
                         <div className="w-16" />
                         {weekDays.map((d, i) => {
                           const today = d.toDateString() === new Date().toDateString()
@@ -850,11 +850,11 @@ export default function CalendarPage() {
                             <button
                               key={i}
                               onClick={() => setSelectedDate(d)}
-                              className="py-3 flex flex-col items-center gap-0.5 hover:bg-white/[0.02] transition-colors duration-150"
+                              className="py-3 flex flex-col items-center gap-0.5 hover:bg-white/[0.05] transition-colors duration-150"
                             >
-                              <span className="text-[9px] font-extrabold uppercase tracking-widest text-white/20">{WEEKDAYS[d.getDay()]}</span>
+                              <span className="text-[9px] font-extrabold uppercase tracking-widest text-white/90">{WEEKDAYS[d.getDay()]}</span>
                               <span className={`h-7 w-7 flex items-center justify-center rounded-full text-[13px] font-black transition-colors ${
-                                today ? "bg-accent text-accent-foreground" : sel ? "bg-white/[0.10] text-white/90" : "text-white/40 hover:text-white/70"
+                                today ? "bg-accent text-accent-foreground" : sel ? "bg-white/[0.10] text-white/90" : "text-white/90 hover:text-white/85"
                               }`}>{d.getDate()}</span>
                             </button>
                           )
@@ -862,9 +862,9 @@ export default function CalendarPage() {
                       </div>
                       <div className="relative">
                         {HOURS.map((hour) => (
-                          <div key={hour} className="flex border-b border-white/[0.04]" style={{ height: 56 }}>
+                          <div key={hour} className="flex border-b border-white/[0.12]" style={{ height: 56 }}>
                             <div className="w-16 shrink-0 flex items-start justify-end pr-3 pt-1">
-                              <span className="text-[9px] font-bold text-white/20 font-mono">{String(hour).padStart(2,"0")}:00</span>
+                              <span className="text-[9px] font-bold text-white/90 font-mono">{String(hour).padStart(2,"0")}:00</span>
                             </div>
                             {weekDays.map((d, di) => {
                               const apts = filteredApts.filter(
@@ -872,7 +872,7 @@ export default function CalendarPage() {
                                   parseInt(a.time.split(":")[0]) === hour
                               )
                               return (
-                                <div key={di} className="flex-1 border-l border-white/[0.04] relative px-0.5 py-0.5 flex flex-col gap-0.5">
+                                <div key={di} className="flex-1 border-l border-white/[0.10] relative px-0.5 py-0.5 flex flex-col gap-0.5">
                                   {apts.map((apt) => {
                                     const c = getAptColorStyle(apt.color, professionalColorMap)
                                     return (
@@ -927,7 +927,7 @@ export default function CalendarPage() {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4, ease }}
-        className="hidden lg:flex w-[260px] shrink-0 flex-col border-l border-white/[0.06] bg-background/50 overflow-hidden"
+        className="hidden lg:flex w-[260px] shrink-0 flex-col border-l border-white/[0.10] bg-background/50 overflow-hidden"
       >
         <SidePanel
           appointments={filteredApts}

@@ -69,21 +69,21 @@ function ServiceCard({
     >
       {/* Icon */}
       <div className="h-12 w-12 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center">
-        <Storefront className="h-5 w-5 text-white/30" weight="duotone" />
+        <Storefront className="h-5 w-5 text-white/85" weight="duotone" />
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-bold text-white/90 truncate leading-tight">{service.name}</p>
         {service.description && (
-          <p className="text-[11px] text-white/40 line-clamp-2 mt-0.5 leading-relaxed">{service.description}</p>
+          <p className="text-[11px] text-white/90 line-clamp-2 mt-0.5 leading-relaxed">{service.description}</p>
         )}
         <div className="flex items-center gap-3 mt-2">
           <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400/80">
             <CurrencyDollar className="h-3.5 w-3.5" weight="fill" />
             {formatPrice(service.price)}
           </span>
-          <span className="flex items-center gap-1 text-[11px] text-white/35">
+          <span className="flex items-center gap-1 text-[11px] text-white/88">
             <Clock className="h-3 w-3" />
             {formatDuration(service.durationMin)}
           </span>
@@ -94,7 +94,7 @@ function ServiceCard({
       <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
         <button
           onClick={onEdit}
-          className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+          className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/85 hover:bg-white/[0.06] transition-all"
           title="Editar"
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -106,7 +106,7 @@ function ServiceCard({
           className={`cursor-pointer flex h-7 items-center justify-center rounded-lg text-[10px] font-bold transition-all disabled:opacity-50 ${
             confirmDelete
               ? "gap-1 px-2 bg-rose-500/15 border border-rose-500/30 text-rose-400 hover:bg-rose-500/25 w-auto"
-              : "w-7 text-white/25 hover:text-rose-400 hover:bg-rose-500/[0.08]"
+              : "w-7 text-white/85 hover:text-rose-400 hover:bg-rose-500/[0.08]"
           }`}
           title={confirmDelete ? "Confirmar exclusão" : "Excluir"}
         >
@@ -258,7 +258,7 @@ function ServiceEditorModal({
               {isNew ? "Novo serviço" : "Editar serviço"}
             </h2>
           </div>
-          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors">
+          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/85 hover:bg-white/[0.06] transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -267,53 +267,53 @@ function ServiceEditorModal({
         <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
           {/* Name */}
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1.5">Nome *</label>
+            <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider mb-1.5">Nome *</label>
             <input
               value={form.name}
               onChange={set("name")}
               placeholder="ex: Consulta particular"
               autoFocus
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-white/90 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1.5">Descrição</label>
+            <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider mb-1.5">Descrição</label>
             <textarea
               value={form.description}
               onChange={set("description")}
               placeholder="Descreva o serviço..."
               rows={2}
-              className="w-full rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white/80 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent/50 resize-none transition-all"
+              className="w-full rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50 resize-none transition-all"
             />
           </div>
 
           {/* Price + Duration */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1.5">Preço (R$) *</label>
+              <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider mb-1.5">Preço (R$) *</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/30 pointer-events-none">R$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px] text-white/85 pointer-events-none">R$</span>
                 <input
                   value={form.price}
                   onChange={(e) => setForm((p) => ({ ...p, price: e.target.value.replace(/[^\d.,]/g, "") }))}
                   placeholder="250,00"
-                  className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] pl-8 pr-3 text-[13px] text-white/90 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                  className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] pl-8 pr-3 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1.5">Duração (min)</label>
+              <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider mb-1.5">Duração (min)</label>
               <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25 pointer-events-none" />
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/85 pointer-events-none" />
                 <input
                   type="number"
                   min={1}
                   value={form.durationMin}
                   onChange={set("durationMin")}
                   placeholder="50"
-                  className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] pl-9 pr-3 text-[13px] text-white/90 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                  className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] pl-9 pr-3 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
                 />
               </div>
             </div>
@@ -327,7 +327,7 @@ function ServiceEditorModal({
               onChange={(e) => setForm((p) => ({ ...p, isConsultation: e.target.checked }))}
               className="h-4 w-4 rounded border-white/[0.15] bg-white/[0.04] text-accent focus:ring-accent/30"
             />
-            <span className="text-[12px] font-medium text-white/70">
+            <span className="text-[12px] font-medium text-white/85">
               É consulta (agendável no calendário e na IA)
             </span>
           </label>
@@ -335,10 +335,10 @@ function ServiceEditorModal({
           {/* Profissionais que oferecem (só ao editar) */}
           {!isNew && (
             <div>
-              <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
+              <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider mb-2">
                 Profissionais que oferecem este serviço
               </label>
-              <p className="text-[11px] text-white/35 mb-2">
+              <p className="text-[11px] text-white/88 mb-2">
                 Só aparecem na agenda e na IA os profissionais vinculados. Marque quem oferece este serviço.
               </p>
               <div className="max-h-40 overflow-y-auto rounded-xl border border-white/[0.08] bg-white/[0.02] p-2 space-y-1">
@@ -359,12 +359,12 @@ function ServiceEditorModal({
                         className="h-2.5 w-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: pro.calendarColor || "#22c55e" }}
                       />
-                      <span className="text-[12px] font-medium text-white/80">{pro.fullName}</span>
+                      <span className="text-[12px] font-medium text-white/90">{pro.fullName}</span>
                     </label>
                   )
                 })}
                 {(professionals ?? []).length === 0 && (
-                  <p className="text-[11px] text-white/30 py-2 text-center">Nenhum profissional cadastrado</p>
+                  <p className="text-[11px] text-white/85 py-2 text-center">Nenhum profissional cadastrado</p>
                 )}
               </div>
             </div>
@@ -384,7 +384,7 @@ function ServiceEditorModal({
           {/* Footer */}
           <div className="flex items-center gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="cursor-pointer flex-1 rounded-xl border border-white/[0.09] py-2 text-[13px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-colors">
+              className="cursor-pointer flex-1 rounded-xl border border-white/[0.09] py-2 text-[13px] text-white/90 hover:text-white/85 hover:bg-white/[0.04] transition-colors">
               Cancelar
             </button>
             <button type="submit" disabled={isPending}
@@ -424,8 +424,8 @@ export function ServicosTab() {
         {/* Toolbar */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[13px] font-bold text-white/70">Serviços</p>
-            <p className="text-[11px] text-white/35 mt-0.5">
+            <p className="text-[13px] font-bold text-white/85">Serviços</p>
+            <p className="text-[11px] text-white/88 mt-0.5">
               {isLoading ? "Carregando..." : `${list.length} serviço${list.length !== 1 ? "s" : ""} cadastrado${list.length !== 1 ? "s" : ""}`}
             </p>
           </div>
@@ -450,7 +450,7 @@ export function ServicosTab() {
         {error && !isLoading && (
           <div className="flex flex-col items-center justify-center gap-3 py-14 rounded-xl border border-dashed border-white/[0.07]">
             <Warning className="h-7 w-7 text-rose-400/40" weight="duotone" />
-            <p className="text-[12px] text-white/40">Erro ao carregar serviços</p>
+            <p className="text-[12px] text-white/90">Erro ao carregar serviços</p>
             <button onClick={() => refetch()}
               className="cursor-pointer flex items-center gap-1.5 text-[11px] text-accent/60 hover:text-accent transition-colors">
               <ArrowsClockwise className="h-3.5 w-3.5" /> Tentar novamente
@@ -479,11 +479,11 @@ export function ServicosTab() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="flex flex-col items-center justify-center py-16 rounded-xl border border-dashed border-white/[0.07] gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.02]">
-                  <Storefront className="h-5 w-5 text-white/20" weight="duotone" />
+                  <Storefront className="h-5 w-5 text-white/90" weight="duotone" />
                 </div>
                 <div className="text-center">
-                  <p className="text-[13px] font-bold text-white/40">Nenhum serviço cadastrado</p>
-                  <p className="text-[11px] text-white/25 mt-0.5">Adicione os serviços oferecidos pela clínica</p>
+                  <p className="text-[13px] font-bold text-white/90">Nenhum serviço cadastrado</p>
+                  <p className="text-[11px] text-white/85 mt-0.5">Adicione os serviços oferecidos pela clínica</p>
                 </div>
                 <button onClick={() => setEditing("new")}
                   className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-3.5 py-2 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all">

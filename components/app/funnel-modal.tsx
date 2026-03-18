@@ -109,7 +109,7 @@ function StageRow({
       className="flex flex-col gap-2 rounded-xl border border-border/50 bg-muted/10 px-3 py-2.5"
     >
       <div className="flex items-center gap-2">
-        <DotsSixVertical className="h-4 w-4 text-muted-foreground/30 shrink-0 cursor-grab" />
+        <DotsSixVertical className="h-4 w-4 text-muted-foreground/85 shrink-0 cursor-grab" />
 
         {/* Color dot */}
         <div
@@ -122,7 +122,7 @@ function StageRow({
           value={stage.name}
           onChange={(e) => onChange({ ...stage, name: e.target.value })}
           placeholder="Nome da etapa..."
-          className="flex-1 min-w-0 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
+          className="flex-1 min-w-0 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
         />
 
         {/* Terminal toggle */}
@@ -133,7 +133,7 @@ function StageRow({
           className={`shrink-0 flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium transition-colors duration-150 ${
             stage.isTerminal
               ? "border-violet-500/30 bg-violet-500/10 text-violet-400"
-              : "border-border/40 bg-transparent text-muted-foreground/40 hover:border-border hover:text-muted-foreground"
+              : "border-border/40 bg-transparent text-muted-foreground/90 hover:border-border hover:text-muted-foreground"
           }`}
         >
           final
@@ -144,7 +144,7 @@ function StageRow({
           <button
             type="button"
             onClick={onRemove}
-            className="shrink-0 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/30 hover:text-rose-400 hover:bg-rose-500/10 transition-colors duration-150"
+            className="shrink-0 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/85 hover:text-rose-400 hover:bg-rose-500/10 transition-colors duration-150"
           >
             <Trash className="h-3.5 w-3.5" />
           </button>
@@ -350,7 +350,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
               </div>
               <button
                 onClick={onClose}
-                className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors"
+                className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -362,7 +362,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
               {/* Funnel info */}
               <div className="flex flex-col gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                  <label className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">
                     Nome do funil *
                   </label>
                   <input
@@ -370,18 +370,18 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ex: Consulta Particular"
-                    className="mt-1.5 w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                    className="mt-1.5 w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                  <label className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">
                     Descrição
                   </label>
                   <input
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Ex: Do primeiro contato à consulta paga"
-                    className="mt-1.5 w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                    className="mt-1.5 w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                   />
                 </div>
               </div>
@@ -389,12 +389,12 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
               {/* Entry Keywords */}
               <div>
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <Tag className="h-3.5 w-3.5 text-muted-foreground/60" weight="duotone" />
-                  <label className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                  <Tag className="h-3.5 w-3.5 text-muted-foreground/90" weight="duotone" />
+                  <label className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">
                     Keywords de entrada
                   </label>
                 </div>
-                <p className="text-[11px] text-muted-foreground/50 mb-2">
+                <p className="text-[11px] text-muted-foreground/85 mb-2">
                   Quando um novo contato mencionar alguma dessas palavras na primeira mensagem, será direcionado para este funil automaticamente.
                 </p>
 
@@ -433,10 +433,10 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                     onKeyDown={handleKeywordKeyDown}
                     onBlur={() => { if (keywordInput.trim()) addKeyword(keywordInput) }}
                     placeholder={entryKeywords.length === 0 ? "Ex: plano, convênio, urgente... (Enter para adicionar)" : "Adicionar..."}
-                    className="flex-1 min-w-[140px] bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
+                    className="flex-1 min-w-[140px] bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
                   />
                 </div>
-                <p className="mt-1.5 text-[10px] text-muted-foreground/40">
+                <p className="mt-1.5 text-[10px] text-muted-foreground/90">
                   Pressione <kbd className="rounded border border-border/30 bg-muted/20 px-1 font-mono text-[9px]">Enter</kbd> ou <kbd className="rounded border border-border/30 bg-muted/20 px-1 font-mono text-[9px]">,</kbd> para adicionar · <kbd className="rounded border border-border/30 bg-muted/20 px-1 font-mono text-[9px]">Backspace</kbd> para remover o último
                 </p>
               </div>
@@ -444,7 +444,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
               {/* Stages */}
               <div>
                 <div className="flex items-center justify-between mb-2.5">
-                  <label className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                  <label className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">
                     Etapas ({stages.length})
                   </label>
                   <button
@@ -471,7 +471,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                   </AnimatePresence>
                 </div>
 
-                <p className="mt-2 text-[11px] text-muted-foreground/30">
+                <p className="mt-2 text-[11px] text-muted-foreground/85">
                   Marque como "final" etapas de conclusão (ex: Ganho, Perdido).
                 </p>
               </div>
@@ -510,7 +510,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(false)}
-                        className="cursor-pointer text-[11px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                        className="cursor-pointer text-[11px] text-muted-foreground/90 hover:text-muted-foreground transition-colors"
                       >
                         Cancelar
                       </button>
@@ -518,7 +518,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                   ) : (
                     <button
                       onClick={() => setDeleteConfirm(true)}
-                      className="cursor-pointer flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] text-muted-foreground/40 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      className="cursor-pointer flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] text-muted-foreground/90 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                     >
                       <Trash className="h-3.5 w-3.5" />
                       Excluir funil

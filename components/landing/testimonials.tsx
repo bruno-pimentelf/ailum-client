@@ -93,7 +93,7 @@ export function Testimonials() {
                 transition={{ duration: 0.6, ease }}
                 className="text-center w-full"
               >
-                <p className="font-display text-lg sm:text-xl md:text-2xl lg:text-[1.65rem] font-medium tracking-tight leading-[1.35] text-white/75 max-w-2xl mx-auto">
+                <p className="font-display text-lg sm:text-xl md:text-2xl lg:text-[1.65rem] font-medium tracking-tight leading-[1.35] text-white/88 max-w-2xl mx-auto">
                   &ldquo;{quotes[active].text}&rdquo;
                 </p>
               </motion.blockquote>
@@ -113,10 +113,10 @@ export function Testimonials() {
                 transition={{ duration: 0.6, delay: 0.05, ease }}
                 className="absolute flex flex-col items-center gap-1"
               >
-                <p className="text-[13px] font-semibold text-white/50">
+                <p className="text-[13px] font-semibold text-white/85">
                   {quotes[active].author}
                 </p>
-                <p className="text-[11px] text-white/25">{quotes[active].role}</p>
+                <p className="text-[11px] text-white/85">{quotes[active].role}</p>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -127,7 +127,7 @@ export function Testimonials() {
             <button
               onClick={() => { go(active - 1, -1); restart() }}
               aria-label="Anterior"
-              className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-white/30 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05] hover:text-white/60"
+              className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-white/85 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05] hover:text-white/90"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M8.5 3L5 7l3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -165,7 +165,7 @@ export function Testimonials() {
             <button
               onClick={() => { go(active + 1, 1); restart() }}
               aria-label="Próximo"
-              className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-white/30 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05] hover:text-white/60"
+              className="group flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.02] text-white/85 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.05] hover:text-white/90"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M5.5 3L9 7l-3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

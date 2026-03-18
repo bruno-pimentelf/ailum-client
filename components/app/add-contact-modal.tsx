@@ -7,7 +7,7 @@ import { useCreateContact } from "@/hooks/use-contacts-list"
 import type { BoardStage } from "@/lib/api/funnels"
 
 const inputCls =
-  "w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+  "w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
 
 export function AddContactModal({
   open,
@@ -88,12 +88,12 @@ export function AddContactModal({
                 </div>
                 <div>
                   <h2 className="text-[14px] font-semibold text-foreground">Adicionar contato</h2>
-                  <p className="text-[11px] text-muted-foreground/60">em {stage.name}</p>
+                  <p className="text-[11px] text-muted-foreground/90">em {stage.name}</p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors"
+                className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -101,7 +101,7 @@ export function AddContactModal({
 
             <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">
                   Telefone *
                 </label>
                 <input
@@ -113,11 +113,11 @@ export function AddContactModal({
                   className={inputCls}
                   autoComplete="tel"
                 />
-                <p className="text-[10px] text-muted-foreground/40 mt-0.5">Use DDI (ex: 5511999999999)</p>
+                <p className="text-[10px] text-muted-foreground/90 mt-0.5">Use DDI (ex: 5511999999999)</p>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">
                   Nome
                 </label>
                 <input
@@ -131,7 +131,7 @@ export function AddContactModal({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">
                   E-mail
                 </label>
                 <input
@@ -145,7 +145,7 @@ export function AddContactModal({
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+                <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">
                   Observações
                 </label>
                 <textarea

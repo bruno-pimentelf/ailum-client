@@ -89,7 +89,7 @@ function AuditDetailBlock({ detail, stageAgentToolCalls }: { detail: AuditDetail
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-medium text-muted-foreground/80">{detail.label}</span>
+      <span className="text-[10px] font-medium text-muted-foreground/90">{detail.label}</span>
       <span className="text-[11px] text-foreground/90 break-words leading-relaxed">{detail.detail}</span>
       {showExpand && (
         <div className="mt-1">
@@ -116,7 +116,7 @@ function AuditDetailBlock({ detail, stageAgentToolCalls }: { detail: AuditDetail
               >
                 <div className="flex flex-col gap-2 pl-4 mt-2 border-l-2 border-accent/20">
                   {detail.data?.inputTokens != null && detail.data?.outputTokens != null && (
-                    <div className="flex justify-between text-[10px] text-muted-foreground/70 pb-1">
+                    <div className="flex justify-between text-[10px] text-muted-foreground/85 pb-1">
                       <span>{detail.data.inputTokens} tokens in</span>
                       <span>{detail.data.outputTokens} tokens out</span>
                     </div>
@@ -126,7 +126,7 @@ function AuditDetailBlock({ detail, stageAgentToolCalls }: { detail: AuditDetail
                       <ToolExecutionRow key={i} execution={ex} />
                     ))
                   ) : (
-                    <p className="text-[10px] text-muted-foreground/70 py-1">
+                    <p className="text-[10px] text-muted-foreground/85 py-1">
                       Detalhes das tools serão exibidos quando o backend enviar <code className="text-[9px] bg-muted/40 px-1 rounded">data.toolExecutions</code>.
                     </p>
                   )}
@@ -161,7 +161,7 @@ function ToolExecutionRow({ execution }: { execution: ToolExecution }) {
         <span className="text-[11px] font-medium text-foreground">{toolLabel(execution.tool)}</span>
       </div>
       {inputStr && (
-        <p className="text-[10px] text-muted-foreground/80 pl-6 break-all">{inputStr}</p>
+        <p className="text-[10px] text-muted-foreground/90 pl-6 break-all">{inputStr}</p>
       )}
       {execution.summary && (
         <p className="text-[10px] text-foreground/70 pl-6 italic">{execution.summary}</p>
@@ -191,20 +191,20 @@ function AuditEntryCard({ entry }: { entry: AgentAuditEntry }) {
       >
         <div className="flex items-center gap-2 min-w-0">
           {open ? (
-            <CaretDown className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+            <CaretDown className="h-3.5 w-3.5 text-muted-foreground/85 shrink-0" />
           ) : (
-            <CaretRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+            <CaretRight className="h-3.5 w-3.5 text-muted-foreground/85 shrink-0" />
           )}
           <span className="text-[11px] font-medium text-foreground truncate">
             {entry.routerIntent ?? entry.status}
           </span>
           {entry.routerConfidence != null && (
-            <span className="text-[10px] text-muted-foreground/50 shrink-0">
+            <span className="text-[10px] text-muted-foreground/85 shrink-0">
               {Math.round(entry.routerConfidence * 100)}%
             </span>
           )}
         </div>
-        <span className="text-[10px] text-muted-foreground/40 shrink-0">{date}</span>
+        <span className="text-[10px] text-muted-foreground/90 shrink-0">{date}</span>
       </button>
       <AnimatePresence>
         {open && (
@@ -217,13 +217,13 @@ function AuditEntryCard({ entry }: { entry: AgentAuditEntry }) {
           >
             <div className="px-3.5 pb-3.5 pt-2 flex flex-col gap-2 border-t border-border/40">
               {entry.durationMs != null && (
-                <div className="flex justify-between text-[11px] text-muted-foreground/70">
+                <div className="flex justify-between text-[11px] text-muted-foreground/85">
                   <span>Duração</span>
                   <span>{entry.durationMs}ms</span>
                 </div>
               )}
               {(entry.totalInputTokens ?? 0) + (entry.totalOutputTokens ?? 0) > 0 && (
-                <div className="flex justify-between text-[11px] text-muted-foreground/70">
+                <div className="flex justify-between text-[11px] text-muted-foreground/85">
                   <span>Tokens</span>
                   <span>{(entry.totalInputTokens ?? 0) + (entry.totalOutputTokens ?? 0)} total</span>
                 </div>
@@ -290,7 +290,7 @@ function MessageBubble({
             {msg.content}
           </p>
         )}
-        <span className="text-[10px] text-muted-foreground/40 mt-1 block">{time}</span>
+        <span className="text-[10px] text-muted-foreground/90 mt-1 block">{time}</span>
       </div>
     </motion.div>
   )
@@ -425,7 +425,7 @@ export default function PlaygroundPage() {
         </div>
         <div className="text-center max-w-sm">
           <h3 className="text-[15px] font-semibold text-foreground">Erro ao carregar Playground</h3>
-          <p className="mt-2 text-[13px] text-muted-foreground/70">
+          <p className="mt-2 text-[13px] text-muted-foreground/85">
             Não foi possível obter o contato de teste. Verifique sua conexão e tente novamente.
           </p>
         </div>
@@ -452,7 +452,7 @@ export default function PlaygroundPage() {
         <div className="flex items-center gap-2.5">
           <Robot className="h-4 w-4 text-accent" weight="fill" />
           <span className="text-[13px] font-semibold text-foreground">Playground</span>
-          <span className="text-[11px] text-muted-foreground/50 hidden sm:inline">— teste a IA sem WhatsApp</span>
+          <span className="text-[11px] text-muted-foreground/85 hidden sm:inline">— teste a IA sem WhatsApp</span>
         </div>
         <button
           type="button"
@@ -486,16 +486,16 @@ export default function PlaygroundPage() {
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="h-6 w-6 rounded-full border-2 border-accent/20 border-t-accent"
                 />
-                <p className="text-[12px] text-muted-foreground/50">Preparando ambiente...</p>
+                <p className="text-[12px] text-muted-foreground/85">Preparando ambiente...</p>
               </div>
             )}
 
             {isReady && isEmpty && (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
-                <p className="text-[13px] text-muted-foreground/50">
+                <p className="text-[13px] text-muted-foreground/85">
                   Digite uma mensagem abaixo para começar. Ex: &quot;Oi, quero marcar uma consulta&quot;
                 </p>
-                <p className="text-[11px] text-muted-foreground/40 max-w-xs text-center mt-2">
+                <p className="text-[11px] text-muted-foreground/90 max-w-xs text-center mt-2">
                   Lembretes (reminder_24h, reminder_1h) e triggers com template aparecem aqui quando houver consulta na janela correta. O job roda a cada 30 min.
                 </p>
               </div>
@@ -532,7 +532,7 @@ export default function PlaygroundPage() {
                   }}
                   placeholder="Digite uma mensagem..."
                   disabled={!isReady}
-                  className="flex-1 min-w-0 rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/40 transition-all duration-200"
+                  className="flex-1 min-w-0 rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/40 transition-all duration-200"
                 />
                 <motion.button
                   type="submit"
@@ -570,7 +570,7 @@ export default function PlaygroundPage() {
               <button
                 type="button"
                 onClick={() => refetchAudit()}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors"
                 title="Atualizar"
               >
                 <ArrowsClockwise className="h-3.5 w-3.5" />
@@ -579,7 +579,7 @@ export default function PlaygroundPage() {
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 flex flex-col gap-3">
             {audit.length === 0 ? (
-              <p className="text-[12px] text-muted-foreground/50 py-8 text-center">
+              <p className="text-[12px] text-muted-foreground/85 py-8 text-center">
                 Envie mensagens para ver o que a IA fez em cada resposta.
               </p>
             ) : (

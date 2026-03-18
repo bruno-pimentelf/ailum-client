@@ -145,7 +145,7 @@ function FinanceCards({
                 <button
                   onClick={onRefresh}
                   disabled={isLoading}
-                  className="cursor-pointer rounded-lg p-2 text-muted-foreground/60 hover:bg-muted/50 hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="cursor-pointer rounded-lg p-2 text-muted-foreground/90 hover:bg-muted/50 hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Atualizar"
                 >
                   <ArrowClockwise className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -231,7 +231,7 @@ function PaymentsTable({ onEmitInvoice }: { onEmitInvoice: (p: AsaasPayment) => 
         ) : payments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/20">
-              <Receipt className="h-7 w-7 text-muted-foreground/50" weight="duotone" />
+              <Receipt className="h-7 w-7 text-muted-foreground/85" weight="duotone" />
             </div>
             <div className="text-center">
               <p className="text-[14px] font-medium text-foreground">Nenhuma cobrança encontrada</p>
@@ -391,7 +391,7 @@ function CustomersTable() {
         ) : customers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/20">
-              <Users className="h-7 w-7 text-muted-foreground/50" weight="duotone" />
+              <Users className="h-7 w-7 text-muted-foreground/85" weight="duotone" />
             </div>
             <div className="text-center">
               <p className="text-[14px] font-medium text-foreground">Nenhum cliente encontrado</p>
@@ -425,7 +425,7 @@ function CustomersTable() {
                           <LinkIcon className="h-3.5 w-3.5" />
                         </Link>
                       ) : (
-                        <span className="text-muted-foreground/40 text-xs">—</span>
+                        <span className="text-muted-foreground/90 text-xs">—</span>
                       )}
                     </td>
                   </tr>
@@ -476,7 +476,7 @@ function EmptyState() {
           transition={{ duration: 0.5, ease }}
           className="flex h-20 w-20 items-center justify-center rounded-2xl border border-border/60 bg-muted/20"
         >
-          <PlugsConnected className="h-10 w-10 text-muted-foreground/60" weight="duotone" />
+          <PlugsConnected className="h-10 w-10 text-muted-foreground/90" weight="duotone" />
         </motion.div>
         <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
           Integração

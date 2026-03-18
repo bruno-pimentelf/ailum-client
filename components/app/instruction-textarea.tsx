@@ -301,14 +301,14 @@ function PopupList({
               <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
                 isHl ? "border-accent/30 bg-accent/10" : "border-border/40 bg-muted/20"
               }`}>
-                <Icon className={`h-3.5 w-3.5 ${isHl ? meta.tagColor : "text-muted-foreground/50"}`} weight="duotone" />
+                <Icon className={`h-3.5 w-3.5 ${isHl ? meta.tagColor : "text-muted-foreground/85"}`} weight="duotone" />
               </div>
               <span className={`flex-1 text-[13px] font-medium ${isHl ? "text-foreground" : "text-foreground/70"}`}>
                 {meta.label}
               </span>
-              <span className="text-[10px] text-muted-foreground/40 mr-1">{row.count}</span>
+              <span className="text-[10px] text-muted-foreground/90 mr-1">{row.count}</span>
               <CaretRight
-                className={`h-3 w-3 text-muted-foreground/40 transition-transform duration-150 ${open ? "rotate-90" : ""}`}
+                className={`h-3 w-3 text-muted-foreground/90 transition-transform duration-150 ${open ? "rotate-90" : ""}`}
                 weight="bold"
               />
             </button>
@@ -328,13 +328,13 @@ function PopupList({
                 isHl ? "bg-accent/10" : "hover:bg-muted/20"
               }`}
             >
-              <FlowArrow className={`h-3 w-3 shrink-0 ${isHl ? "text-violet-400" : "text-muted-foreground/30"}`} weight="duotone" />
-              <span className={`flex-1 text-[12px] font-medium truncate ${isHl ? "text-foreground" : "text-muted-foreground/60"}`}>
+              <FlowArrow className={`h-3 w-3 shrink-0 ${isHl ? "text-violet-400" : "text-muted-foreground/85"}`} weight="duotone" />
+              <span className={`flex-1 text-[12px] font-medium truncate ${isHl ? "text-foreground" : "text-muted-foreground/90"}`}>
                 {row.funnel}
               </span>
-              <span className="text-[10px] text-muted-foreground/30 mr-0.5">{row.count}</span>
+              <span className="text-[10px] text-muted-foreground/85 mr-0.5">{row.count}</span>
               <CaretRight
-                className={`h-2.5 w-2.5 text-muted-foreground/30 transition-transform duration-150 ${open ? "rotate-90" : ""}`}
+                className={`h-2.5 w-2.5 text-muted-foreground/85 transition-transform duration-150 ${open ? "rotate-90" : ""}`}
                 weight="bold"
               />
             </button>
@@ -360,7 +360,7 @@ function PopupList({
             } ${isHl ? "bg-accent/15" : "hover:bg-muted/40"}`}
           >
             <Icon
-              className={`h-3.5 w-3.5 shrink-0 ${isHl ? meta.tagColor : "text-muted-foreground/30"}`}
+              className={`h-3.5 w-3.5 shrink-0 ${isHl ? meta.tagColor : "text-muted-foreground/85"}`}
               weight="duotone"
             />
             <span className={`flex-1 text-[13px] font-medium truncate ${isHl ? "text-foreground" : "text-foreground/80"}`}>
@@ -716,7 +716,7 @@ export function InstructionTextarea({
         {!hasText && placeholder && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-[1] overflow-hidden px-4 py-3 text-[14px] leading-[1.625] text-muted-foreground/40 whitespace-pre-wrap break-words"
+            className="pointer-events-none absolute inset-0 z-[1] overflow-hidden px-4 py-3 text-[14px] leading-[1.625] text-muted-foreground/90 whitespace-pre-wrap break-words"
           >
             {placeholder}
           </div>
@@ -777,8 +777,8 @@ export function InstructionTextarea({
 
       {/* Bottom hint */}
       <div className="flex items-center gap-1.5 border-t border-border/30 px-3 py-1.5">
-        <At className="h-3 w-3 text-muted-foreground/30" weight="bold" />
-        <p className="text-[10px] text-muted-foreground/30 select-none">
+        <At className="h-3 w-3 text-muted-foreground/85" weight="bold" />
+        <p className="text-[10px] text-muted-foreground/85 select-none">
           Digite{" "}
           <kbd className="rounded border border-border/30 bg-muted/20 px-1 py-px font-mono text-[9px]">
             @
@@ -839,7 +839,7 @@ export function InstructionTextarea({
                   />
                 </div>
                 <div className="border-t border-border/30 px-3 py-1.5">
-                  <p className="text-[10px] text-muted-foreground/40 select-none">
+                  <p className="text-[10px] text-muted-foreground/90 select-none">
                     <kbd className="rounded border border-border/30 bg-muted/20 px-1 py-px font-mono text-[9px]">
                       ↑↓
                     </kbd>{" "}

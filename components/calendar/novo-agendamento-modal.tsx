@@ -25,7 +25,7 @@ import { useQuery } from "@tanstack/react-query"
 import { toYMD, todayYMD } from "@/lib/date-utils"
 
 const inputCls =
-  "w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-white/90 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+  "w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -177,14 +177,14 @@ export function NovoAgendamentoModal({
               </div>
               <div>
                 <h2 className="text-[14px] font-semibold text-white/90">Nova consulta</h2>
-                <p className="text-[11px] text-white/40">
+                <p className="text-[11px] text-white/90">
                   Passo {step} de 7 — {STEPS[step - 1].label}
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/85 hover:bg-white/[0.06] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -201,8 +201,8 @@ export function NovoAgendamentoModal({
                   step === n
                     ? "bg-accent/20 text-accent"
                     : n < step
-                      ? "text-white/50 hover:text-white/70"
-                      : "text-white/20"
+                      ? "text-white/85 hover:text-white/85"
+                      : "text-white/90"
                 }`}
               >
                 {n}. {label}
@@ -223,11 +223,11 @@ export function NovoAgendamentoModal({
                   transition={{ duration: 0.2, ease }}
                   className="space-y-3"
                 >
-                  <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">
                     Paciente
                   </label>
                   <div className="relative">
-                    <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
+                    <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/85" />
                     <input
                       type="text"
                       value={contactSearch}
@@ -238,7 +238,7 @@ export function NovoAgendamentoModal({
                   </div>
                   <div className="max-h-48 overflow-y-auto rounded-xl border border-white/[0.06] divide-y divide-white/[0.04]">
                     {contacts.length === 0 ? (
-                      <div className="py-8 text-center text-[12px] text-white/30">
+                      <div className="py-8 text-center text-[12px] text-white/85">
                         {contactSearch ? "Nenhum contato encontrado" : "Digite para buscar"}
                       </div>
                     ) : (
@@ -254,12 +254,12 @@ export function NovoAgendamentoModal({
                               selected ? "bg-accent/15 border-l-2 border-accent" : "hover:bg-white/[0.04]"
                             }`}
                           >
-                            <div className="h-9 w-9 shrink-0 rounded-full bg-white/[0.08] flex items-center justify-center text-[11px] font-bold text-white/60">
+                            <div className="h-9 w-9 shrink-0 rounded-full bg-white/[0.08] flex items-center justify-center text-[11px] font-bold text-white/90">
                               {(name ?? "?").slice(0, 2).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[13px] font-medium text-white/90 truncate">{name}</p>
-                              <p className="text-[11px] text-white/40 truncate">{c.phone}</p>
+                              <p className="text-[11px] text-white/90 truncate">{c.phone}</p>
                             </div>
                             {selected && <Check className="h-4 w-4 text-accent shrink-0" weight="bold" />}
                           </button>
@@ -280,7 +280,7 @@ export function NovoAgendamentoModal({
                   transition={{ duration: 0.2, ease }}
                   className="space-y-3"
                 >
-                  <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">
                     Profissional
                   </label>
                   <div className="grid gap-2">
@@ -320,12 +320,12 @@ export function NovoAgendamentoModal({
                   transition={{ duration: 0.2, ease }}
                   className="space-y-3"
                 >
-                  <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">
                     Serviço (consultas)
                   </label>
                   <div className="grid gap-2">
                     {consultations.length === 0 ? (
-                      <p className="text-[12px] text-white/40 py-4">
+                      <p className="text-[12px] text-white/90 py-4">
                         Nenhum serviço marcado como consulta. Configure em Configurações → Serviços.
                       </p>
                     ) : (
@@ -343,7 +343,7 @@ export function NovoAgendamentoModal({
                             }`}
                           >
                             <span className="text-[13px] font-medium text-white/90">{s.name}</span>
-                            <span className="text-[11px] text-white/40">{s.durationMin} min</span>
+                            <span className="text-[11px] text-white/90">{s.durationMin} min</span>
                           </button>
                         )
                       })
@@ -362,7 +362,7 @@ export function NovoAgendamentoModal({
                   transition={{ duration: 0.2, ease }}
                   className="space-y-3"
                 >
-                  <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">
                     Data
                   </label>
                   <input
@@ -385,7 +385,7 @@ export function NovoAgendamentoModal({
                   transition={{ duration: 0.2, ease }}
                   className="space-y-3"
                 >
-                  <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">
                     Horário disponível
                   </label>
                   {slotsQuery.isLoading ? (
@@ -393,7 +393,7 @@ export function NovoAgendamentoModal({
                       <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
                     </div>
                   ) : slots.length === 0 ? (
-                    <p className="text-[12px] text-white/40 py-4">
+                    <p className="text-[12px] text-white/90 py-4">
                       {slotsQuery.data?.reason ?? "Nenhum horário disponível nesta data."}
                     </p>
                   ) : (
@@ -408,7 +408,7 @@ export function NovoAgendamentoModal({
                             className={`py-2 rounded-xl border text-[12px] font-semibold transition-all ${
                               selected
                                 ? "border-accent/50 bg-accent/15 text-accent"
-                                : "border-white/[0.08] text-white/80 hover:border-white/[0.14] hover:bg-white/[0.04]"
+                                : "border-white/[0.08] text-white/90 hover:border-white/[0.14] hover:bg-white/[0.04]"
                             }`}
                           >
                             {slot.time}
@@ -430,7 +430,7 @@ export function NovoAgendamentoModal({
                   transition={{ duration: 0.2, ease }}
                   className="space-y-3"
                 >
-                  <label className="block text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">
                     Observações (opcional)
                   </label>
                   <textarea
@@ -454,19 +454,19 @@ export function NovoAgendamentoModal({
                   className="space-y-3"
                 >
                   <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2">
-                    <p className="text-[11px] text-white/40">Paciente</p>
+                    <p className="text-[11px] text-white/90">Paciente</p>
                     <p className="text-[13px] font-semibold text-white/90">
                       {contact?.name ?? contact?.phone ?? "—"}
                     </p>
-                    <p className="text-[11px] text-white/40 mt-3">Profissional</p>
+                    <p className="text-[11px] text-white/90 mt-3">Profissional</p>
                     <p className="text-[13px] font-semibold text-white/90">
                       {selectedProfessional?.fullName ?? "—"}
                     </p>
-                    <p className="text-[11px] text-white/40 mt-3">Serviço</p>
+                    <p className="text-[11px] text-white/90 mt-3">Serviço</p>
                     <p className="text-[13px] font-semibold text-white/90">
                       {selectedService?.name ?? "—"} ({selectedService?.durationMin} min)
                     </p>
-                    <p className="text-[11px] text-white/40 mt-3">Data e horário</p>
+                    <p className="text-[11px] text-white/90 mt-3">Data e horário</p>
                     <p className="text-[13px] font-semibold text-white/90">
                       {selectedDate} às {selectedSlot?.time ?? "—"}
                     </p>
@@ -497,7 +497,7 @@ export function NovoAgendamentoModal({
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex-1 rounded-xl border border-white/[0.09] py-2 text-[13px] font-medium text-white/70 hover:text-white/90 hover:bg-white/[0.04] transition-colors"
+                className="flex-1 rounded-xl border border-white/[0.09] py-2 text-[13px] font-medium text-white/85 hover:text-white/90 hover:bg-white/[0.04] transition-colors"
               >
                 Voltar
               </button>

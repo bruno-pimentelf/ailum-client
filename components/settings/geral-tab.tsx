@@ -16,7 +16,7 @@ import {
 import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
 import { uploadTenantLogo } from "@/lib/firebase"
 
-const inputCls = "w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-colors disabled:opacity-50"
+const inputCls = "w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-colors disabled:opacity-50"
 const labelCls = "block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
 const NOTIFICATION_TYPE_OPTIONS = [
   "integration.whatsapp.disconnected",
@@ -162,8 +162,8 @@ export function GeralTab() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         className="flex flex-col items-center justify-center gap-3 py-20 text-center">
         <Warning className="h-8 w-8 text-rose-400/40" weight="duotone" />
-        <p className="text-[13px] text-muted-foreground/50">Erro ao carregar dados da clínica</p>
-        <p className="text-[11px] text-muted-foreground/30">{(error as Error).message}</p>
+        <p className="text-[13px] text-muted-foreground/85">Erro ao carregar dados da clínica</p>
+        <p className="text-[11px] text-muted-foreground/85">{(error as Error).message}</p>
       </motion.div>
     )
   }
@@ -185,7 +185,7 @@ export function GeralTab() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={form.logoUrl} alt="Logo" className="w-full h-full object-cover" />
               ) : (
-                <ImageIcon className="h-9 w-9 text-muted-foreground/30 group-hover:text-accent/50 transition-colors" />
+                <ImageIcon className="h-9 w-9 text-muted-foreground/85 group-hover:text-accent/50 transition-colors" />
               )}
               <input
                 type="file"
@@ -195,7 +195,7 @@ export function GeralTab() {
                 disabled={logoUploading}
               />
             </label>
-            <p className="text-[10px] text-muted-foreground/40 mt-2 text-center">
+            <p className="text-[10px] text-muted-foreground/90 mt-2 text-center">
               JPG, PNG ou WebP. 256×256px recomendado
             </p>
           </div>
@@ -212,7 +212,7 @@ export function GeralTab() {
             <div>
               <label className={labelCls}>Descrição</label>
               <textarea value={form.description} onChange={set("description")} placeholder="Breve descrição da clínica..." rows={3}
-                className="w-full rounded-lg border border-border bg-muted/20 px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40 resize-none transition-colors" />
+                className="w-full rounded-lg border border-border bg-muted/20 px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/40 resize-none transition-colors" />
             </div>
           </div>
         </div>
@@ -294,7 +294,7 @@ export function GeralTab() {
           <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/15 px-3 py-2.5">
             <div>
               <p className="text-[12px] font-medium text-foreground">Ativar notificações do tenant</p>
-              <p className="text-[11px] text-muted-foreground/60">Controla bell, feed e toasts em tempo real</p>
+              <p className="text-[11px] text-muted-foreground/90">Controla bell, feed e toasts em tempo real</p>
             </div>
             <button
               type="button"

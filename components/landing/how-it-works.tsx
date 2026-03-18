@@ -91,7 +91,7 @@ function StepChat({ active, t }: { active: boolean; t: ReturnType<typeof useLang
                 <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${msg.from === "patient" ? "bg-accent/12 rounded-br-sm" : "bg-muted rounded-bl-sm"}`}>
                   <p className="text-[13px] leading-relaxed text-foreground">{msg.text}</p>
                   <div className="flex items-center justify-end gap-1 mt-1">
-                    <span className="text-[9px] text-muted-foreground/60">{msg.time}</span>
+                    <span className="text-[9px] text-muted-foreground/90">{msg.time}</span>
                     {msg.from === "patient" && <Checks className="h-3 w-3 text-accent/70" />}
                   </div>
                 </div>
@@ -185,7 +185,7 @@ function StepPix({ active, t }: { active: boolean; t: ReturnType<typeof useLangu
           {phase === "generating" && (
             <motion.div key="gen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center gap-2 py-16">
               <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="h-5 w-5 rounded-full border-2 border-accent/20 border-t-accent" />
-              <span className="text-[10px] text-muted-foreground/60">{t.howItWorks.pixGenerating}</span>
+              <span className="text-[10px] text-muted-foreground/90">{t.howItWorks.pixGenerating}</span>
             </motion.div>
           )}
           {(phase === "qr" || phase === "waiting" || phase === "paid") && (
@@ -207,7 +207,7 @@ function StepPix({ active, t }: { active: boolean; t: ReturnType<typeof useLangu
               </div>
               <div className="flex flex-col gap-3 flex-1 min-w-0">
                 <div>
-                  <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider mb-1.5">{t.howItWorks.pixCopyPaste}</p>
+                  <p className="text-[10px] text-muted-foreground/85 uppercase tracking-wider mb-1.5">{t.howItWorks.pixCopyPaste}</p>
                   <button onClick={() => setCopied(true)} className="w-full flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-left hover:border-accent/30 transition-colors">
                     <span className="flex-1 truncate font-mono text-[10px] text-muted-foreground">00020126580014br.gov.bcb.pix…6304ABCD</span>
                     <AnimatePresence mode="wait">
@@ -217,12 +217,12 @@ function StepPix({ active, t }: { active: boolean; t: ReturnType<typeof useLangu
                   </button>
                 </div>
                 <div className="text-center">
-                  <p className="text-[11px] text-muted-foreground/40">{t.howItWorks.pixScan}</p>
+                  <p className="text-[11px] text-muted-foreground/90">{t.howItWorks.pixScan}</p>
                 </div>
                 <AnimatePresence mode="wait">
                   {phase === "waiting" && (
                     <motion.div key="w" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col gap-2">
-                      <div className="flex justify-between"><span className="text-[10px] text-muted-foreground/50">{t.howItWorks.pixWaiting}</span><span className="text-[10px] text-accent/60 tabular-nums font-mono">{payProgress}%</span></div>
+                      <div className="flex justify-between"><span className="text-[10px] text-muted-foreground/85">{t.howItWorks.pixWaiting}</span><span className="text-[10px] text-accent/60 tabular-nums font-mono">{payProgress}%</span></div>
                       <div className="h-1.5 rounded-full bg-border overflow-hidden"><motion.div className="h-full rounded-full bg-accent/70" style={{ width: `${payProgress}%` }} /></div>
                     </motion.div>
                   )}
@@ -286,14 +286,14 @@ function StepCalendar({ active, t }: { active: boolean; t: ReturnType<typeof use
           ) : phase === "scanning" ? (
             <motion.span key="s" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-accent/60">{t.howItWorks.calChecking}</motion.span>
           ) : (
-            <motion.span key="w" className="text-[10px] text-muted-foreground/40">{t.howItWorks.calAwaiting}</motion.span>
+            <motion.span key="w" className="text-[10px] text-muted-foreground/90">{t.howItWorks.calAwaiting}</motion.span>
           )}
         </AnimatePresence>
       </div>
       <div className="p-3 sm:p-4 flex flex-col gap-0.5 overflow-x-auto">
         <div className="grid grid-cols-4 gap-px mb-2 pl-8 sm:pl-10 min-w-[260px]">
           {t.howItWorks.calDays.map((d,i) => (
-            <div key={d} className={`text-center text-[9px] font-medium py-1 rounded-sm ${i===3 ? "text-accent bg-accent/8" : "text-muted-foreground/40"}`}>{d}</div>
+            <div key={d} className={`text-center text-[9px] font-medium py-1 rounded-sm ${i===3 ? "text-accent bg-accent/8" : "text-muted-foreground/90"}`}>{d}</div>
           ))}
         </div>
         {calSlots.map((time, rowIdx) => {
@@ -301,7 +301,7 @@ function StepCalendar({ active, t }: { active: boolean; t: ReturnType<typeof use
           const isTarget = time === "10:00"
           return (
             <div key={time} className={`flex items-center gap-1.5 sm:gap-2 h-10 sm:h-11 rounded-md transition-colors duration-150 min-w-[260px] ${isScanning ? "bg-accent/[0.04]" : ""}`}>
-              <span className="w-8 sm:w-9 text-[9px] text-muted-foreground/40 font-mono shrink-0 text-right">{time}</span>
+              <span className="w-8 sm:w-9 text-[9px] text-muted-foreground/90 font-mono shrink-0 text-right">{time}</span>
               <div className="flex-1 grid grid-cols-4 gap-px h-full">
                 {[0,1,2,3].map(col => {
                   const apt = existingApts.find(a => a.time === time && a.col === col)
@@ -440,7 +440,7 @@ export function HowItWorks() {
                   className={`flex items-center gap-2 shrink-0 px-4 py-2.5 rounded-full border text-[13px] font-medium transition-all duration-300 ${
                     isActive
                       ? "border-accent/25 bg-accent/[0.06] text-accent"
-                      : "border-white/[0.06] bg-white/[0.02] text-white/35"
+                      : "border-white/[0.06] bg-white/[0.02] text-white/88"
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" weight="fill" />
@@ -458,7 +458,7 @@ export function HowItWorks() {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.4, ease }}
             >
-              <p className="text-[13px] leading-relaxed text-white/30 mb-5">
+              <p className="text-[13px] leading-relaxed text-white/85 mb-5">
                 {steps[activeStep].description}
               </p>
               {steps[activeStep].demo(true)}
@@ -510,14 +510,14 @@ export function HowItWorks() {
                 <div className="flex items-center gap-3 mb-3">
                   <span
                     className={`text-[11px] font-mono tabular-nums transition-colors duration-300 ${
-                      isActive ? "text-accent" : "text-white/20"
+                      isActive ? "text-accent" : "text-white/90"
                     }`}
                   >
                     {step.number}
                   </span>
                   <Icon
                     className={`h-4 w-4 transition-colors duration-300 ${
-                      isActive ? "text-accent" : "text-white/20"
+                      isActive ? "text-accent" : "text-white/90"
                     }`}
                     weight="fill"
                   />
@@ -525,7 +525,7 @@ export function HowItWorks() {
                 <h3 className="font-display text-[15px] font-bold tracking-tight text-foreground">
                   {step.title}
                 </h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/25">
+                <p className="mt-2 text-[13px] leading-relaxed text-white/85">
                   {step.description}
                 </p>
 

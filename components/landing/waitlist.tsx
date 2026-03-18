@@ -84,7 +84,7 @@ export function Waitlist() {
                                     )}
                                 </span>
                             </Button>
-                            <p className="text-center text-[11px] text-muted-foreground/60">
+                            <p className="text-center text-[11px] text-muted-foreground/90">
                                 {t.waitlist.semSpam}
                             </p>
                         </form>

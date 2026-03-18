@@ -254,7 +254,7 @@ export function AppHeader() {
                 {/* List */}
                 <div className="p-1.5">
                   {orgs.length > 0 && (
-                    <p className="px-2 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/50">
+                    <p className="px-2 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/85">
                       Clínicas
                     </p>
                   )}
@@ -277,7 +277,7 @@ export function AppHeader() {
                     )
                   })}
                   {filtered.length === 0 && (
-                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/50 text-center">
+                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/85 text-center">
                       Nenhuma clínica encontrada
                     </p>
                   )}
@@ -322,7 +322,7 @@ export function AppHeader() {
                 placeholder="Buscar..."
                 className="h-8 w-full rounded-lg border border-border bg-card/60 pl-8 pr-10 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
               />
-              <kbd className="absolute right-2.5 flex items-center rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground/60 font-mono">
+              <kbd className="absolute right-2.5 flex items-center rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground/90 font-mono">
                 ⌘K
               </kbd>
             </motion.div>
@@ -412,13 +412,13 @@ export function AppHeader() {
 
                 <div className="max-h-[380px] overflow-y-auto p-1.5">
                   {!notificationsEnabled && (
-                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/60 text-center">
+                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/90 text-center">
                       Notificações desativadas nas configurações do tenant.
                     </p>
                   )}
 
                   {notificationsEnabled && filteredNotifications.length === 0 && (
-                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/60 text-center">
+                    <p className="px-2.5 py-3 text-[12px] text-muted-foreground/90 text-center">
                       Nenhuma notificação nesse filtro.
                     </p>
                   )}
@@ -441,17 +441,17 @@ export function AppHeader() {
                             <div className="flex items-center gap-2">
                               <p className="text-[12px] font-semibold text-foreground truncate">{n.title}</p>
                               {readPendingIds.has(n.id) && (
-                                <span className="text-[10px] text-muted-foreground/55">...</span>
+                                <span className="text-[10px] text-muted-foreground/88">...</span>
                               )}
                               {!n.read && (
                                 <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
                               )}
                             </div>
-                            <p className="text-[11px] text-muted-foreground/80 line-clamp-2 mt-0.5">{n.body}</p>
+                            <p className="text-[11px] text-muted-foreground/90 line-clamp-2 mt-0.5">{n.body}</p>
                             <div className="flex items-center gap-1.5 mt-1">
-                              <span className="text-[10px] font-mono text-muted-foreground/40">{n.type}</span>
-                              <span className="text-[10px] text-muted-foreground/30">·</span>
-                              <span className="text-[10px] text-muted-foreground/40">{formatRelative(n.createdAt)}</span>
+                              <span className="text-[10px] font-mono text-muted-foreground/90">{n.type}</span>
+                              <span className="text-[10px] text-muted-foreground/85">·</span>
+                              <span className="text-[10px] text-muted-foreground/90">{formatRelative(n.createdAt)}</span>
                             </div>
                           </div>
                         </div>

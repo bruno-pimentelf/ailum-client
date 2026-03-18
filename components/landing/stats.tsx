@@ -32,7 +32,7 @@ export function Stats() {
                     prefix={metric.prefix || ""}
                   />
                 </span>
-                <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white/25">
+                <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white/85">
                   {metric.label}
                 </span>
               </div>

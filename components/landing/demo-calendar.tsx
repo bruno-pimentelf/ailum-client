@@ -173,7 +173,7 @@ export function DemoCalendar() {
                         className={`relative h-11 px-1 py-0.5 ${dayIndex === 2 ? "bg-accent/[0.02]" : ""} ${dayIndex === 0 ? "flex items-center" : ""}`}
                       >
                         {dayIndex === 0 && (
-                          <span className="text-[9px] text-muted-foreground/50 pl-1 tabular-nums">{time}</span>
+                          <span className="text-[9px] text-muted-foreground/85 pl-1 tabular-nums">{time}</span>
                         )}
                         {dayIndex === 2 && apt && (
                           <AnimatePresence>

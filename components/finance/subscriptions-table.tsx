@@ -111,7 +111,7 @@ export function SubscriptionsTable({ onCreateClick }: SubscriptionsTableProps) {
         ) : subscriptions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/20">
-              <Repeat className="h-7 w-7 text-muted-foreground/50" weight="duotone" />
+              <Repeat className="h-7 w-7 text-muted-foreground/85" weight="duotone" />
             </div>
             <p className="text-[14px] font-medium text-foreground">
               Nenhuma assinatura

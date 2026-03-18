@@ -35,7 +35,7 @@ const ease = [0.33, 1, 0.68, 1] as const
 
 type ZapiView = "status" | "qrcode" | "credentials"
 
-const inputCls = "w-full h-10 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3 text-[12px] font-mono text-white/80 placeholder:text-white/18 focus:outline-none focus:ring-1 focus:ring-accent/50 focus:border-accent/30 transition-all duration-200"
+const inputCls = "w-full h-10 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3 text-[12px] font-mono text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50 focus:border-accent/30 transition-all duration-200"
 
 function Spinner({ className = "h-3 w-3" }: { className?: string }) {
   return (
@@ -49,7 +49,7 @@ function Spinner({ className = "h-3 w-3" }: { className?: string }) {
 
 function StatusBadge({ connected, label }: { connected: boolean; label?: string }) {
   return (
-    <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${connected ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-white/[0.08] bg-white/[0.03] text-white/30"}`}>
+    <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${connected ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-white/[0.08] bg-white/[0.03] text-white/85"}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${connected ? "bg-emerald-400 animate-pulse" : "bg-white/20"}`} />
       {label ?? (connected ? "Conectado" : "Não configurado")}
     </span>
@@ -59,7 +59,7 @@ function StatusBadge({ connected, label }: { connected: boolean; label?: string 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] font-bold text-white/35 uppercase tracking-wider">{label}</label>
+      <label className="text-[10px] font-bold text-white/88 uppercase tracking-wider">{label}</label>
       {children}
     </div>
   )
@@ -134,7 +134,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
     <div className={`rounded-2xl border transition-all duration-300 overflow-hidden ${isConfigured ? "border-emerald-500/25 bg-emerald-500/[0.04]" : "border-white/[0.07] bg-white/[0.015]"}`}>
       <button type="button" onClick={onToggle} className="cursor-pointer w-full flex items-center gap-4 p-5 text-left group">
         <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-all duration-300 ${isConfigured ? "border-emerald-500/30 bg-emerald-500/15" : "border-white/[0.09] bg-white/[0.04]"}`}>
-          <WhatsappLogo className={`h-6 w-6 transition-colors duration-300 ${isConfigured ? "text-emerald-400" : "text-white/35"}`} weight="fill" />
+          <WhatsappLogo className={`h-6 w-6 transition-colors duration-300 ${isConfigured ? "text-emerald-400" : "text-white/88"}`} weight="fill" />
           {isConfigured && (
             <span className={`absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-[oklch(0.17_0.025_263)] ${whatsappConnected ? "bg-emerald-400" : "bg-amber-400"}`} />
           )}
@@ -142,9 +142,9 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <p className="text-[14px] font-bold text-white/90">WhatsApp</p>
-            <span className="text-[10px] text-white/25 font-medium">via Z-API</span>
+            <span className="text-[10px] text-white/85 font-medium">via Z-API</span>
           </div>
-          <p className="text-[11px] text-white/40 truncate">
+          <p className="text-[11px] text-white/90 truncate">
             {isConfigured
               ? whatsappConnected
                 ? `Conectado — ${integration?.label || integration?.instanceId}`
@@ -157,7 +157,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
             ? <StatusBadge connected={whatsappConnected} label={statusLoading ? "..." : whatsappConnected ? "Online" : "Offline"} />
             : <StatusBadge connected={false} />}
           <motion.div animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.2, ease }}>
-            <CaretRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/40 transition-colors" weight="bold" />
+            <CaretRight className="h-3.5 w-3.5 text-white/90 group-hover:text-white/90 transition-colors" weight="bold" />
           </motion.div>
         </div>
       </button>
@@ -174,7 +174,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                     { id: "credentials" as ZapiView, label: "Credenciais", icon: Gear },
                   ] as const).map(({ id, label, icon: Icon }) => (
                     <button key={id} type="button" onClick={() => setView(id)}
-                      className={`cursor-pointer flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold transition-all duration-200 ${view === id ? "bg-white/[0.07] text-white/80" : "text-white/30 hover:text-white/55"}`}>
+                      className={`cursor-pointer flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold transition-all duration-200 ${view === id ? "bg-white/[0.07] text-white/90" : "text-white/85 hover:text-white/88"}`}>
                       <Icon className="h-3.5 w-3.5" />
                       {label}
                     </button>
@@ -185,16 +185,16 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
               {view === "status" && (
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-4">
                   <div className="space-y-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Instâncias</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/88">Instâncias</p>
                     <div className="space-y-1.5">
                       {integrations.length === 0 ? (
-                        <p className="text-[11px] text-white/30">Nenhuma instância cadastrada.</p>
+                        <p className="text-[11px] text-white/85">Nenhuma instância cadastrada.</p>
                       ) : integrations.map((inst, idx) => (
                         <div key={`${inst.instanceId}-${idx}`} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2">
                           <span className={`h-2 w-2 rounded-full ${(inst.isActive && inst.hasApiKey) ? "bg-emerald-400" : "bg-white/25"}`} />
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[11px] font-semibold text-white/75">{inst.label || inst.instanceId}</p>
-                            <p className="truncate text-[10px] font-mono text-white/30">{inst.instanceId}</p>
+                            <p className="truncate text-[11px] font-semibold text-white/88">{inst.label || inst.instanceId}</p>
+                            <p className="truncate text-[10px] font-mono text-white/85">{inst.instanceId}</p>
                           </div>
                           {inst.isDefault && (
                             <span className="rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
@@ -205,7 +205,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                             type="button"
                             onClick={() => setDefault.mutate({ instanceId: inst.instanceId ?? "" })}
                             disabled={!inst.instanceId || inst.isDefault || setDefault.isPending}
-                            className="cursor-pointer rounded-md border border-white/[0.09] bg-white/[0.03] px-2 py-1 text-[10px] font-bold text-white/55 hover:text-white/80 disabled:cursor-default disabled:opacity-40"
+                            className="cursor-pointer rounded-md border border-white/[0.09] bg-white/[0.03] px-2 py-1 text-[10px] font-bold text-white/88 hover:text-white/90 disabled:cursor-default disabled:opacity-40"
                           >
                             Tornar padrão
                           </button>
@@ -220,13 +220,13 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                       <p className={`text-[12px] font-bold ${whatsappConnected ? "text-emerald-400" : "text-amber-400"}`}>
                         {statusLoading ? "Verificando..." : whatsappConnected ? "WhatsApp conectado" : "WhatsApp desconectado"}
                       </p>
-                      {status?.error && !whatsappConnected && <p className="text-[10px] text-white/30 mt-0.5">{status.error}</p>}
+                      {status?.error && !whatsappConnected && <p className="text-[10px] text-white/85 mt-0.5">{status.error}</p>}
                       {status?.smartphoneConnected === false && whatsappConnected && (
                         <p className="text-[10px] text-amber-400/60 mt-0.5">Smartphone offline — mantenha o app aberto</p>
                       )}
                     </div>
                     <button type="button" onClick={() => refetchStatus()} disabled={statusLoading}
-                      className="cursor-pointer flex items-center gap-1 rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] font-bold text-white/30 hover:text-white/55 transition-all disabled:opacity-40">
+                      className="cursor-pointer flex items-center gap-1 rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-[10px] font-bold text-white/85 hover:text-white/88 transition-all disabled:opacity-40">
                       <ArrowsClockwise className={`h-3 w-3 ${statusLoading ? "animate-spin" : ""}`} /> Atualizar
                     </button>
                   </div>
@@ -243,7 +243,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                       </button>
                     )}
                     <button type="button" onClick={handleRestart} disabled={restart.isPending}
-                      className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3.5 py-2 text-[11px] font-bold text-white/40 hover:text-white/70 hover:border-white/[0.16] transition-all disabled:opacity-40">
+                      className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3.5 py-2 text-[11px] font-bold text-white/90 hover:text-white/85 hover:border-white/[0.16] transition-all disabled:opacity-40">
                       {restart.isPending ? <Spinner /> : <ArrowsClockwise className="h-3 w-3" />} Reiniciar instância
                     </button>
                     <button type="button" onClick={() => removeIntegration.mutate("zapi", { onSuccess: onToggle })} disabled={removeIntegration.isPending}
@@ -252,12 +252,12 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                     </button>
                   </div>
                   {(disconnect.isSuccess || restart.isSuccess) && (
-                    <p className="text-[10px] text-white/30">
+                    <p className="text-[10px] text-white/85">
                       {disconnect.isSuccess ? "Desconectado. Escaneie o QR Code para reconectar." : "Instância reiniciada com sucesso."}
                     </p>
                   )}
                   <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Sincronizar roteamento por chats</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/88">Sincronizar roteamento por chats</p>
                     <div className="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                       <Field label="Page Size">
                         <input
@@ -283,7 +283,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                         <button
                           type="button"
                           onClick={() => setSyncOnlyUnknown((v) => !v)}
-                          className="cursor-pointer h-10 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3 text-[12px] font-semibold text-white/70 text-left"
+                          className="cursor-pointer h-10 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3 text-[12px] font-semibold text-white/85 text-left"
                         >
                           {syncOnlyUnknown ? "Somente desconhecidos" : "Todos os contatos"}
                         </button>
@@ -307,7 +307,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                         Sincronizar roteamento
                       </button>
                       {syncRouting.data && (
-                        <p className="text-[10px] text-white/45">
+                        <p className="text-[10px] text-white/85">
                           {syncRouting.data.syncedContacts} contatos roteados de {syncRouting.data.scannedChats} chats lidos
                         </p>
                       )}
@@ -323,7 +323,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                       {qrFetching && !qrData && (
                         <div className="flex flex-col items-center gap-2">
                           <Spinner className="h-6 w-6" />
-                          <p className="text-[10px] text-white/30">Gerando QR code...</p>
+                          <p className="text-[10px] text-white/85">Gerando QR code...</p>
                         </div>
                       )}
                       {qrError && (
@@ -343,12 +343,12 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                       )}
                     </div>
                     <div className="text-center space-y-1">
-                      <p className="text-[12px] font-bold text-white/70">Abra o WhatsApp no celular</p>
-                      <p className="text-[11px] text-white/35">Toque em <span className="text-white/55 font-medium">⋮ → Aparelhos conectados → Conectar aparelho</span> e escaneie o código</p>
+                      <p className="text-[12px] font-bold text-white/85">Abra o WhatsApp no celular</p>
+                      <p className="text-[11px] text-white/88">Toque em <span className="text-white/88 font-medium">⋮ → Aparelhos conectados → Conectar aparelho</span> e escaneie o código</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button type="button" onClick={() => refetchQr()} disabled={qrFetching}
-                        className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3.5 py-2 text-[11px] font-bold text-white/45 hover:text-white/70 hover:border-white/[0.16] transition-all disabled:opacity-40">
+                        className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3.5 py-2 text-[11px] font-bold text-white/85 hover:text-white/85 hover:border-white/[0.16] transition-all disabled:opacity-40">
                         <ArrowsClockwise className={`h-3 w-3 ${qrFetching ? "animate-spin" : ""}`} /> Atualizar QR
                       </button>
                       <button type="button" onClick={() => refetchStatus()} disabled={statusLoading}
@@ -356,7 +356,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                         {statusLoading ? <Spinner /> : <Check className="h-3 w-3" weight="bold" />} Verificar conexão
                       </button>
                     </div>
-                    <p className="text-[10px] text-white/20">O QR code é atualizado automaticamente a cada 12 segundos</p>
+                    <p className="text-[10px] text-white/90">O QR code é atualizado automaticamente a cada 12 segundos</p>
                   </div>
                 </div>
               )}
@@ -441,16 +441,16 @@ function AsaasCard({ integration, open, onToggle }: { integration: Integration |
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <p className="text-[14px] font-bold text-white/90">Asaas</p>
-            <span className="text-[10px] text-white/25 font-medium">Cobrança & Pagamentos</span>
+            <span className="text-[10px] text-white/85 font-medium">Cobrança & Pagamentos</span>
           </div>
-          <p className="text-[11px] text-white/40">
+          <p className="text-[11px] text-white/90">
             {isConnected ? "API key configurada e ativa" : "Automatize cobranças e receba pagamentos"}
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <StatusBadge connected={isConnected} />
           <motion.div animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.2, ease }}>
-            <CaretRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/40 transition-colors" weight="bold" />
+            <CaretRight className="h-3.5 w-3.5 text-white/90 group-hover:text-white/90 transition-colors" weight="bold" />
           </motion.div>
         </div>
       </button>
@@ -476,7 +476,7 @@ function AsaasCard({ integration, open, onToggle }: { integration: Integration |
                   <div className="relative">
                     <input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); saveAsaas.reset() }} placeholder="$aact_MzkwODA..." className={inputCls} />
                   </div>
-                  <p className="text-[10px] text-white/25 mt-0.5">Sandbox: <span className="text-white/40 font-medium">sandbox.asaas.com</span> → Integrações → Chave da API</p>
+                  <p className="text-[10px] text-white/85 mt-0.5">Sandbox: <span className="text-white/90 font-medium">sandbox.asaas.com</span> → Integrações → Chave da API</p>
                 </Field>
                 <div className="flex items-center gap-2 pt-1">
                   <button type="submit" disabled={saveAsaas.isPending || !apiKey.trim()}
@@ -519,12 +519,12 @@ export function ConexoesTab() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-[14px] font-bold text-white/85 mb-1">Integrações</h2>
-          <p className="text-[12px] text-white/35">Conecte ferramentas externas para potencializar o atendimento da sua clínica.</p>
+          <p className="text-[12px] text-white/88">Conecte ferramentas externas para potencializar o atendimento da sua clínica.</p>
         </div>
         {!isLoading && !isError && (
           <div className="shrink-0 flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5">
             <span className={`h-1.5 w-1.5 rounded-full ${activeCount > 0 ? "bg-emerald-400 animate-pulse" : "bg-white/20"}`} />
-            <span className="text-[11px] font-bold text-white/45">{activeCount}/2 ativas</span>
+            <span className="text-[11px] font-bold text-white/85">{activeCount}/2 ativas</span>
           </div>
         )}
       </div>
@@ -535,17 +535,17 @@ export function ConexoesTab() {
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
               <Sparkle className="h-5 w-5 text-accent" />
             </motion.div>
-            <p className="text-[11px] text-white/30">Carregando integrações...</p>
+            <p className="text-[11px] text-white/85">Carregando integrações...</p>
           </div>
         </div>
       ) : isError ? (
         <div className="flex flex-col items-center justify-center py-14 rounded-2xl border border-dashed border-white/[0.07] gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.03]">
-            <PlugsConnected className="h-5 w-5 text-white/20" weight="duotone" />
+            <PlugsConnected className="h-5 w-5 text-white/90" weight="duotone" />
           </div>
           <div className="text-center">
-            <p className="text-[13px] font-bold text-white/50 mb-1">Não foi possível carregar</p>
-            <p className="text-[11px] text-white/25">Verifique sua conexão e tente novamente</p>
+            <p className="text-[13px] font-bold text-white/85 mb-1">Não foi possível carregar</p>
+            <p className="text-[11px] text-white/85">Verifique sua conexão e tente novamente</p>
           </div>
           <button onClick={() => refetch()} className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-3.5 py-2 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all">
             Tentar novamente

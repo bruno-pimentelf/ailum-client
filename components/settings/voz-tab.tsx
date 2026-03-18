@@ -45,7 +45,7 @@ function VoiceCard({ voice, isActive, onSetActive, index }: { voice: Voice; isAc
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[12px] font-bold text-foreground truncate">{voice.name}</p>
-        <p className="text-[10px] text-muted-foreground/70">{isActive ? "Voz ativa" : "Clique para ativar"}</p>
+        <p className="text-[10px] text-muted-foreground/85">{isActive ? "Voz ativa" : "Clique para ativar"}</p>
       </div>
       <AnimatePresence mode="wait">
         {isActive ? (
@@ -54,7 +54,7 @@ function VoiceCard({ voice, isActive, onSetActive, index }: { voice: Voice; isAc
             <span className="text-[9px] font-bold text-accent">Ativo</span>
           </motion.div>
         ) : (
-          <motion.div key="b" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="flex items-center justify-center w-6 h-6 rounded border border-border/50 text-muted-foreground/50 group-hover:text-foreground/70 group-hover:border-border transition-all">
+          <motion.div key="b" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="flex items-center justify-center w-6 h-6 rounded border border-border/50 text-muted-foreground/85 group-hover:text-foreground/70 group-hover:border-border transition-all">
             <CaretRight className="h-3 w-3" weight="fill" />
           </motion.div>
         )}
@@ -110,7 +110,7 @@ function RecordSection() {
         </motion.button>
         <div className="flex-1 w-full min-w-0 flex flex-col gap-2">
           <div className="h-8 flex items-center"><RecordingBars active={recording || recorded} intensity={recording ? 1 : 0.5} /></div>
-          <p className="text-[10px] text-muted-foreground/50">{recording ? "Gravando..." : recorded ? "Áudio gravado." : "Clique no microfone."}</p>
+          <p className="text-[10px] text-muted-foreground/85">{recording ? "Gravando..." : recorded ? "Áudio gravado." : "Clique no microfone."}</p>
         </div>
         <AnimatePresence mode="wait">
           {recorded && (
@@ -139,7 +139,7 @@ export function VozTab() {
             <VoiceCard key={v.id} voice={v} isActive={activeVoiceId === v.id} onSetActive={() => setActiveVoiceId(v.id)} index={i} />
           ))}
         </div>
-        <p className="text-[10px] text-muted-foreground/40 mt-3">A voz ativa é usada em todos os atendimentos.</p>
+        <p className="text-[10px] text-muted-foreground/90 mt-3">A voz ativa é usada em todos os atendimentos.</p>
       </div>
     </motion.div>
   )

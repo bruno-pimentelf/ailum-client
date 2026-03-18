@@ -33,13 +33,14 @@ import {
   ArrowsOutSimple,
   DownloadSimple,
   FilmStrip,
+  Copy,
 } from "@phosphor-icons/react"
 import { PixChargeBlock } from "./pix-charge-block"
 import { useMessages, useTypingStatus } from "@/hooks/use-chats"
 import { useIntegrations } from "@/hooks/use-integrations"
 import type { Integration } from "@/lib/api/integrations"
 import { sendMessage, markAsRead } from "@/lib/api/conversations"
-import type { FirestoreContact, FirestoreMessage } from "@/lib/types/firestore"
+import type { FirestoreContact, FirestoreMessage, MessageReaction } from "@/lib/types/firestore"
 
 // ─── Optimistic message ───────────────────────────────────────────────────────
 // A lightweight mirror of FirestoreMessage for instant UI feedback before
@@ -96,11 +97,11 @@ function Avatar({
 // ─── Message status tick ───────────────────────────────────────────────────────
 
 function MessageTick({ status, pending }: { status?: FirestoreMessage["status"]; pending?: boolean }) {
-  if (pending) return <Clock className="h-3 w-3 text-muted-foreground/30" />
-  if (!status) return <Check className="h-3 w-3 text-muted-foreground/40" />
+  if (pending) return <Clock className="h-3 w-3 text-muted-foreground/85" />
+  if (!status) return <Check className="h-3 w-3 text-muted-foreground/90" />
   if (status === "READ" || status === "PLAYED") return <Checks className="h-3 w-3 text-accent" />
-  if (status === "RECEIVED") return <Checks className="h-3 w-3 text-muted-foreground/40" />
-  return <Check className="h-3 w-3 text-muted-foreground/40" />
+  if (status === "RECEIVED") return <Checks className="h-3 w-3 text-muted-foreground/90" />
+  return <Check className="h-3 w-3 text-muted-foreground/90" />
 }
 
 // ─── Format Timestamp ─────────────────────────────────────────────────────────
@@ -113,6 +114,49 @@ function formatTime(ts: { toDate: () => Date } | undefined): string {
   } catch {
     return ""
   }
+}
+
+// ─── Format Date label ────────────────────────────────────────────────────────
+
+function formatDateLabel(ts: { toDate: () => Date } | undefined): string {
+  if (!ts) return ""
+  try {
+    const date = ts.toDate()
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+    const isSameDay = (a: Date, b: Date) =>
+      a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()
+    if (isSameDay(date, today)) return "Hoje"
+    if (isSameDay(date, yesterday)) return "Ontem"
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+  } catch {
+    return ""
+  }
+}
+
+function getMsgDateKey(ts: { toDate: () => Date } | undefined): string {
+  if (!ts) return ""
+  try {
+    const d = ts.toDate()
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+  } catch {
+    return ""
+  }
+}
+
+// ─── Date Divider ─────────────────────────────────────────────────────────────
+
+function DateDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 py-1 select-none">
+      <div className="flex-1 h-px bg-border/40" />
+      <span className="text-[10px] font-semibold text-muted-foreground/70 bg-background/60 px-2.5 py-0.5 rounded-full border border-border/30 backdrop-blur-sm">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-border/40" />
+    </div>
+  )
 }
 
 // ─── File → base64 ───────────────────────────────────────────────────────────
@@ -175,7 +219,7 @@ function AttachmentPreview({ attachment, onRemove }: { attachment: PendingAttach
       ) : (
         <>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted/30">
-            <FileDoc className="h-4 w-4 text-muted-foreground/60" />
+            <FileDoc className="h-4 w-4 text-muted-foreground/90" />
           </div>
           <span className="text-[12px] text-foreground/70 truncate flex-1">{attachment.file.name}</span>
         </>
@@ -183,7 +227,7 @@ function AttachmentPreview({ attachment, onRemove }: { attachment: PendingAttach
       <button
         type="button"
         onClick={onRemove}
-        className="cursor-pointer shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-muted/50 text-muted-foreground/60 hover:bg-rose-500/15 hover:text-rose-400 transition-colors"
+        className="cursor-pointer shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-muted/50 text-muted-foreground/90 hover:bg-rose-500/15 hover:text-rose-400 transition-colors"
       >
         <X className="h-3 w-3" weight="bold" />
       </button>
@@ -217,7 +261,7 @@ function RecordingIndicator({ seconds }: { seconds: number }) {
           />
         ))}
       </div>
-      <span className="text-[11px] text-muted-foreground/40 ml-auto">Gravando...</span>
+      <span className="text-[11px] text-muted-foreground/90 ml-auto">Gravando...</span>
     </motion.div>
   )
 }
@@ -353,15 +397,15 @@ function AudioMessagePlayer({
             />
           </div>
           <div className="mt-1 flex items-center justify-between">
-            <span className="text-[10px] font-mono text-muted-foreground/60">{formatAudioTime(currentTime)}</span>
-            <span className="text-[10px] font-mono text-muted-foreground/50">{formatAudioTime(duration)}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/90">{formatAudioTime(currentTime)}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/85">{formatAudioTime(duration)}</span>
           </div>
         </div>
         {onOpenFull && (
           <button
             type="button"
             onClick={onOpenFull}
-            className="cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground/55 hover:text-foreground hover:bg-muted/50 transition-colors"
+            className="cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground/88 hover:text-foreground hover:bg-muted/50 transition-colors"
             aria-label="Abrir áudio em destaque"
             title="Abrir em destaque"
           >
@@ -400,7 +444,7 @@ function MediaViewerModal({
           className="relative w-full max-w-[840px] overflow-hidden rounded-2xl border border-white/10 bg-[oklch(0.18_0.02_260)] shadow-2xl"
         >
           <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
-            <p className="truncate text-[12px] font-medium text-white/75">
+            <p className="truncate text-[12px] font-medium text-white/88">
               {media.type === "document" ? media.fileName || "Documento" : "Visualização de mídia"}
             </p>
             <div className="flex items-center gap-1.5">
@@ -408,7 +452,7 @@ function MediaViewerModal({
                 href={media.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/88 hover:text-white hover:bg-white/10 transition-colors"
                 title="Abrir em nova aba"
               >
                 <ArrowsOutSimple className="h-4 w-4" />
@@ -417,7 +461,7 @@ function MediaViewerModal({
                 <a
                   href={media.url}
                   download={media.fileName ?? undefined}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/88 hover:text-white hover:bg-white/10 transition-colors"
                   title="Baixar"
                 >
                   <DownloadSimple className="h-4 w-4" />
@@ -426,7 +470,7 @@ function MediaViewerModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-white/55 hover:text-white hover:bg-white/10 transition-colors"
+                className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-white/88 hover:text-white hover:bg-white/10 transition-colors"
                 aria-label="Fechar visualizador"
               >
                 <X className="h-4 w-4" />
@@ -479,9 +523,43 @@ function MessageBubble({
   const isAgent = msg.role === "AGENT"
   const time = formatTime(msg.createdAt)
   const canReplyOrReact = !isPending && !!msg.zapiMessageId
-  const REACTIONS = ["❤️", "👍", "🙏", "😂"] as const
+  const QUICK_REACTIONS = ["❤️", "👍", "🙏", "😂"] as const
+  const [copied, setCopied] = useState(false)
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
+  const pickerRef = useRef<HTMLDivElement>(null)
 
-  const bubbleCls = `max-w-[72%] rounded-2xl px-4 py-2.5 transition-opacity duration-300 ${
+  useEffect(() => {
+    if (!emojiPickerOpen) return
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setEmojiPickerOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [emojiPickerOpen])
+
+  const copyableText = msg.type === "TEXT" || !msg.type ? msg.content : null
+
+  // Reactions: filter out empty-emoji entries (deleted reactions)
+  const activeReactions = (msg.reactions ?? []).filter((r) => r.emoji !== "")
+
+  const EMOJI_GRID = [
+    "❤️","👍","👎","😂","😮","😢","😡","🙏",
+    "🔥","🎉","👏","💯","✅","🤔","😍","🥰",
+    "😎","🤣","😅","😭","🥺","😤","🤯","😱",
+    "💪","🙌","👀","✨","💀","🫡","🤝","🫶",
+  ]
+
+  const handleCopy = () => {
+    if (!copyableText) return
+    navigator.clipboard.writeText(copyableText).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    })
+  }
+
+  const bubbleCls = `max-w-[72%] rounded-2xl transition-opacity duration-300 ${
     isPending ? "opacity-60" : "opacity-100"
   } ${
     isMe
@@ -527,7 +605,7 @@ function MessageBubble({
       return (
         <div className="space-y-1.5">
           <div className="flex h-24 w-[200px] items-center justify-center rounded-xl border border-border/40 bg-muted/20">
-            <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+            <ImageIcon className="h-6 w-6 text-muted-foreground/85" />
           </div>
           {caption && <p className="text-[12px] text-foreground/80">{caption}</p>}
         </div>
@@ -548,8 +626,8 @@ function MessageBubble({
       // Sent by operator — audioUrl not yet populated
       return (
         <div className="flex items-center gap-2 min-w-[160px]">
-          <SpeakerHigh className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-          <span className="text-[12px] text-muted-foreground/50 italic">Áudio enviado</span>
+          <SpeakerHigh className="h-4 w-4 text-muted-foreground/90 shrink-0" />
+          <span className="text-[12px] text-muted-foreground/85 italic">Áudio enviado</span>
         </div>
       )
     }
@@ -585,13 +663,13 @@ function MessageBubble({
             className="flex items-center gap-2.5 group"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/30 group-hover:bg-accent/10 transition-colors">
-              <FileDoc className="h-4 w-4 text-muted-foreground/60 group-hover:text-accent transition-colors" />
+              <FileDoc className="h-4 w-4 text-muted-foreground/90 group-hover:text-accent transition-colors" />
             </div>
             <div className="min-w-0">
               <p className="text-[12px] font-medium truncate max-w-[180px] group-hover:text-accent transition-colors">
                 {fileName}
               </p>
-              <p className="text-[10px] text-muted-foreground/40">Toque para visualizar</p>
+              <p className="text-[10px] text-muted-foreground/90">Toque para visualizar</p>
             </div>
           </button>
         )
@@ -601,11 +679,11 @@ function MessageBubble({
       return (
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/20">
-            <FileDoc className="h-4 w-4 text-muted-foreground/40" />
+            <FileDoc className="h-4 w-4 text-muted-foreground/90" />
           </div>
           <div className="min-w-0">
             <p className="text-[12px] font-medium truncate max-w-[180px] text-foreground/70">{fileName}</p>
-            <p className="text-[10px] text-muted-foreground/40">Processando...</p>
+            <p className="text-[10px] text-muted-foreground/90">Processando...</p>
           </div>
         </div>
       )
@@ -647,13 +725,13 @@ function MessageBubble({
           className="flex items-center gap-2 group"
         >
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/30 group-hover:bg-emerald-500/10 transition-colors">
-            <MapPin className="h-4 w-4 text-muted-foreground/60 group-hover:text-emerald-400 transition-colors" weight="fill" />
+            <MapPin className="h-4 w-4 text-muted-foreground/90 group-hover:text-emerald-400 transition-colors" weight="fill" />
           </div>
           <div>
             <p className="text-[12px] font-medium group-hover:text-emerald-400 transition-colors">
               {msg.content || m.address || "Ver localização"}
             </p>
-            <p className="text-[10px] text-muted-foreground/40">Abrir no Maps</p>
+            <p className="text-[10px] text-muted-foreground/90">Abrir no Maps</p>
           </div>
         </a>
       )
@@ -663,11 +741,11 @@ function MessageBubble({
     if (m?.mediaKind === "contact" && m.contactName) {
       return (
         <div className="flex items-center gap-2.5">
-          <UserCircle className="h-9 w-9 text-muted-foreground/40 shrink-0" weight="duotone" />
+          <UserCircle className="h-9 w-9 text-muted-foreground/90 shrink-0" weight="duotone" />
           <div>
             <p className="text-[12px] font-semibold">{m.contactName}</p>
             {m.contactPhone && (
-              <p className="text-[11px] text-muted-foreground/60 font-mono">{m.contactPhone}</p>
+              <p className="text-[11px] text-muted-foreground/90 font-mono">{m.contactPhone}</p>
             )}
           </div>
         </div>
@@ -690,37 +768,87 @@ function MessageBubble({
           <Robot className="h-3.5 w-3.5 text-accent" weight="fill" />
         </div>
       )}
-      <div className={`group relative ${bubbleCls}`}>
-        {quotedText && (
-          <div className={`mb-2 rounded-lg border px-2.5 py-1.5 ${
-            isMe
-              ? "border-accent/25 bg-accent/8"
-              : "border-border/50 bg-muted/25"
-          }`}>
-            <div className="flex items-center gap-1.5">
-              <Quotes className="h-3 w-3 text-muted-foreground/50" />
-              <span className="text-[10px] text-muted-foreground/60">Resposta</span>
+      <div className={`group relative ${bubbleCls} ${activeReactions.length > 0 ? "mb-3" : ""}`}>
+        {/* Content area */}
+        <div className="px-4 pt-2.5 pb-2">
+          {quotedText && (
+            <div className={`mb-2 rounded-lg border px-2.5 py-1.5 ${
+              isMe
+                ? "border-accent/25 bg-accent/8"
+                : "border-border/50 bg-muted/25"
+            }`}>
+              <div className="flex items-center gap-1.5">
+                <Quotes className="h-3 w-3 text-muted-foreground/85" />
+                <span className="text-[10px] text-muted-foreground/90">Resposta</span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-muted-foreground/88 line-clamp-2">{quotedText}</p>
             </div>
-            <p className="mt-0.5 text-[11px] text-muted-foreground/75 line-clamp-2">{quotedText}</p>
+          )}
+          {content}
+        </div>
+        {/* Divider */}
+        <div className={`mx-3 h-px ${isMe ? "bg-accent/15" : "bg-border/40"}`} />
+        {/* Footer: time + copy */}
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 ${isMe ? "justify-end" : "justify-between"}`}>
+          {!isMe && copyableText && (
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="cursor-pointer flex items-center justify-center h-5 w-5 rounded-md text-muted-foreground/50 hover:text-muted-foreground/90 hover:bg-muted/30 transition-colors"
+              title="Copiar mensagem"
+            >
+              {copied
+                ? <Check className="h-3 w-3 text-accent" weight="bold" />
+                : <Copy className="h-3 w-3" />
+              }
+            </button>
+          )}
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-muted-foreground/75">{time}</span>
+            {isMe && <MessageTick status={msg.status} pending={isPending} />}
+          </div>
+          {isMe && copyableText && (
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="cursor-pointer flex items-center justify-center h-5 w-5 rounded-md text-muted-foreground/50 hover:text-muted-foreground/90 hover:bg-muted/30 transition-colors"
+              title="Copiar mensagem"
+            >
+              {copied
+                ? <Check className="h-3 w-3 text-accent" weight="bold" />
+                : <Copy className="h-3 w-3" />
+              }
+            </button>
+          )}
+        </div>
+        {/* Reactions pill — always anchored to the left */}
+        {activeReactions.length > 0 && (
+          <div className="absolute -bottom-3 left-2 flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5 rounded-full border border-border/50 bg-popover/95 backdrop-blur px-1.5 py-0.5 shadow-sm shadow-black/20">
+              {activeReactions.map((r, i) => (
+                <span
+                  key={i}
+                  className="text-[13px] leading-none"
+                  title={r.fromMe ? "Você" : "Contato"}
+                >
+                  {r.emoji}
+                </span>
+              ))}
+            </div>
           </div>
         )}
-        {content}
-        <div className={`mt-1 flex items-center gap-1 ${isMe ? "justify-end" : "justify-start"}`}>
-          <span className="text-[10px] text-muted-foreground/40">{time}</span>
-          {isMe && <MessageTick status={msg.status} pending={isPending} />}
-        </div>
         {canReplyOrReact && (
-          <div className={`absolute -top-2 ${isMe ? "left-0 -translate-x-[calc(100%+8px)]" : "right-0 translate-x-[calc(100%+8px)]"} opacity-0 group-hover:opacity-100 transition-opacity`}>
+          <div ref={pickerRef} className={`absolute bottom-0 ${isMe ? "right-full mr-2" : "left-full ml-2"} opacity-0 group-hover:opacity-100 transition-opacity z-20`}>
             <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-popover/95 backdrop-blur px-1 py-1 shadow-lg shadow-black/20">
               <button
                 type="button"
                 onClick={() => onReply?.(msg as FirestoreMessage)}
-                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted/40 transition-colors"
+                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors"
                 title="Responder"
               >
                 <ArrowBendUpLeft className="h-3.5 w-3.5" />
               </button>
-              {REACTIONS.map((r) => (
+              {QUICK_REACTIONS.map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -732,8 +860,58 @@ function MessageBubble({
                 </button>
               ))}
               <div className="h-4 w-px bg-border/70 mx-0.5" />
-              <Smiley className="h-3.5 w-3.5 text-muted-foreground/40 mx-1" />
+              {/* More emojis button */}
+              <button
+                type="button"
+                onClick={() => setEmojiPickerOpen((v) => !v)}
+                className={`cursor-pointer flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                  emojiPickerOpen
+                    ? "bg-accent/20 text-accent"
+                    : "text-muted-foreground/85 hover:text-foreground hover:bg-muted/40"
+                }`}
+                title="Mais emojis"
+              >
+                <Smiley className="h-3.5 w-3.5" />
+              </button>
             </div>
+
+            {/* Emoji picker panel */}
+            <AnimatePresence>
+              {emojiPickerOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.92, y: 4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: 4 }}
+                  transition={{ duration: 0.15, ease }}
+                  className={`absolute bottom-full mb-1.5 z-30 rounded-xl border border-border/60 bg-popover/98 backdrop-blur-md shadow-xl shadow-black/30 p-2 ${
+                    isMe ? "right-0" : "left-0"
+                  }`}
+                >
+                  <div className="grid grid-cols-8 gap-0.5 w-[224px]">
+                    {EMOJI_GRID.map((emoji) => {
+                      const myReaction = activeReactions.find((r) => r.fromMe)
+                      const isActive = myReaction?.emoji === emoji
+                      return (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => {
+                            onReact?.(msg as FirestoreMessage, isActive ? "" : emoji)
+                            setEmojiPickerOpen(false)
+                          }}
+                          className={`cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-[16px] transition-all hover:scale-110 hover:bg-muted/40 ${
+                            isActive ? "bg-accent/20 ring-1 ring-accent/40" : ""
+                          }`}
+                          title={emoji}
+                        >
+                          {emoji}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </div>
@@ -754,7 +932,7 @@ function TypingIndicator({ label }: { label: string }) {
     >
       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted/40" />
       <div className="rounded-2xl rounded-bl-sm border border-border/60 bg-card px-4 py-2.5 flex items-center gap-1.5">
-        <span className="text-[11px] text-muted-foreground/50 italic">{label}</span>
+        <span className="text-[11px] text-muted-foreground/85 italic">{label}</span>
         <span className="flex gap-0.5">
           {[0, 1, 2].map((i) => (
             <motion.span
@@ -787,6 +965,9 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
 
   // Optimistic messages — keyed by a local temp ID, removed when Firestore confirms
   const [optimisticMsgs, setOptimisticMsgs] = useState<OptimisticMessage[]>([])
+
+  // Optimistic reactions — keyed by messageId, overrides msg.reactions until onSnapshot confirms
+  const [optimisticReactions, setOptimisticReactions] = useState<Record<string, MessageReaction[]>>({})
 
   // Audio recording
   const [recording, setRecording] = useState(false)
@@ -837,11 +1018,31 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages])
 
+  // Clear optimistic reactions that have been confirmed by Firestore
+  useEffect(() => {
+    if (Object.keys(optimisticReactions).length === 0) return
+    setOptimisticReactions((prev) => {
+      const next = { ...prev }
+      for (const msg of messages) {
+        if (next[msg.id] && msg.reactions !== undefined) {
+          delete next[msg.id]
+        }
+      }
+      return next
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages])
+
   // Merged list: real messages first, then any still-pending optimistic ones
+  // Apply optimistic reactions overlay
   const allMessages: AnyMessage[] = [
     ...messages,
     ...optimisticMsgs.filter((opt) => !messages.some((m) => m.content === opt.content && m.role === "OPERATOR")),
-  ]
+  ].map((m) =>
+    optimisticReactions[m.id] !== undefined
+      ? { ...m, reactions: optimisticReactions[m.id] }
+      : m
+  )
 
   const messageById = useRef(new Map<string, AnyMessage>())
   const messageByZapi = useRef(new Map<string, AnyMessage>())
@@ -914,6 +1115,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     setMediaViewer(null)
     setErrorMsg(null)
     setOptimisticMsgs([])
+    setOptimisticReactions({})
     stopRecording(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -988,6 +1190,17 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       showError("Essa mensagem ainda não pode receber reação")
       return
     }
+
+    // Optimistic update: upsert fromMe reaction immediately
+    setOptimisticReactions((prev) => {
+      const current = prev[m.id] ?? m.reactions ?? []
+      const withoutMe = current.filter((r) => !r.fromMe)
+      const next: MessageReaction[] = reaction
+        ? [...withoutMe, { emoji: reaction, fromMe: true, at: { toDate: () => new Date() } as never }]
+        : withoutMe
+      return { ...prev, [m.id]: next }
+    })
+
     try {
       await sendMessage(contact.id, {
         type: "REACTION",
@@ -995,6 +1208,11 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
         replyToZapiMessageId: m.zapiMessageId,
       })
     } catch (err) {
+      // Rollback optimistic reaction on failure
+      setOptimisticReactions((prev) => {
+        const { [m.id]: _, ...rest } = prev
+        return rest
+      })
       const msg = err instanceof Error ? err.message : "Falha ao reagir"
       showError(msg)
     }
@@ -1143,7 +1361,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           </div>
           <div>
             <p className="text-[13px] font-semibold text-foreground leading-tight">{displayName}</p>
-            <p className="text-[11px] text-muted-foreground/50 leading-tight font-mono">
+            <p className="text-[11px] text-muted-foreground/85 leading-tight font-mono">
               {contactTyping ? "digitando..." : agentTyping ? "agente escrevendo..." : displayPhone}
             </p>
           </div>
@@ -1153,7 +1371,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           {[Phone, ArrowCounterClockwise, ChatCircleText, Smiley, Star, BookmarkSimple, Archive, DotsThree].map((Icon, i) => (
             <button
               key={i}
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
             >
               <Icon className="h-4 w-4" />
             </button>
@@ -1176,7 +1394,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
                 className="h-5 w-5 rounded-full border-2 border-accent/20 border-t-accent"
               />
             ) : (
-              <p className="text-[11px] text-muted-foreground/50">Role para cima para carregar mais</p>
+              <p className="text-[11px] text-muted-foreground/85">Role para cima para carregar mais</p>
             )}
           </div>
         )}
@@ -1187,16 +1405,16 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               className="h-5 w-5 rounded-full border-2 border-accent/20 border-t-accent"
             />
-            <p className="text-[11px] text-muted-foreground/30">Carregando mensagens...</p>
+            <p className="text-[11px] text-muted-foreground/85">Carregando mensagens...</p>
           </div>
         )}
 
         {!messagesLoading && allMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/30 border border-border/40">
-              <ChatCircleText className="h-6 w-6 text-muted-foreground/30" weight="duotone" />
+              <ChatCircleText className="h-6 w-6 text-muted-foreground/85" weight="duotone" />
             </div>
-            <p className="text-[12px] text-muted-foreground/40">Nenhuma mensagem ainda</p>
+            <p className="text-[12px] text-muted-foreground/90">Nenhuma mensagem ainda</p>
           </div>
         )}
 
@@ -1205,16 +1423,23 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           const refMsg = refId
             ? (messageById.current.get(refId) ?? messageByZapi.current.get(refId) ?? null)
             : null
+          const currentKey = getMsgDateKey(msg.createdAt)
+          const prevKey = i > 0 ? getMsgDateKey(allMessages[i - 1].createdAt) : null
+          const showDateDivider = currentKey && currentKey !== prevKey
           return (
-            <MessageBubble
-              key={msg.id}
-              msg={msg}
-              animate={i >= allMessages.length - 1}
-              quotedText={previewText(refMsg)}
-              onReply={handleReplyMessage}
-              onReact={handleReactToMessage}
-              onOpenMedia={setMediaViewer}
-            />
+            <div key={msg.id} className="flex flex-col gap-3">
+              {showDateDivider && (
+                <DateDivider label={formatDateLabel(msg.createdAt)} />
+              )}
+              <MessageBubble
+                msg={msg}
+                animate={i >= allMessages.length - 1}
+                quotedText={previewText(refMsg)}
+                onReply={handleReplyMessage}
+                onReact={handleReactToMessage}
+                onOpenMedia={setMediaViewer}
+              />
+            </div>
           )
         })}
 
@@ -1227,7 +1452,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
         {zapiInstances.length > 1 && routedInstanceLabel && (
           <div className="flex items-center justify-center gap-1.5 py-1">
             <span className="h-px w-8 bg-border/40" />
-            <span className="text-[10px] text-muted-foreground/35 select-none">
+            <span className="text-[10px] text-muted-foreground/88 select-none">
               via {routedInstanceLabel}
             </span>
             <span className="h-px w-8 bg-border/40" />
@@ -1258,7 +1483,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
                 <button
                   type="button"
                   onClick={() => setReplyTo(null)}
-                  className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-muted/30 transition-colors"
+                  className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/90 hover:text-foreground hover:bg-muted/30 transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -1307,7 +1532,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
               <button
                 type="button"
                 onClick={() => setAttachMenuOpen(false)}
-                className="cursor-pointer ml-auto flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                className="cursor-pointer ml-auto flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/90 hover:text-muted-foreground transition-colors"
               >
                 <X className="h-3.5 w-3.5" weight="bold" />
               </button>
@@ -1330,7 +1555,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
               className={`cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 ${
                 attachMenuOpen
                   ? "bg-accent/15 text-accent"
-                  : "text-muted-foreground/50 hover:text-foreground hover:bg-muted/40"
+                  : "text-muted-foreground/85 hover:text-foreground hover:bg-muted/40"
               }`}
             >
               <Paperclip className="h-4 w-4" />
@@ -1349,7 +1574,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={attachment ? "Adicionar legenda (opcional)..." : "Digite uma mensagem..."}
-                className="flex-1 h-9 rounded-xl border border-border bg-card/50 px-4 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+                className="flex-1 h-9 rounded-xl border border-border bg-card/50 px-4 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
               />
             )}
           </AnimatePresence>
@@ -1382,7 +1607,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
+                className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
               >
                 <Microphone className="h-4 w-4" />
               </motion.button>
@@ -1401,7 +1626,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
                 className={`cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 disabled:cursor-default ${
                   canSend
                     ? "bg-accent text-accent-foreground shadow-md shadow-accent/20"
-                    : "bg-muted/40 text-muted-foreground/40"
+                    : "bg-muted/40 text-muted-foreground/90"
                 }`}
               >
                 <PaperPlaneTilt className="h-4 w-4" weight="fill" />

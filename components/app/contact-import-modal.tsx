@@ -17,7 +17,7 @@ import { useContactsImportCommit, useContactsImportPreview } from "@/hooks/use-c
 const ease = [0.33, 1, 0.68, 1] as const
 
 const inputCls =
-  "w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+  "w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
 
 const IMPORT_MODES: Array<{ id: ContactImportMode; title: string; desc: string }> = [
   { id: "skip_existing", title: "Ignorar existentes", desc: "Cria apenas contatos novos (padrão recomendado)." },
@@ -166,12 +166,12 @@ export function ContactImportModal({
                 </div>
                 <div>
                   <h2 className="text-[14px] font-semibold text-foreground">Importar contatos por CSV</h2>
-                  <p className="text-[11px] text-muted-foreground/60">Template, preview e commit em fluxo guiado</p>
+                  <p className="text-[11px] text-muted-foreground/90">Template, preview e commit em fluxo guiado</p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors"
+                className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -204,7 +204,7 @@ export function ContactImportModal({
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Delimitador</label>
+                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/90">Delimitador</label>
                       <select value={delimiter} onChange={(e) => setDelimiter(e.target.value as ContactImportDelimiter)} className={inputCls}>
                         <option value=";">Ponto e vírgula (;)</option>
                         <option value=",">Vírgula (,)</option>
@@ -235,7 +235,7 @@ export function ContactImportModal({
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
-                          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Modo de importação</label>
+                          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/90">Modo de importação</label>
                           <div className="space-y-1.5">
                             {IMPORT_MODES.map((m) => (
                               <button
@@ -249,22 +249,22 @@ export function ContactImportModal({
                                 }`}
                               >
                                 <p className="text-[12px] font-semibold text-foreground/90">{m.title}</p>
-                                <p className="mt-0.5 text-[10px] text-muted-foreground/60">{m.desc}</p>
+                                <p className="mt-0.5 text-[10px] text-muted-foreground/90">{m.desc}</p>
                               </button>
                             ))}
                           </div>
                         </div>
 
                         <div className="rounded-lg border border-border/60 bg-card/30 p-3">
-                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Amostra</p>
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/90">Amostra</p>
                           {preview.sample.length === 0 ? (
-                            <p className="text-[11px] text-muted-foreground/55">Sem linhas válidas no preview.</p>
+                            <p className="text-[11px] text-muted-foreground/88">Sem linhas válidas no preview.</p>
                           ) : (
                             <div className="space-y-1.5">
                               {preview.sample.slice(0, 4).map((row) => (
                                 <div key={row.rowNumber} className="rounded-md border border-border/50 bg-muted/20 px-2 py-1.5">
                                   <p className="truncate text-[11px] text-foreground/85">{row.name || "Sem nome"} · {row.phone}</p>
-                                  {row.email && <p className="truncate text-[10px] text-muted-foreground/60">{row.email}</p>}
+                                  {row.email && <p className="truncate text-[10px] text-muted-foreground/90">{row.email}</p>}
                                 </div>
                               ))}
                             </div>

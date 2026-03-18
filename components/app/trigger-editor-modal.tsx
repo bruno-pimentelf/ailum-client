@@ -211,7 +211,7 @@ export function TriggerEditorModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -421,7 +421,7 @@ export function TriggerEditorModal({
                     onChange={(e) => setCooldownSeconds(Number(e.target.value) || MIN_COOLDOWN_SECONDS)}
                     className={inputCls}
                   />
-                  <p className="mt-1 text-[10px] text-muted-foreground/60">
+                  <p className="mt-1 text-[10px] text-muted-foreground/90">
                     Tempo mínimo entre disparos para o mesmo contato (1h = 3600)
                   </p>
                 </div>

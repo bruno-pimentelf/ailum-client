@@ -130,7 +130,7 @@ function SignUpContent() {
               placeholder="Seu nome"
               required
               autoComplete="name"
-              className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+              className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
             />
           </div>
 
@@ -144,7 +144,7 @@ function SignUpContent() {
               placeholder="seu@email.com"
               required
               autoComplete="email"
-              className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+              className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
             />
           </div>
 
@@ -159,9 +159,9 @@ function SignUpContent() {
                 placeholder="Mínimo 8 caracteres"
                 required
                 autoComplete="new-password"
-                className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 pr-11 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+                className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 pr-11 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
               />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-200" tabIndex={-1}>
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/85 hover:text-muted-foreground transition-colors duration-200" tabIndex={-1}>
                 {showPassword ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
@@ -178,9 +178,9 @@ function SignUpContent() {
                 placeholder="Repita a senha"
                 required
                 autoComplete="new-password"
-                className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 pr-11 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+                className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 pr-11 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
               />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-200" tabIndex={-1}>
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/85 hover:text-muted-foreground transition-colors duration-200" tabIndex={-1}>
                 {showConfirm ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>

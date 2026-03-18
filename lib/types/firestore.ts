@@ -58,6 +58,12 @@ export interface FirestoreContact {
 
 // ─── Message ──────────────────────────────────────────────────────────────────
 
+export interface MessageReaction {
+  emoji: string
+  fromMe: boolean
+  at: Timestamp
+}
+
 export interface FirestoreMessage {
   id: string
   role: "CONTACT" | "OPERATOR" | "AGENT"
@@ -66,9 +72,10 @@ export interface FirestoreMessage {
   createdAt: Timestamp
   status?: "SENT" | "RECEIVED" | "READ" | "PLAYED"
   updatedAt?: Timestamp
-  // New WhatsApp integration fields for reply/reaction
+  // WhatsApp integration fields for reply/reaction
   zapiMessageId?: string
   referenceMessageId?: string
+  reactions?: MessageReaction[]
   metadata?: {
     // IMAGE
     imageUrl?: string

@@ -82,7 +82,7 @@ function PhoneCopy({ phone }: { phone: string }) {
       title={`Copiar ${phone}`}
       className="group flex items-center gap-1 cursor-pointer"
     >
-      <span className="text-[10px] text-muted-foreground/40 font-mono group-hover:text-muted-foreground/70 transition-colors duration-150">
+      <span className="text-[10px] text-muted-foreground/90 font-mono group-hover:text-muted-foreground/85 transition-colors duration-150">
         {phone}
       </span>
       <AnimatePresence mode="wait">
@@ -93,7 +93,7 @@ function PhoneCopy({ phone }: { phone: string }) {
         ) : (
           <motion.span key="cp" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
             className="opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            <Copy className="h-2.5 w-2.5 text-muted-foreground/40" />
+            <Copy className="h-2.5 w-2.5 text-muted-foreground/90" />
           </motion.span>
         )}
       </AnimatePresence>
@@ -182,12 +182,12 @@ function ConversationItem({
           <span className={`text-[13px] font-medium truncate ${active ? "text-foreground" : "text-foreground/90"}`}>
             {displayName}
           </span>
-          <span className="text-[11px] text-muted-foreground/60 shrink-0">
+          <span className="text-[11px] text-muted-foreground/90 shrink-0">
             {formatRelativeTime(contact.lastMessageAt)}
           </span>
         </div>
 
-        <p className="mt-0.5 text-[12px] text-muted-foreground/70 truncate leading-snug">
+        <p className="mt-0.5 text-[12px] text-muted-foreground/85 truncate leading-snug">
           {isTyping
             ? (contact.agentTyping ? "agente escrevendo..." : "digitando...")
             : formatConversationPreview(contact.lastMessage)}
@@ -198,9 +198,9 @@ function ConversationItem({
             {contact.agentTyping ? (
               <Robot className="h-3 w-3 text-accent/50 shrink-0" weight="fill" />
             ) : (
-              <User className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+              <User className="h-3 w-3 text-muted-foreground/90 shrink-0" />
             )}
-            <span className="text-[11px] text-muted-foreground/50 truncate">
+            <span className="text-[11px] text-muted-foreground/85 truncate">
               {contact.status?.replace(/_/g, " ") || ""}
             </span>
           </div>
@@ -230,11 +230,13 @@ export default function ChatsPage() {
   const { whatsappConnected, whatsappError } = useWhatsappStatus(tenantId)
 
   const filtered = contacts.filter((c) => {
+    const ph = c.contactPhone ?? c.phone ?? ""
+    if (ph === "__playground__") return false
     if (!search) return true
     const q = search.toLowerCase()
     return (
       (c.contactName ?? c.name ?? "").toLowerCase().includes(q) ||
-      (c.contactPhone ?? c.phone ?? "").includes(q) ||
+      ph.includes(q) ||
       (c.lastMessage ?? "").toLowerCase().includes(q)
     )
   })
@@ -276,12 +278,12 @@ export default function ChatsPage() {
         <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-background/50">
           <div className="p-3 border-b border-border/50">
             <div className="relative">
-              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/85 pointer-events-none" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Pesquisar conversas..."
-                className="h-8 w-full rounded-lg bg-muted/30 pl-8 pr-3 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all duration-200"
+                className="h-8 w-full rounded-lg bg-muted/30 pl-8 pr-3 text-[12px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all duration-200"
               />
             </div>
           </div>
@@ -294,7 +296,7 @@ export default function ChatsPage() {
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   className="h-5 w-5 rounded-full border-2 border-accent/20 border-t-accent"
                 />
-                <p className="text-[11px] text-muted-foreground/30">Carregando conversas...</p>
+                <p className="text-[11px] text-muted-foreground/85">Carregando conversas...</p>
               </div>
             )}
 
@@ -314,7 +316,7 @@ export default function ChatsPage() {
             {!loading && filtered.length === 0 && (
               <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-4">
                 <ChatCircleText className="h-8 w-8 text-muted-foreground/20" />
-                <p className="text-[12px] text-muted-foreground/40">
+                <p className="text-[12px] text-muted-foreground/90">
                   {search ? "Nenhuma conversa encontrada" : "Nenhuma conversa ainda"}
                 </p>
               </div>
@@ -341,11 +343,11 @@ export default function ChatsPage() {
                 </div>
                 <div>
                   <h3 className="text-[15px] font-semibold text-foreground">Selecione uma conversa</h3>
-                  <p className="mt-1.5 text-[13px] text-muted-foreground/60 max-w-[260px] leading-relaxed">
+                  <p className="mt-1.5 text-[13px] text-muted-foreground/90 max-w-[260px] leading-relaxed">
                     Escolha uma conversa da lista ao lado para começar a visualizar e enviar mensagens
                   </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground/30 mt-2">
+                <p className="text-[11px] text-muted-foreground/85 mt-2">
                   Dica: use a busca para encontrar conversas rapidamente
                 </p>
               </motion.div>

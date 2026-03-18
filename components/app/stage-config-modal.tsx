@@ -218,7 +218,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                   <h2 className="text-[14px] font-semibold text-foreground">
                     Configurar — {stage?.name ?? "Etapa"}
                   </h2>
-                  <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+                  <p className="text-[11px] text-muted-foreground/90 mt-0.5">
                     Agente de IA e triggers automáticos
                   </p>
                 </div>
@@ -226,7 +226,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -291,9 +291,9 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                       <div className="flex flex-col gap-2">
                         {triggers.length === 0 && (
                           <div className="rounded-xl border border-dashed border-border/50 bg-muted/5 py-10 text-center">
-                            <Lightning className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" weight="duotone" />
+                            <Lightning className="h-10 w-10 text-muted-foreground/85 mx-auto mb-2" weight="duotone" />
                             <p className="text-[13px] text-muted-foreground">Nenhum trigger configurado</p>
-                            <p className="text-[11px] text-muted-foreground/70 mt-1">Adicione triggers para enviar mensagens automáticas</p>
+                            <p className="text-[11px] text-muted-foreground/85 mt-1">Adicione triggers para enviar mensagens automáticas</p>
                             <button
                               type="button"
                               onClick={() => setAddingTrigger(true)}
@@ -319,7 +319,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                               {t.isActive ? (
                                 <ToggleRight className="h-6 w-6 text-accent" weight="fill" />
                               ) : (
-                                <ToggleLeft className="h-6 w-6 text-muted-foreground/40" />
+                                <ToggleLeft className="h-6 w-6 text-muted-foreground/90" />
                               )}
                             </button>
                             <div className="flex-1 min-w-0">
@@ -388,7 +388,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                     <div className="space-y-1.5">
                       <label className={labelCls}>Nome do assistente</label>
                       <div className="flex items-center gap-2.5">
-                        <TextAa className="h-4 w-4 text-muted-foreground/60 shrink-0" weight="duotone" />
+                        <TextAa className="h-4 w-4 text-muted-foreground/90 shrink-0" weight="duotone" />
                         <input
                           type="text"
                           value={funnelAgentName}
@@ -421,7 +421,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                         onChange={(e) => setTemperature(parseFloat(e.target.value))}
                         className="w-full h-2.5 rounded-full accent-accent mt-2 cursor-pointer"
                       />
-                      <p className="text-[10px] text-muted-foreground/60">0 conservador · 1 criativo</p>
+                      <p className="text-[10px] text-muted-foreground/90">0 conservador · 1 criativo</p>
                     </div>
                   </div>
 
@@ -468,7 +468,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                             transition={{ duration: 0.12 }}
                             className="flex flex-col gap-2"
                           >
-                            <p className="text-[11px] text-muted-foreground/70">
+                            <p className="text-[11px] text-muted-foreground/85">
                               Como o assistente fala e age — tom, estilo, regras gerais.
                             </p>
                             <InstructionTextarea
@@ -487,7 +487,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                             transition={{ duration: 0.12 }}
                             className="flex flex-col gap-2"
                           >
-                            <p className="text-[11px] text-muted-foreground/70">
+                            <p className="text-[11px] text-muted-foreground/85">
                               O que o assistente deve fazer nesta etapa. Instruções específicas.
                             </p>
                             <InstructionTextarea
@@ -560,10 +560,10 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                           </button>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <CurrencyDollar className="h-3.5 w-3.5 text-muted-foreground/60" weight="duotone" />
+                              <CurrencyDollar className="h-3.5 w-3.5 text-muted-foreground/90" weight="duotone" />
                               <p className="text-[12px] font-medium text-foreground">PIX antes de agendar</p>
                             </div>
-                            <p className="text-[10px] text-muted-foreground/60 mt-0.5 leading-relaxed">
+                            <p className="text-[10px] text-muted-foreground/90 mt-0.5 leading-relaxed">
                               Horário → PIX → consulta criada após pagamento.
                             </p>
                           </div>

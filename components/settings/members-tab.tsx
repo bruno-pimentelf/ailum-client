@@ -108,48 +108,48 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
                 </div>
                 <h2 className="text-[14px] font-semibold text-foreground">Criar conta de membro</h2>
               </div>
-              <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors">
+              <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Nome *</label>
+                <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Nome *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Maria Souza"
                   autoFocus
-                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">E-mail *</label>
+                <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">E-mail *</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="colaborador@clinica.com"
-                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Senha *</label>
+                <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Senha *</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="SenhaForte123"
-                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                  className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Perfil *</label>
+                <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Perfil *</label>
                 <div className="flex gap-2">
                   {(Object.keys(ROLE_CFG) as MemberRole[]).map((r) => {
                     const cfg = ROLE_CFG[r]
@@ -158,7 +158,7 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
                     return (
                       <button key={r} type="button" onClick={() => setRole(r)}
                         className={`cursor-pointer flex-1 flex flex-col items-center gap-1 rounded-xl border py-2.5 transition-all duration-150 ${
-                          active ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "border-border/40 bg-muted/10 text-muted-foreground/50 hover:border-border hover:text-muted-foreground"
+                          active ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "border-border/40 bg-muted/10 text-muted-foreground/85 hover:border-border hover:text-muted-foreground"
                         }`}>
                         <Icon className="h-4 w-4" weight={active ? "fill" : "regular"} />
                         <span className="text-[10px] font-bold">{cfg.label}</span>
@@ -170,7 +170,7 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
 
               {role === "PROFESSIONAL" && (
                 <div>
-                  <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Profissional (opcional)</label>
+                  <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Profissional (opcional)</label>
                   <select
                     value={professionalId}
                     onChange={(e) => setProfessionalId(e.target.value)}
@@ -263,14 +263,14 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
           >
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
               <h2 className="text-[14px] font-semibold text-foreground">Alterar perfil</h2>
-              <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors">
+              <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="px-5 py-4 flex flex-col gap-4">
-              <p className="text-[12px] text-muted-foreground/60">
-                Membro ID: <span className="font-mono text-muted-foreground/40">{member.id}</span>
+              <p className="text-[12px] text-muted-foreground/90">
+                Membro ID: <span className="font-mono text-muted-foreground/90">{member.id}</span>
               </p>
 
               <div className="flex gap-2">
@@ -281,7 +281,7 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
                   return (
                     <button key={r} type="button" onClick={() => setRole(r)}
                       className={`cursor-pointer flex-1 flex flex-col items-center gap-1 rounded-xl border py-2.5 transition-all duration-150 ${
-                        active ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "border-border/40 bg-muted/10 text-muted-foreground/50 hover:border-border hover:text-muted-foreground"
+                        active ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "border-border/40 bg-muted/10 text-muted-foreground/85 hover:border-border hover:text-muted-foreground"
                       }`}>
                       <Icon className="h-4 w-4" weight={active ? "fill" : "regular"} />
                       <span className="text-[10px] font-bold">{cfg.label}</span>
@@ -292,7 +292,7 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
 
               {role === "PROFESSIONAL" && (
                 <div>
-                  <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Profissional</label>
+                  <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Profissional</label>
                   <select
                     value={professionalId}
                     onChange={(e) => setProfessionalId(e.target.value)}
@@ -383,7 +383,7 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
 
       <div className="flex-1 min-w-0 py-0.5">
         <p className="text-[12px] font-bold text-white/90 truncate">{displayName}</p>
-        {displaySub && <p className="text-[11px] text-white/40 truncate">{displaySub}</p>}
+        {displaySub && <p className="text-[11px] text-white/90 truncate">{displaySub}</p>}
         {!member.isActive && (
           <span className="text-[9px] font-bold text-amber-400/70 uppercase tracking-wider">convite pendente</span>
         )}
@@ -403,7 +403,7 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
       </div>
 
       <div className="relative shrink-0 w-6 flex justify-end">
-        <button onClick={() => setMenuOpen((v) => !v)} className="cursor-pointer flex h-6 w-6 items-center justify-center rounded text-white/20 opacity-0 group-hover:opacity-100 hover:bg-white/[0.06] hover:text-white/45 transition-all duration-150">
+        <button onClick={() => setMenuOpen((v) => !v)} className="cursor-pointer flex h-6 w-6 items-center justify-center rounded text-white/90 opacity-0 group-hover:opacity-100 hover:bg-white/[0.06] hover:text-white/85 transition-all duration-150">
           <DotsThree className="h-3.5 w-3.5" weight="bold" />
         </button>
         <AnimatePresence>
@@ -414,12 +414,12 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
                 transition={{ duration: 0.12, ease }}
                 className="absolute right-0 top-full mt-1 z-20 w-36 rounded-lg border border-white/[0.08] bg-[oklch(0.16_0.02_263)] py-0.5 shadow-lg shadow-black/30">
                 <button onClick={() => { onEdit(); setMenuOpen(false) }}
-                  className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/70 hover:bg-white/[0.06] hover:text-white/90 transition-colors">
+                  className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/85 hover:bg-white/[0.06] hover:text-white/90 transition-colors">
                   <Pencil className="h-3 w-3" /> Alterar perfil
                 </button>
                 {!removeConfirm ? (
                   <button onClick={() => setRemoveConfirm(true)}
-                    className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/40 hover:bg-rose-500/[0.08] hover:text-rose-400 transition-colors">
+                    className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/90 hover:bg-rose-500/[0.08] hover:text-rose-400 transition-colors">
                     <Trash className="h-3 w-3" /> Remover
                   </button>
                 ) : (
@@ -467,7 +467,7 @@ export function MembersTab() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
-            <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
+            <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/85" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..."
               className="cursor-text w-full h-8 pl-8 pr-3 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/90 placeholder:text-white/22 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-all" />
           </div>
@@ -482,7 +482,7 @@ export function MembersTab() {
                   className={`cursor-pointer flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold transition-all duration-150 ${
                     active
                       ? cfg ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "bg-white/[0.08] border-white/[0.12] text-white/85"
-                      : "border-white/[0.05] bg-white/[0.02] text-white/35 hover:border-white/[0.08] hover:text-white/50"
+                      : "border-white/[0.05] bg-white/[0.02] text-white/88 hover:border-white/[0.08] hover:text-white/85"
                   }`}>
                   {Icon && <Icon className="h-3 w-3" weight={active ? "fill" : "regular"} />}
                   {label}
@@ -507,7 +507,7 @@ export function MembersTab() {
         {error && !isLoading && (
           <div className="flex flex-col items-center gap-2 py-10">
             <Warning className="h-7 w-7 text-rose-400/50" weight="duotone" />
-            <p className="text-[12px] text-muted-foreground/40">Erro ao carregar membros</p>
+            <p className="text-[12px] text-muted-foreground/90">Erro ao carregar membros</p>
             <button onClick={() => refetch()} className="cursor-pointer flex items-center gap-1.5 text-[11px] text-accent/60 hover:text-accent transition-colors">
               <ArrowsClockwise className="h-3.5 w-3.5" /> Tentar novamente
             </button>
@@ -517,7 +517,7 @@ export function MembersTab() {
         {!isLoading && !error && (
           <div className="flex flex-col gap-6 w-full">
             <div>
-              <h3 className="text-[11px] font-bold text-white/35 uppercase tracking-wider mb-2">Membros</h3>
+              <h3 className="text-[11px] font-bold text-white/88 uppercase tracking-wider mb-2">Membros</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
                 {filtered.length > 0 ? (
                   filtered.map((m, i) => (
@@ -526,9 +526,9 @@ export function MembersTab() {
                 ) : (
                   <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.05] bg-white/[0.02] mb-3">
-                      <Users className="h-4 w-4 text-white/18" weight="duotone" />
+                      <Users className="h-4 w-4 text-white/82" weight="duotone" />
                     </div>
-                    <p className="text-[12px] font-bold text-white/40">
+                    <p className="text-[12px] font-bold text-white/90">
                       {search ? "Nenhum membro encontrado" : "Nenhum membro ainda"}
                     </p>
                   </div>

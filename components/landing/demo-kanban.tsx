@@ -119,7 +119,7 @@ function KanbanColumn({
       <div className="flex items-center gap-2 mb-3 px-0.5">
         <div className={`h-2 w-2 rounded-full ${column.dot} ${isOver && manualMode ? "animate-pulse" : ""}`} />
         <span className="text-[10px] font-medium text-muted-foreground">{column.label}</span>
-        <span className="text-[9px] text-muted-foreground/40 ml-auto tabular-nums">{columnPatients.length}</span>
+        <span className="text-[9px] text-muted-foreground/90 ml-auto tabular-nums">{columnPatients.length}</span>
       </div>
       <div className="flex flex-col gap-1.5 min-h-[90px]">
         <AnimatePresence mode="popLayout">
@@ -298,7 +298,7 @@ export function DemoKanban() {
           </AnimatePresence>
           {(!currentAction || manualMode) && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-[10px] text-muted-foreground/60">
+              <span className="text-[10px] text-muted-foreground/90">
                 {manualMode ? t.demo.kanbanDrag : t.demo.kanbanIdle}
               </span>
             </div>

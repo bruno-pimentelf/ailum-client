@@ -66,7 +66,7 @@ export function Navbar() {
               <Link
                 key={item.key}
                 href={item.href}
-                className="relative px-4 py-2 text-[13px] font-medium text-white/40 transition-colors duration-300 hover:text-white/80"
+                className="relative px-4 py-2 text-[13px] font-medium text-white/90 transition-colors duration-300 hover:text-white/90"
               >
                 {t.nav[item.key]}
               </Link>
@@ -78,7 +78,7 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="group flex items-center gap-1.5 h-8 px-2.5 rounded-full text-white/40 hover:text-white/70 transition-all duration-300 focus:outline-none"
+                  className="group flex items-center gap-1.5 h-8 px-2.5 rounded-full text-white/90 hover:text-white/85 transition-all duration-300 focus:outline-none"
                   aria-label="Select language"
                   suppressHydrationWarning
                 >
@@ -113,7 +113,7 @@ export function Navbar() {
                         sizes="20px"
                       />
                     </div>
-                    <span className="flex-1 text-[13px] font-medium text-white/70">{loc.label}</span>
+                    <span className="flex-1 text-[13px] font-medium text-white/85">{loc.label}</span>
                     {locale === loc.code && (
                       <Check className="h-3.5 w-3.5 text-accent shrink-0" weight="bold" />
                     )}
@@ -124,7 +124,7 @@ export function Navbar() {
 
             <Link
               href="/login"
-              className="px-4 py-2 text-[13px] font-medium text-white/40 hover:text-white/80 transition-colors duration-300"
+              className="px-4 py-2 text-[13px] font-medium text-white/90 hover:text-white/90 transition-colors duration-300"
             >
               {t.nav.entrar}
             </Link>
@@ -133,10 +133,10 @@ export function Navbar() {
               href="https://form.typeform.com/to/d4xLz0DX"
               target="_blank"
               rel="noopener noreferrer"
-              className="cta-shimmer group relative overflow-hidden flex items-center gap-2 h-9 rounded-full border border-white/10 bg-white/[0.04] px-4 text-[13px] font-semibold text-white/75 shadow-[0_0_12px_rgba(0,181,212,0.05)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-accent/25 hover:bg-accent/[0.07] hover:text-white hover:shadow-[0_0_20px_rgba(0,181,212,0.12)] active:scale-[0.97]"
+              className="cta-shimmer group relative overflow-hidden flex items-center gap-2 h-9 rounded-full border border-white/10 bg-white/[0.04] px-4 text-[13px] font-semibold text-white/88 shadow-[0_0_12px_rgba(0,181,212,0.05)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-accent/25 hover:bg-accent/[0.07] hover:text-white hover:shadow-[0_0_20px_rgba(0,181,212,0.12)] active:scale-[0.97]"
             >
               <span>{t.nav.aplicarSe}</span>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white/50 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105 group-hover:border-accent/20 group-hover:text-accent">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white/85 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105 group-hover:border-accent/20 group-hover:text-accent">
                 <ArrowUpRight className="h-3 w-3" />
               </span>
             </a>
@@ -144,7 +144,7 @@ export function Navbar() {
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden flex items-center justify-center h-9 w-9 rounded-full text-white/60 hover:text-white hover:bg-white/[0.05] transition-all duration-300 ml-1"
+            className="md:hidden flex items-center justify-center h-9 w-9 rounded-full text-white/90 hover:text-white hover:bg-white/[0.05] transition-all duration-300 ml-1"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? t.nav.fecharMenu : t.nav.abrirMenu}
           >
@@ -190,7 +190,7 @@ export function Navbar() {
                 >
                   <Link
                     href={item.href}
-                    className="block py-3 text-2xl font-display font-semibold tracking-tight text-white/60 hover:text-white transition-colors duration-300"
+                    className="block py-3 text-2xl font-display font-semibold tracking-tight text-white/90 hover:text-white transition-colors duration-300"
                     onClick={() => setMobileOpen(false)}
                   >
                     {t.nav[item.key]}
@@ -208,7 +208,7 @@ export function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      className="flex items-center gap-2 h-10 px-4 rounded-full border border-white/[0.08] bg-white/[0.03] text-white/50 w-full justify-center"
+                      className="flex items-center gap-2 h-10 px-4 rounded-full border border-white/[0.08] bg-white/[0.03] text-white/85 w-full justify-center"
                       aria-label="Select language"
                     >
                       <div className="relative h-4 w-5 rounded-sm overflow-hidden shrink-0 ring-1 ring-white/10">
@@ -234,7 +234,7 @@ export function Navbar() {
                         <div className="relative h-4 w-5 rounded-sm overflow-hidden shrink-0 ring-1 ring-white/10">
                           <Image src={loc.flag} alt={loc.alt} fill className="object-cover" sizes="20px" />
                         </div>
-                        <span className="flex-1 text-[13px] font-medium text-white/70">{loc.label}</span>
+                        <span className="flex-1 text-[13px] font-medium text-white/85">{loc.label}</span>
                         {locale === loc.code && <Check className="h-3.5 w-3.5 text-accent" weight="bold" />}
                       </DropdownMenuItem>
                     ))}

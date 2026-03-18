@@ -117,7 +117,7 @@ function SlashMenu({
       transition={{ duration: 0.12, ease: [0.33, 1, 0.68, 1] }}
       className="w-64 rounded-xl border border-white/[0.10] bg-[oklch(0.16_0.02_263)] shadow-2xl shadow-black/70 py-1.5 max-h-72 overflow-y-auto"
     >
-      <p className="px-3 py-1 text-[9px] font-bold text-white/25 uppercase tracking-wider">Comandos</p>
+      <p className="px-3 py-1 text-[9px] font-bold text-white/85 uppercase tracking-wider">Comandos</p>
       {items.map((item, i) => (
         <button
           key={item.title}
@@ -127,12 +127,12 @@ function SlashMenu({
             i === selectedIndex ? "bg-white/[0.08]" : "hover:bg-white/[0.05]"
           }`}
         >
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.04] text-white/50">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.04] text-white/85">
             {item.icon}
           </div>
           <div>
             <p className="text-[12px] font-bold text-white/85">{item.title}</p>
-            <p className="text-[10px] text-white/30">{item.description}</p>
+            <p className="text-[10px] text-white/85">{item.description}</p>
           </div>
         </button>
       ))}
@@ -222,7 +222,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       className={`cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-100 ${
         isActive
           ? "bg-white/[0.14] text-white"
-          : "text-white/40 hover:bg-white/[0.08] hover:text-white/80"
+          : "text-white/90 hover:bg-white/[0.08] hover:text-white/90"
       }`}
     >
       {icon}
@@ -394,10 +394,10 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight = 220, 
 
       {/* Footer: hint + char count */}
       <div className="flex items-center justify-between px-4 py-2 border-t border-white/[0.06]">
-        <p className="text-[10px] text-white/20">
-          Digite <kbd className="rounded px-1 py-0.5 border border-white/[0.12] bg-white/[0.04] text-white/30 font-mono text-[9px]">/</kbd> para ver comandos
+        <p className="text-[10px] text-white/90">
+          Digite <kbd className="rounded px-1 py-0.5 border border-white/[0.12] bg-white/[0.04] text-white/85 font-mono text-[9px]">/</kbd> para ver comandos
         </p>
-        <span className="text-[10px] text-white/20 tabular-nums">{charCount} / 4000</span>
+        <span className="text-[10px] text-white/90 tabular-nums">{charCount} / 4000</span>
       </div>
     </div>
   )

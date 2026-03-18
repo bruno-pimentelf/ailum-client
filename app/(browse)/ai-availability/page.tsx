@@ -566,7 +566,7 @@ export default function AiAvailabilityPage() {
                 maxLength={2000}
                 rows={1}
                 disabled={loading || hasNoProfessional}
-                className="flex-1 min-h-[44px] max-h-32 resize-none bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none py-2.5"
+                className="flex-1 min-h-[44px] max-h-32 resize-none bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none py-2.5"
                 style={{ minHeight: 44 }}
               />
               <button
@@ -590,7 +590,7 @@ export default function AiAvailabilityPage() {
                 )}
               </button>
             </div>
-            <p className="text-[11px] text-muted-foreground/60 text-right mt-1.5 pr-1">
+            <p className="text-[11px] text-muted-foreground/90 text-right mt-1.5 pr-1">
               {message.length}/2000
             </p>
           </form>

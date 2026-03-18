@@ -193,7 +193,7 @@ function SelectOrgContent() {
                   onChange={(e) => handleOrgNameChange(e.target.value)}
                   placeholder="Ex: Clínica Saúde & Bem-estar"
                   required
-                  className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+                  className="h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
                 />
               </div>
 
@@ -202,16 +202,16 @@ function SelectOrgContent() {
                   Identificador (slug)
                 </label>
                 <div className="flex h-11 w-full items-center rounded-xl border border-border bg-card/60 backdrop-blur-sm px-4 text-sm focus-within:ring-2 focus-within:ring-accent/30 focus-within:border-accent/40 transition-all duration-300">
-                  <span className="text-muted-foreground/50 shrink-0 mr-0.5">ailum.io/</span>
+                  <span className="text-muted-foreground/85 shrink-0 mr-0.5">ailum.io/</span>
                   <input
                     type="text"
                     value={orgSlug}
                     onChange={(e) => handleSlugChange(e.target.value)}
                     placeholder="minha-clinica"
-                    className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+                    className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
                   />
                 </div>
-                <p className="text-[10px] text-muted-foreground/50">Apenas letras minúsculas, números e hifens.</p>
+                <p className="text-[10px] text-muted-foreground/85">Apenas letras minúsculas, números e hifens.</p>
               </div>
 
               <Button

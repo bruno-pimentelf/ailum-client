@@ -23,7 +23,7 @@ export function Footer() {
                 AILUM
               </span>
             </Link>
-            <p className="mt-5 text-[13px] leading-relaxed text-white/25 max-w-[220px] md:max-w-none">
+            <p className="mt-5 text-[13px] leading-relaxed text-white/85 max-w-[220px] md:max-w-none">
               {t.footer.tagline}
             </p>
           </div>
@@ -31,7 +31,7 @@ export function Footer() {
           {/* Link columns */}
           {footerSections.map(({ title, links }) => (
             <div key={title}>
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/85">
                 {title}
               </h4>
               <ul className="mt-5 flex flex-col gap-3">
@@ -39,7 +39,7 @@ export function Footer() {
                   <li key={link}>
                     <Link
                       href="#"
-                      className="text-[13px] text-white/25 transition-colors duration-300 hover:text-white/60"
+                      className="text-[13px] text-white/85 transition-colors duration-300 hover:text-white/90"
                     >
                       {link}
                     </Link>
@@ -51,14 +51,14 @@ export function Footer() {
         </div>
 
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/[0.04] pt-8 md:flex-row">
-          <p className="text-[11px] text-white/20">
+          <p className="text-[11px] text-white/90">
             &copy; {new Date().getFullYear()} Ailum. {t.footer.direitos}
           </p>
           <div className="flex items-center gap-6">
-            <Link href="#" className="text-[11px] text-white/20 transition-colors duration-300 hover:text-white/50">
+            <Link href="#" className="text-[11px] text-white/90 transition-colors duration-300 hover:text-white/85">
               {t.footer.politica}
             </Link>
-            <Link href="#" className="text-[11px] text-white/20 transition-colors duration-300 hover:text-white/50">
+            <Link href="#" className="text-[11px] text-white/90 transition-colors duration-300 hover:text-white/85">
               {t.footer.termos}
             </Link>
           </div>

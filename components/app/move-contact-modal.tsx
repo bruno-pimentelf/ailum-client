@@ -88,7 +88,7 @@ export function MoveContactModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -166,7 +166,7 @@ export function MoveContactModal({
                                 </span>
                               )}
                               {!isCurrent && (
-                                <CaretRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                                <CaretRight className="h-4 w-4 text-muted-foreground/90 shrink-0" />
                               )}
                             </button>
                           )
@@ -178,11 +178,11 @@ export function MoveContactModal({
 
               {funnels.length === 0 && (
                 <div className="py-8 text-center">
-                  <FlowArrow className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" weight="duotone" />
+                  <FlowArrow className="h-10 w-10 text-muted-foreground/85 mx-auto mb-2" weight="duotone" />
                   <p className="text-[13px] text-muted-foreground">
                     Nenhum outro funil disponível
                   </p>
-                  <p className="text-[11px] text-muted-foreground/70 mt-1">
+                  <p className="text-[11px] text-muted-foreground/85 mt-1">
                     Crie um funil para mover contatos entre fluxos
                   </p>
                 </div>

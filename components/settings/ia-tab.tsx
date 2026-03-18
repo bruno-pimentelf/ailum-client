@@ -71,7 +71,7 @@ export function IATab() {
         className="flex flex-col items-center justify-center gap-3 py-20 text-center"
       >
         <Warning className="h-8 w-8 text-rose-400/40" weight="duotone" />
-        <p className="text-[13px] text-muted-foreground/50">Erro ao carregar configurações de IA</p>
+        <p className="text-[13px] text-muted-foreground/85">Erro ao carregar configurações de IA</p>
       </motion.div>
     )
   }

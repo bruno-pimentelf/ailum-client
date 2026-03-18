@@ -136,7 +136,7 @@ function ContactRow({ contact, active, onClick }: { contact: ApiContact; active:
           <div className="min-w-0">
             <p className="text-[13px] font-medium text-foreground truncate leading-tight">{name}</p>
             {contact.email && (
-              <p className="text-[11px] text-muted-foreground/50 truncate">{contact.email}</p>
+              <p className="text-[11px] text-muted-foreground/85 truncate">{contact.email}</p>
             )}
           </div>
         </div>
@@ -146,7 +146,7 @@ function ContactRow({ contact, active, onClick }: { contact: ApiContact; active:
       <td className="py-2.5 px-3">
         <div className="flex items-center gap-1.5">
           <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400/60 shrink-0" weight="fill" />
-          <span className="text-[12px] font-mono text-muted-foreground/70">{contact.phone}</span>
+          <span className="text-[12px] font-mono text-muted-foreground/85">{contact.phone}</span>
         </div>
       </td>
 
@@ -154,27 +154,27 @@ function ContactRow({ contact, active, onClick }: { contact: ApiContact; active:
       <td className="py-2.5 px-3">
         <div className="flex flex-col gap-0.5">
           {contact.currentFunnel && (
-            <span className="text-[11px] text-muted-foreground/60 truncate max-w-[130px]">
+            <span className="text-[11px] text-muted-foreground/90 truncate max-w-[130px]">
               {contact.currentFunnel.name}
             </span>
           )}
           {contact.currentStage && <StagePill stage={contact.currentStage} />}
           {!contact.currentFunnel && !contact.currentStage && (
-            <span className="text-[11px] text-muted-foreground/30">—</span>
+            <span className="text-[11px] text-muted-foreground/85">—</span>
           )}
         </div>
       </td>
 
       {/* Status */}
       <td className="py-2.5 px-3 hidden lg:table-cell">
-        <span className="text-[11px] text-muted-foreground/50">
+        <span className="text-[11px] text-muted-foreground/85">
           {contact.status.replace(/_/g, " ")}
         </span>
       </td>
 
       {/* Last */}
       <td className="py-2.5 px-3">
-        <span className="text-[11px] text-muted-foreground/50 tabular-nums">
+        <span className="text-[11px] text-muted-foreground/85 tabular-nums">
           {formatRelativeTime(contact.lastMessageAt)}
         </span>
       </td>
@@ -223,15 +223,15 @@ function ContactsTablePanel({
       {/* Search bar */}
       <div className="shrink-0 flex items-center gap-2 p-3 border-b border-border/50">
         <div className="relative flex-1">
-          <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50 pointer-events-none" />
+          <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/85 pointer-events-none" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Pesquisar por nome, e-mail ou telefone..."
-            className="h-9 w-full rounded-lg bg-muted/30 pl-9 pr-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all duration-200"
+            className="h-9 w-full rounded-lg bg-muted/30 pl-9 pr-3 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all duration-200"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="cursor-pointer absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+            <button onClick={() => setSearch("")} className="cursor-pointer absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/90 hover:text-muted-foreground transition-colors">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -244,7 +244,7 @@ function ContactsTablePanel({
           Importar CSV
         </button>
         {total > 0 && (
-          <span className="text-[11px] text-muted-foreground/40 shrink-0">{total} contatos</span>
+          <span className="text-[11px] text-muted-foreground/90 shrink-0">{total} contatos</span>
         )}
       </div>
 
@@ -268,7 +268,7 @@ function ContactsTablePanel({
         {error && !loading && (
           <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
             <Warning className="h-8 w-8 text-rose-400/40" weight="duotone" />
-            <p className="text-[13px] text-muted-foreground/50">Erro ao carregar contatos</p>
+            <p className="text-[13px] text-muted-foreground/85">Erro ao carregar contatos</p>
             <button onClick={onRetry}
               className="cursor-pointer flex items-center gap-1.5 text-[12px] text-accent/60 hover:text-accent transition-colors">
               <ArrowsClockwise className="h-3.5 w-3.5" /> Tentar novamente
@@ -281,11 +281,11 @@ function ContactsTablePanel({
             <table className="w-full">
               <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50">
                 <tr>
-                  <th className="text-left py-2.5 pl-4 pr-3 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Contato</th>
-                  <th className="text-left py-2.5 px-3 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Telefone</th>
-                  <th className="text-left py-2.5 px-3 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Funil / Etapa</th>
-                  <th className="text-left py-2.5 px-3 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider hidden lg:table-cell">Status</th>
-                  <th className="text-left py-2.5 px-3 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Último</th>
+                  <th className="text-left py-2.5 pl-4 pr-3 text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">Contato</th>
+                  <th className="text-left py-2.5 px-3 text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">Telefone</th>
+                  <th className="text-left py-2.5 px-3 text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">Funil / Etapa</th>
+                  <th className="text-left py-2.5 px-3 text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider hidden lg:table-cell">Status</th>
+                  <th className="text-left py-2.5 px-3 text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">Último</th>
                   <th className="w-8" />
                 </tr>
               </thead>
@@ -307,8 +307,8 @@ function ContactsTablePanel({
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                 <AddressBook className="h-10 w-10 text-muted-foreground/20" weight="duotone" />
-                <p className="text-[13px] text-muted-foreground/50">Nenhum contato encontrado</p>
-                {search && <p className="text-[11px] text-muted-foreground/30">Tente alterar os termos da busca</p>}
+                <p className="text-[13px] text-muted-foreground/85">Nenhum contato encontrado</p>
+                {search && <p className="text-[11px] text-muted-foreground/85">Tente alterar os termos da busca</p>}
               </motion.div>
             )}
           </>
@@ -318,21 +318,21 @@ function ContactsTablePanel({
       {/* Pagination */}
       {pages > 1 && (
         <div className="shrink-0 flex items-center justify-between border-t border-border/50 px-4 py-2.5">
-          <span className="text-[11px] text-muted-foreground/40">
+          <span className="text-[11px] text-muted-foreground/90">
             Página {page} de {pages}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => onPage(page - 1)}
               disabled={page <= 1}
-              className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 disabled:opacity-30 disabled:cursor-default transition-colors"
+              className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 disabled:opacity-30 disabled:cursor-default transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => onPage(page + 1)}
               disabled={page >= pages}
-              className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 disabled:opacity-30 disabled:cursor-default transition-colors"
+              className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 disabled:opacity-30 disabled:cursor-default transition-colors"
             >
               <ArrowRight className="h-3.5 w-3.5" />
             </button>

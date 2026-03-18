@@ -193,7 +193,7 @@ export function DisponibilidadeTab() {
         className="flex flex-col items-center justify-center py-20 text-center"
       >
         <div className="h-16 w-16 rounded-2xl bg-background/50 border border-border/50 flex items-center justify-center mb-5">
-          <CalendarBlank className="h-8 w-8 text-muted-foreground/40" weight="duotone" />
+          <CalendarBlank className="h-8 w-8 text-muted-foreground/90" weight="duotone" />
         </div>
         <p className="text-[15px] font-semibold text-foreground/80 mb-2">Sem permissão</p>
         <p className="text-[13px] text-muted-foreground max-w-sm">

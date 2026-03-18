@@ -127,11 +127,11 @@ export function AppointmentStatusModal({
             <div className="flex items-center gap-2 mt-1.5 ml-6 text-[13px] text-muted-foreground">
               <Clock className="h-3.5 w-3.5 shrink-0" />
               <span>{appointment.time}</span>
-              <span className="text-white/20">·</span>
+              <span className="text-white/90">·</span>
               <span>{appointment.type}</span>
               {appointment.doctorName && (
                 <>
-                  <span className="text-white/20">·</span>
+                  <span className="text-white/90">·</span>
                   <span>{appointment.doctorName}</span>
                 </>
               )}

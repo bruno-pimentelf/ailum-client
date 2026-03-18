@@ -115,12 +115,12 @@ export default function PrivateCheckoutPage() {
               <span className="text-accent">Comece no nível alto padrão.</span>
             </h1>
 
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/40">
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/90">
               Preencha em menos de 1 minuto. Você já segue direto para o checkout seguro.
             </p>
 
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-              <div className="flex items-center gap-2 text-xs text-white/45">
+              <div className="flex items-center gap-2 text-xs text-white/85">
                 <LockSimple className="h-3.5 w-3.5 text-accent/80" />
                 Checkout protegido e processado pela InfinitePay.
               </div>
@@ -152,7 +152,7 @@ export default function PrivateCheckoutPage() {
                   <p className="mt-1 font-display text-3xl font-bold leading-none tracking-tight text-white">
                     {publicPlan?.amountFormatted ?? "R$ 18.000,00"}
                   </p>
-                  <p className="mt-2 text-xs text-white/40">
+                  <p className="mt-2 text-xs text-white/90">
                     {publicPlan?.description ?? "Plano padrão da Ailum para novas clínicas"}
                   </p>
                 </div>
@@ -163,7 +163,7 @@ export default function PrivateCheckoutPage() {
                       value={clinicName}
                       onChange={(e) => setClinicName(e.target.value)}
                       placeholder="Nome da clínica *"
-                      className="h-11 rounded-xl border-white/15 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/30"
+                      className="h-11 rounded-xl border-white/15 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/40"
                     />
                   </div>
                   <Input
@@ -171,16 +171,16 @@ export default function PrivateCheckoutPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="E-mail financeiro *"
                     type="email"
-                    className="h-11 rounded-xl border-white/15 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/30"
+                    className="h-11 rounded-xl border-white/15 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/40"
                   />
                   <div className="flex h-11 items-center rounded-xl border border-white/15 bg-white/[0.03]">
-                    <span className="px-3 text-sm font-medium text-white/55">+55</span>
+                    <span className="px-3 text-sm font-medium text-white/88">+55</span>
                     <Input
                       value={phoneLocal}
                       onChange={(e) => setPhoneLocal(maskPhoneBR(e.target.value))}
                       placeholder="(11) 99999-8888 *"
                       inputMode="numeric"
-                      className="h-full border-0 bg-transparent text-sm text-white placeholder:text-white/30 focus-visible:ring-0"
+                      className="h-full border-0 bg-transparent text-sm text-white placeholder:text-white/40 focus-visible:ring-0"
                     />
                   </div>
                 </div>
@@ -200,7 +200,7 @@ export default function PrivateCheckoutPage() {
                     : "Ir para o pagamento"}
                 </Button>
 
-                <p className="text-center text-xs text-white/35">
+                <p className="text-center text-xs text-white/88">
                   Redirecionamento automático para o checkout seguro.
                 </p>
 

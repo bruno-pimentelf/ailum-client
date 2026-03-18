@@ -40,7 +40,7 @@ export function PerfilTab() {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center gap-3 py-16">
         <Warning className="h-8 w-8 text-rose-400/50" weight="duotone" />
-        <p className="text-[13px] text-muted-foreground/50">Não foi possível carregar seu perfil</p>
+        <p className="text-[13px] text-muted-foreground/85">Não foi possível carregar seu perfil</p>
       </motion.div>
     )
   }
@@ -64,7 +64,7 @@ export function PerfilTab() {
               {roleConfig.label}
             </div>
           )}
-          <p className="text-[10px] text-muted-foreground/40 text-center">
+          <p className="text-[10px] text-muted-foreground/90 text-center">
             Membro desde {me?.createdAt ? new Date(me.createdAt).toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) : "—"}
           </p>
         </div>
@@ -76,20 +76,20 @@ export function PerfilTab() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Nome</label>
+              <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Nome</label>
               <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[13px] text-foreground/80">
-                {me?.name ?? <span className="text-muted-foreground/30">—</span>}
+                {me?.name ?? <span className="text-muted-foreground/85">—</span>}
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">E-mail</label>
+              <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">E-mail</label>
               <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[12px] text-foreground/80 font-mono">
-                {me?.email ?? <span className="text-muted-foreground/30">—</span>}
+                {me?.email ?? <span className="text-muted-foreground/85">—</span>}
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">ID do membro</label>
-              <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[11px] text-muted-foreground/50 font-mono truncate">
+              <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">ID do membro</label>
+              <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[11px] text-muted-foreground/85 font-mono truncate">
                 {me?.memberId ?? "—"}
               </div>
             </div>
@@ -105,27 +105,27 @@ export function PerfilTab() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Nome</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Nome</label>
             <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[13px] text-foreground/80">
               {me?.tenant.name ?? "—"}
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Slug</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Slug</label>
             <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[12px] text-foreground/70 font-mono">
               {me?.tenant.slug ?? "—"}
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">Tenant ID</label>
-            <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[11px] text-muted-foreground/50 font-mono truncate">
+            <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Tenant ID</label>
+            <div className="flex h-10 items-center rounded-lg border border-border/50 bg-muted/10 px-3 text-[11px] text-muted-foreground/85 font-mono truncate">
               {me?.tenant.id ?? "—"}
             </div>
           </div>
         </div>
       </div>
 
-      <p className="text-[11px] text-muted-foreground/30 text-right">
+      <p className="text-[11px] text-muted-foreground/85 text-right">
         Para alterar nome ou e-mail, entre em contato com o suporte.
       </p>
     </motion.div>

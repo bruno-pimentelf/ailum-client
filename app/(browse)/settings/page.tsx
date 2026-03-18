@@ -70,7 +70,7 @@ function SettingsContent() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`relative shrink-0 flex items-center gap-2 px-4 h-full text-[12px] font-bold transition-colors duration-150 cursor-pointer ${
-                  active ? "text-white/90" : "text-white/25 hover:text-white/60"
+                  active ? "text-white/90" : "text-white/85 hover:text-white/90"
                 }`}
               >
                 {active && (

@@ -205,7 +205,7 @@ export function ClinicProfile({ clinic }: Props) {
                         </span>
                       ))}
                       {service.professionals.length > 3 && (
-                        <span className="text-[11px] text-muted-foreground/70">
+                        <span className="text-[11px] text-muted-foreground/85">
                           +{service.professionals.length - 3}
                         </span>
                       )}
@@ -257,7 +257,7 @@ export function ClinicProfile({ clinic }: Props) {
                         sizes="64px"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground/85">
                         <Stethoscope className="h-7 w-7" />
                       </div>
                     )}

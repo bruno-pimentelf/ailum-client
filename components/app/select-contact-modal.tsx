@@ -9,7 +9,7 @@ import type { BoardStage } from "@/lib/api/funnels"
 import type { ApiContact } from "@/lib/api/contacts"
 
 const inputCls =
-  "w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 pl-9 text-[13px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+  "w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 pl-9 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
 
 function formatRelativeTime(iso: string | null): string {
   if (!iso) return ""
@@ -106,13 +106,13 @@ export function SelectContactModal({
                 </div>
                 <div>
                   <h2 className="text-[14px] font-semibold text-foreground">Adicionar à etapa</h2>
-                  <p className="text-[11px] text-muted-foreground/60">{stage.name}</p>
+                  <p className="text-[11px] text-muted-foreground/90">{stage.name}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors"
+                className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -120,7 +120,7 @@ export function SelectContactModal({
 
             <div className="px-5 pt-3 pb-2 shrink-0">
               <div className="relative">
-                <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+                <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/90" />
                 <input
                   type="text"
                   value={search}
@@ -155,8 +155,8 @@ export function SelectContactModal({
                 </div>
               ) : contacts.length === 0 ? (
                 <div className="py-12 text-center">
-                  <UserCircle className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" weight="duotone" />
-                  <p className="text-[12px] text-muted-foreground/50">
+                  <UserCircle className="h-10 w-10 text-muted-foreground/85 mx-auto mb-2" weight="duotone" />
+                  <p className="text-[12px] text-muted-foreground/85">
                     {search ? "Nenhum contato encontrado" : "Digite para buscar contatos"}
                   </p>
                 </div>
@@ -188,12 +188,12 @@ export function SelectContactModal({
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-[13px] font-medium text-foreground truncate">{name}</p>
-                          <p className="text-[11px] text-muted-foreground/60 truncate">{c.phone}</p>
+                          <p className="text-[11px] text-muted-foreground/90 truncate">{c.phone}</p>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400/60" weight="fill" />
                           {c.lastMessageAt && (
-                            <span className="text-[10px] text-muted-foreground/40">
+                            <span className="text-[10px] text-muted-foreground/90">
                               {formatRelativeTime(c.lastMessageAt)}
                             </span>
                           )}

@@ -79,16 +79,16 @@ export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
     >
       {/* Search */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.06]">
-        <MagnifyingGlass className="h-3.5 w-3.5 text-white/25 shrink-0" />
+        <MagnifyingGlass className="h-3.5 w-3.5 text-white/85 shrink-0" />
         <input
           ref={searchRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar emoji..."
-          className="flex-1 bg-transparent text-[12px] text-white/80 placeholder:text-white/25 focus:outline-none"
+          className="flex-1 bg-transparent text-[12px] text-white/90 placeholder:text-white/40 focus:outline-none"
         />
         {search && (
-          <button onClick={() => setSearch("")} className="cursor-pointer text-white/25 hover:text-white/60 transition-colors">
+          <button onClick={() => setSearch("")} className="cursor-pointer text-white/85 hover:text-white/90 transition-colors">
             <X className="h-3 w-3" />
           </button>
         )}
@@ -132,7 +132,7 @@ export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
       {/* Current selection */}
       <div className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.06]">
         <span className="text-xl">{value}</span>
-        <span className="text-[11px] text-white/30">Selecionado</span>
+        <span className="text-[11px] text-white/85">Selecionado</span>
       </div>
     </motion.div>
   )

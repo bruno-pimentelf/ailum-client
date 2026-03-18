@@ -174,7 +174,7 @@ function TemplateFormModal({
       >
         <div className="flex items-center justify-between border-b border-border/50 px-5 py-3 shrink-0">
           <h3 className="text-[14px] font-semibold">{isEdit ? "Editar template" : "Novo template"}</h3>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/40">
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -311,7 +311,7 @@ export function TemplatesTab() {
         </div>
       ) : templates.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/50 bg-muted/5 py-12 text-center">
-          <TextAa className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" weight="duotone" />
+          <TextAa className="h-12 w-12 text-muted-foreground/85 mx-auto mb-3" weight="duotone" />
           <p className="text-[14px] font-medium text-foreground">Nenhum template</p>
           <p className="text-[12px] text-muted-foreground mt-1">Crie templates para lembretes e triggers.</p>
           <button
@@ -354,7 +354,7 @@ export function TemplatesTab() {
                   </div>
                   {t.description && <p className="text-[12px] text-muted-foreground mt-0.5">{t.description}</p>}
                   {t.type === "TEXT" && t.body && (
-                    <p className="text-[11px] text-muted-foreground/80 mt-1 line-clamp-2">{t.body}</p>
+                    <p className="text-[11px] text-muted-foreground/90 mt-1 line-clamp-2">{t.body}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">

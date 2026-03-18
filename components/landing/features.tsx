@@ -80,13 +80,13 @@ export function Features() {
                 <h3 className="font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl leading-[1.15]">
                   {section.title}
                 </h3>
-                <p className="mt-5 text-[15px] leading-relaxed text-white/35">
+                <p className="mt-5 text-[15px] leading-relaxed text-white/88">
                   {section.description}
                 </p>
                 {/* Callout insight line */}
                 <div className="mt-7 flex items-start gap-3 rounded-xl border border-accent/[0.08] bg-accent/[0.03] px-4 py-3.5">
                   <Sparkle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent/50" weight="fill" />
-                  <p className="text-[13px] leading-relaxed text-white/50 italic">
+                  <p className="text-[13px] leading-relaxed text-white/85 italic">
                     {section.callout}
                   </p>
                 </div>

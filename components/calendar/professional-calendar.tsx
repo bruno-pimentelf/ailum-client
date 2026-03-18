@@ -165,7 +165,7 @@ function CalendarToast({
       <p className={`text-[12px] font-medium ${isError ? "text-rose-400" : "text-amber-300"}`}>
         {message}
       </p>
-      <button onClick={onDismiss} className="ml-1 text-white/40 hover:text-white/70 transition-colors">
+      <button onClick={onDismiss} className="ml-1 text-white/90 hover:text-white/85 transition-colors">
         <X className="h-3.5 w-3.5" weight="bold" />
       </button>
     </motion.div>
@@ -228,8 +228,8 @@ function PaidBadge({ paid }: { paid: boolean }) {
     <span
       className={`inline-flex items-center rounded-full border px-1.5 py-px text-[8px] font-bold tracking-wide shrink-0 ${
         paid
-          ? "bg-white/[0.06] border-white/[0.12] text-white/50"
-          : "bg-white/[0.02] border-white/[0.06] text-white/25"
+          ? "bg-white/[0.06] border-white/[0.12] text-white/85"
+          : "bg-white/[0.02] border-white/[0.06] text-white/85"
       }`}
     >
       {paid ? "Pago" : "Pendente"}
@@ -266,11 +266,11 @@ function BlockDayModal({
           <Lock className="h-4 w-4 text-amber-400" />
           Bloquear dia
         </h3>
-        <p className="text-[12px] text-white/50 mt-2">
+        <p className="text-[12px] text-white/85 mt-2">
           {WEEKDAYS[date.getDay()]}, {date.getDate()} de {MONTHS_PT[date.getMonth()]}
         </p>
         <div className="mt-4">
-          <label className="block text-[10px] font-bold text-white/30 uppercase tracking-wider mb-1.5">
+          <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1.5">
             Motivo (opcional)
           </label>
           <input
@@ -278,13 +278,13 @@ function BlockDayModal({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Ex: Consulta externa"
-            className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px] text-white/90 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent/50"
+            className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50"
           />
         </div>
         <div className="flex gap-2 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/60 text-[13px] font-semibold hover:bg-white/[0.04]"
+            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/90 text-[13px] font-semibold hover:bg-white/[0.04]"
           >
             Cancelar
           </button>
@@ -337,10 +337,10 @@ function BlockRangeModal({
           <Lock className="h-4 w-4 text-amber-400" />
           Bloquear período
         </h3>
-        <p className="text-[12px] text-white/50 mt-2">Ex.: férias, licença</p>
+        <p className="text-[12px] text-white/85 mt-2">Ex.: férias, licença</p>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="block text-[10px] font-bold text-white/30 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
               De
             </label>
             <input
@@ -351,7 +351,7 @@ function BlockRangeModal({
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-white/30 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
               Até
             </label>
             <input
@@ -362,7 +362,7 @@ function BlockRangeModal({
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-white/30 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
               Motivo (opcional)
             </label>
             <input
@@ -377,7 +377,7 @@ function BlockRangeModal({
         <div className="flex gap-2 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/60 text-[13px] font-semibold"
+            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/90 text-[13px] font-semibold"
           >
             Cancelar
           </button>
@@ -423,12 +423,12 @@ function AddOverrideModal({
           <CalendarPlus className="h-4 w-4 text-emerald-400" />
           Adicionar horário neste dia
         </h3>
-        <p className="text-[12px] text-white/50 mt-2">
+        <p className="text-[12px] text-white/85 mt-2">
           {WEEKDAYS[date.getDay()]}, {date.getDate()} de {MONTHS_PT[date.getMonth()]}
         </p>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="block text-[10px] font-bold text-white/30 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
               Das
             </label>
             <input
@@ -440,7 +440,7 @@ function AddOverrideModal({
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-white/30 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
               Até
             </label>
             <input
@@ -453,7 +453,7 @@ function AddOverrideModal({
           </div>
         </div>
         <div className="flex gap-2 mt-6">
-          <button onClick={onClose} className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/60 text-[13px] font-semibold">
+          <button onClick={onClose} className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/90 text-[13px] font-semibold">
             Cancelar
           </button>
           <button
@@ -504,7 +504,7 @@ function DragCreateModal({
           <CalendarPlus className="h-4 w-4 text-emerald-400" />
           Adicionar disponibilidade
         </h3>
-        <p className="text-[12px] text-white/50 mt-2">
+        <p className="text-[12px] text-white/85 mt-2">
           {WEEKDAYS[date.getDay()]}, {date.getDate()} de {MONTHS_PT[date.getMonth()]} — {startTime} – {endTime}
         </p>
         <div className="mt-4 space-y-3">
@@ -515,10 +515,10 @@ function DragCreateModal({
               onChange={(e) => setRepeatWeekly(e.target.checked)}
               className="rounded border-border/60 text-accent"
             />
-            <span className="text-[13px] text-white/80">Repetir toda semana neste horário</span>
+            <span className="text-[13px] text-white/90">Repetir toda semana neste horário</span>
           </label>
           <div>
-            <label className="block text-[10px] font-bold text-white/30 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
               Duração do slot
             </label>
             <select
@@ -537,7 +537,7 @@ function DragCreateModal({
         <div className="flex gap-2 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/60 text-[13px] font-semibold"
+            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/90 text-[13px] font-semibold"
           >
             Cancelar
           </button>
@@ -593,7 +593,7 @@ function DayContextMenu({
         {isBlocked ? (
           <button
             onClick={() => { onUnblockDay(); onClose() }}
-            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/80 hover:bg-white/[0.06]"
+            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
           >
             <LockOpen className="h-3.5 w-3.5 text-emerald-400" />
             Desbloquear dia
@@ -601,7 +601,7 @@ function DayContextMenu({
         ) : (
           <button
             onClick={() => { onBlockDay(); onClose() }}
-            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/80 hover:bg-white/[0.06]"
+            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
           >
             <Lock className="h-3.5 w-3.5 text-amber-400" />
             Bloquear dia
@@ -610,7 +610,7 @@ function DayContextMenu({
         {!isBlocked && (
           <button
             onClick={() => { onAddOverride(); onClose() }}
-            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/80 hover:bg-white/[0.06]"
+            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
           >
             <CalendarPlus className="h-3.5 w-3.5 text-emerald-400" />
             Adicionar horário neste dia
@@ -618,7 +618,7 @@ function DayContextMenu({
         )}
         <button
           onClick={() => { onBlockRange(); onClose() }}
-          className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/80 hover:bg-white/[0.06]"
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
         >
           <Lock className="h-3.5 w-3.5 text-amber-400" />
           Bloquear período
@@ -801,7 +801,7 @@ export function ProfessionalCalendar({
             {onBackToAll && (
               <button
                 onClick={onBackToAll}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-white/[0.08] text-white/50 hover:text-white/80 hover:bg-white/[0.04] text-[12px] font-medium"
+                className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-white/[0.08] text-white/85 hover:text-white/90 hover:bg-white/[0.04] text-[12px] font-medium"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Ver todos
@@ -812,7 +812,7 @@ export function ProfessionalCalendar({
                 onClick={() =>
                   setSelectedDate((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - (viewMode === "week" ? 7 : 1)))
                 }
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/30 hover:text-white/70"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85"
               >
                 <CaretLeft className="h-3.5 w-3.5" />
               </button>
@@ -820,7 +820,7 @@ export function ProfessionalCalendar({
                 onClick={() =>
                   setSelectedDate((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + (viewMode === "week" ? 7 : 1)))
                 }
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/30 hover:text-white/70"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85"
               >
                 <CaretRight className="h-3.5 w-3.5" />
               </button>
@@ -847,7 +847,7 @@ export function ProfessionalCalendar({
                   key={m}
                   onClick={() => setViewMode(m)}
                   className={`relative px-3 py-1 text-[11px] font-bold rounded-md ${
-                    viewMode === m ? "text-white/90" : "text-white/25 hover:text-white/50"
+                    viewMode === m ? "text-white/90" : "text-white/85 hover:text-white/85"
                   }`}
                 >
                   {viewMode === m && (
@@ -868,7 +868,7 @@ export function ProfessionalCalendar({
                   <TooltipTrigger asChild>
                     <AlertDialogTrigger asChild>
                       <button
-                        className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-[11px] font-bold text-white/60 hover:bg-white/5 hover:text-white/80"
+                        className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-[11px] font-bold text-white/90 hover:bg-white/5 hover:text-white/90"
                         aria-label="Limpar disponibilidade"
                       >
                         <Trash className="h-3.5 w-3.5" />
@@ -917,7 +917,7 @@ export function ProfessionalCalendar({
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 px-6 pb-3 text-[10px]">
           {canEdit && (
-            <span className="text-white/30">Arraste para adicionar · Clique no bloco para excluir</span>
+            <span className="text-white/85">Arraste para adicionar · Clique no bloco para excluir</span>
           )}
           <div className="flex items-center gap-1.5">
             <div
@@ -927,23 +927,23 @@ export function ProfessionalCalendar({
                 backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 1px, rgba(255,255,255,0.05) 1px, rgba(255,255,255,0.05) 2px)",
               }}
             />
-            <span className="text-white/40">Recorrente</span>
+            <span className="text-white/90">Recorrente</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded bg-emerald-500/50" />
-            <span className="text-white/40">Avulso</span>
+            <span className="text-white/90">Avulso</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded bg-amber-500/50" />
-            <span className="text-white/40">Bloqueado</span>
+            <span className="text-white/90">Bloqueado</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded bg-blue-500/60" />
-            <span className="text-white/40">Confirmado</span>
+            <span className="text-white/90">Confirmado</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded border border-dashed border-white/30" />
-            <span className="text-white/40">Pendente</span>
+            <span className="text-white/90">Pendente</span>
           </div>
         </div>
       </div>
@@ -956,7 +956,7 @@ export function ProfessionalCalendar({
           </div>
         ) : viewMode === "week" ? (
           <>
-          <div className="flex border-b border-white/[0.05] min-w-[800px] shrink-0">
+          <div className="flex border-b border-white/[0.14] min-w-[800px] shrink-0">
             <div className="w-14 shrink-0" />
             <div className="flex-1 grid grid-cols-7">
             {weekDays.map((d) => {
@@ -974,16 +974,16 @@ export function ProfessionalCalendar({
                       })
                     }
                   }}
-                  className={`py-2 flex flex-col items-center gap-0.5 border-l border-white/[0.04] ${
+                  className={`py-2 flex flex-col items-center gap-0.5 border-l border-white/[0.10] ${
                     today ? "bg-accent/5" : "hover:bg-white/[0.02]"
                   }`}
                 >
-                  <span className="text-[9px] font-extrabold uppercase text-white/20">
+                  <span className="text-[9px] font-extrabold uppercase text-white/90">
                     {WEEKDAYS[d.getDay()]}
                   </span>
                   <span
                     className={`h-6 w-6 flex items-center justify-center rounded-full text-[12px] font-bold ${
-                      today ? "bg-accent text-accent-foreground" : "text-white/50"
+                      today ? "bg-accent text-accent-foreground" : "text-white/85"
                     }`}
                   >
                     {d.getDate()}
@@ -1007,7 +1007,7 @@ export function ProfessionalCalendar({
                     className="flex items-start justify-end pr-2 pt-0.5 -mt-[1px]"
                     style={{ height: HOUR_HEIGHT }}
                   >
-                    <span className="text-[9px] font-bold text-white/20 font-mono tabular-nums">
+                    <span className="text-[9px] font-bold text-white/90 font-mono tabular-nums">
                       {String(hour).padStart(2, "0")}:00
                     </span>
                   </div>
@@ -1028,7 +1028,7 @@ export function ProfessionalCalendar({
                   return (
                     <div
                       key={d.toISOString()}
-                      className="relative border-l border-white/[0.04]"
+                      className="relative border-l border-white/[0.10]"
                       style={{
                         minHeight: DAY_HEIGHT,
                         cursor: canEdit && !dayAvail.blocked ? "crosshair" : undefined,
@@ -1053,7 +1053,7 @@ export function ProfessionalCalendar({
                       {HOURS.slice(0, -1).map((hour) => (
                         <div
                           key={hour}
-                          className="absolute left-0 right-0 border-t border-white/[0.03]"
+                          className="absolute left-0 right-0 border-t border-white/[0.08]"
                           style={{ top: (hour - 7) * HOUR_HEIGHT }}
                         />
                       ))}
@@ -1088,12 +1088,12 @@ export function ProfessionalCalendar({
                                 top,
                                 height: h,
                                 backgroundColor: isRecurring
-                                  ? `${accentColor}25`
-                                  : "rgba(34, 197, 94, 0.25)",
-                                borderLeft: `3px solid ${isRecurring ? accentColor : "#22c55e"}`,
-                                opacity: isPending ? 0.7 : 1,
+                                  ? `${accentColor}12`
+                                  : "rgba(34, 197, 94, 0.10)",
+                                borderLeft: `2px solid ${isRecurring ? accentColor + "55" : "rgba(34,197,94,0.4)"}`,
+                                opacity: isPending ? 0.5 : 0.7,
                                 backgroundImage: isRecurring
-                                  ? "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px)"
+                                  ? "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px)"
                                   : undefined,
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
@@ -1113,7 +1113,7 @@ export function ProfessionalCalendar({
                             >
                               {isPending && (
                                 <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-80">
-                                  <Clock className="h-3 w-3 text-white/60" weight="fill" />
+                                  <Clock className="h-3 w-3 text-white/90" weight="fill" />
                                 </div>
                               )}
                             </div>
@@ -1161,7 +1161,7 @@ export function ProfessionalCalendar({
                                 ? "bg-blue-500/50 border-blue-500/60 text-white/95"
                                 : apt.status === "cancelled"
                                   ? "bg-white/[0.04] border-white/10 opacity-40 line-through"
-                                  : "border-dashed border-white/30 bg-white/[0.06] text-white/80"
+                                  : "border-dashed border-white/30 bg-white/[0.06] text-white/90"
                             }`}
                             style={{ top, height: h }}
                           >
@@ -1178,11 +1178,11 @@ export function ProfessionalCalendar({
           </>
         ) : (
           <div className="p-6">
-            <div className="grid grid-cols-7 border-b border-white/[0.05]">
+            <div className="grid grid-cols-7 border-b border-white/[0.14]">
               {WEEKDAYS.map((d) => (
                 <div
                   key={d}
-                  className="py-2 text-center text-[10px] font-extrabold uppercase tracking-widest text-white/20"
+                  className="py-2 text-center text-[10px] font-extrabold uppercase tracking-widest text-white/90"
                 >
                   {d}
                 </div>
@@ -1201,7 +1201,7 @@ export function ProfessionalCalendar({
                 const today = new Date()
                 return days.map((day, i) => {
                   if (day === null) {
-                    return <div key={`empty-${i}`} className="border-b border-r border-white/[0.04] p-1" />
+                    return <div key={`empty-${i}`} className="border-b border-r border-white/[0.10] p-1" />
                   }
                   const d = new Date(y, m, day)
                   const dayAvail = computeDayAvailability(d, opts)
@@ -1231,14 +1231,14 @@ export function ProfessionalCalendar({
                           setContextMenu({ date: d, x: rect.left, y: rect.top })
                         }
                       }}
-                      className={`flex flex-col gap-1 p-2 border-b border-r border-white/[0.04] text-left transition-colors ${
+                      className={`flex flex-col gap-1 p-2 border-b border-r border-white/[0.10] text-left transition-colors ${
                         canEdit ? "cursor-pointer hover:bg-white/[0.02]" : ""
                       } ${isToday ? "bg-accent/10" : ""}`}
                     >
                       <div className="flex items-center justify-between">
                         <span
                           className={`h-6 w-6 flex items-center justify-center rounded-full text-[12px] font-bold ${
-                            isToday ? "bg-accent text-accent-foreground" : "text-white/60"
+                            isToday ? "bg-accent text-accent-foreground" : "text-white/90"
                           }`}
                         >
                           {day}
@@ -1269,14 +1269,14 @@ export function ProfessionalCalendar({
                                 ? "bg-blue-500/40 text-blue-200"
                                 : apt.status === "cancelled"
                                   ? "opacity-40 line-through"
-                                  : "bg-white/[0.06] text-white/70"
+                                  : "bg-white/[0.06] text-white/85"
                             }`}
                           >
                             {apt.time} {apt.patientName.split(" ")[0]}
                           </button>
                         ))}
                         {dayApts.length > 3 && (
-                          <span className="text-[8px] text-white/30">+{dayApts.length - 3}</span>
+                          <span className="text-[8px] text-white/85">+{dayApts.length - 3}</span>
                         )}
                       </div>
                     </div>
@@ -1556,13 +1556,13 @@ export function ProfessionalCalendar({
             animate={{ opacity: 1, y: 0 }}
             className="fixed left-1/2 top-40 -translate-x-1/2 z-50 rounded-xl border border-white/[0.12] bg-background/95 backdrop-blur py-2 shadow-xl min-w-[220px]"
           >
-            <p className="px-4 py-1 text-[12px] text-white/70">
+            <p className="px-4 py-1 text-[12px] text-white/85">
               {selectedBlock.slot.overrideId ? "Excluir este horário?" : "Excluir horário recorrente?"}
             </p>
             <div className="flex flex-wrap gap-2 px-4 pt-2">
               <button
                 onClick={() => setSelectedBlock(null)}
-                className="flex-1 min-w-[70px] h-8 rounded-lg border border-white/[0.08] text-[11px] font-semibold text-white/60 hover:bg-white/[0.04]"
+                className="flex-1 min-w-[70px] h-8 rounded-lg border border-white/[0.08] text-[11px] font-semibold text-white/90 hover:bg-white/[0.04]"
               >
                 Cancelar
               </button>

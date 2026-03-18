@@ -145,7 +145,7 @@ function KanbanCard({
           <Avatar name={name} photoUrl={contact.photoUrl} />
           <div className="min-w-0">
             <p className="text-[13px] font-medium text-foreground truncate leading-tight">{name}</p>
-            <p className="text-[10px] text-muted-foreground/40 font-mono">{contact.phone}</p>
+            <p className="text-[10px] text-muted-foreground/90 font-mono">{contact.phone}</p>
           </div>
         </div>
         {overlay ? (
@@ -155,7 +155,7 @@ function KanbanCard({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="opacity-0 group-hover:opacity-100 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-all duration-150 cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/85 hover:text-foreground hover:bg-muted/50 transition-all duration-150 cursor-pointer"
                 onClick={(e) => e.stopPropagation()}
               >
                 <DotsThree className="h-3.5 w-3.5" weight="bold" />
@@ -175,9 +175,9 @@ function KanbanCard({
 
       {/* Last message preview */}
       {lastMsg && (
-        <p className="text-[12px] text-muted-foreground/70 leading-snug line-clamp-2">
+        <p className="text-[12px] text-muted-foreground/85 leading-snug line-clamp-2">
           {lastMsg.role !== "CONTACT" && (
-            <span className="text-muted-foreground/40 mr-1">
+            <span className="text-muted-foreground/90 mr-1">
               {lastMsg.role === "AGENT" ? "Agente:" : "Você:"}
             </span>
           )}
@@ -198,7 +198,7 @@ function KanbanCard({
           {contact.status.replace(/_/g, " ")}
         </span>
         {contact.assignedProfessional && (
-          <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 text-[10px] text-muted-foreground/60">
+          <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 text-[10px] text-muted-foreground/90">
             {contact.assignedProfessional.fullName.split(" ")[0]}
           </span>
         )}
@@ -209,7 +209,7 @@ function KanbanCard({
         <div className="flex items-center gap-2">
           <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400/60" weight="fill" />
           {time && (
-            <div className="flex items-center gap-1 text-muted-foreground/40">
+            <div className="flex items-center gap-1 text-muted-foreground/90">
               <Clock className="h-3 w-3" />
               <span className="text-[10px]">{time}</span>
             </div>
@@ -220,7 +220,7 @@ function KanbanCard({
             <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${
               contact.lastPaymentStatus === "PAID"
                 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400/70"
-                : "bg-white/[0.03] border-white/[0.08] text-white/20"
+                : "bg-white/[0.03] border-white/[0.08] text-white/90"
             }`}>
               {contact.lastPaymentStatus === "PAID" ? "Pago" : "Pendente"}
             </span>
@@ -351,11 +351,11 @@ function KanbanColumn({
               {displayName}
             </span>
           )}
-          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
+          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/85">
             {contacts.length}
           </span>
           {stage.isTerminal && (
-            <span className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-wider">final</span>
+            <span className="text-[9px] font-bold text-muted-foreground/85 uppercase tracking-wider">final</span>
           )}
         </div>
         {canEdit && (
@@ -363,7 +363,7 @@ function KanbanColumn({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onOpenConfig(stage) }}
-              className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
+              className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/90 hover:text-white/90 hover:bg-white/10 transition-colors duration-150"
               title="Configurar IA"
             >
               <DotsThree className="h-3 w-3" weight="bold" />
@@ -371,7 +371,7 @@ function KanbanColumn({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onAddContact(stage) }}
-              className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors duration-150"
+              className="cursor-pointer flex h-5 w-5 items-center justify-center rounded-md text-white/90 hover:text-white/90 hover:bg-white/10 transition-colors duration-150"
               title="Adicionar contato"
             >
               <Plus className="h-3 w-3" />
@@ -557,7 +557,7 @@ function MobileColumn({
               {displayName}
             </span>
           )}
-          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/50">
+          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-black/20 px-1.5 text-[10px] font-medium text-white/85">
             {contacts.length}
           </span>
         </button>
@@ -567,7 +567,7 @@ function MobileColumn({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onOpenConfig(stage) }}
-                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
+                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/85 hover:text-white/90 hover:bg-white/10 transition-colors"
                 title="Configurar IA"
               >
                 <DotsThree className="h-3.5 w-3.5" weight="bold" />
@@ -575,7 +575,7 @@ function MobileColumn({
               <button
                 type="button"
                 onClick={() => onAddContact(stage)}
-                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors"
+                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/85 hover:text-white/90 hover:bg-white/10 transition-colors"
                 title="Adicionar contato"
               >
                 <Plus className="h-3.5 w-3.5" weight="bold" />
@@ -583,7 +583,7 @@ function MobileColumn({
             </>
           )}
           <motion.div animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }} className="flex h-6 w-6 items-center justify-center">
-            <CaretDown className="h-3.5 w-3.5 text-white/30" weight="bold" />
+            <CaretDown className="h-3.5 w-3.5 text-white/85" weight="bold" />
           </motion.div>
         </div>
       </div>
@@ -599,7 +599,7 @@ function MobileColumn({
           >
             <div className="flex flex-col gap-2.5 p-3">
               {contacts.length === 0 ? (
-                <p className="text-center text-[11px] text-muted-foreground/30 py-4">
+                <p className="text-center text-[11px] text-muted-foreground/85 py-4">
                   Nenhum contato nesta etapa
                 </p>
               ) : (
@@ -822,7 +822,7 @@ export default function BoardsPage() {
                   <button
                     onClick={() => setActiveFunnelId(f.id)}
                     className={`relative flex items-center gap-2 px-4 h-full text-[12px] font-bold transition-colors duration-150 cursor-pointer ${
-                      isActive ? "text-white/90" : "text-white/25 hover:text-white/60"
+                      isActive ? "text-white/90" : "text-white/85 hover:text-white/90"
                     }`}
                   >
                     {isActive && (
@@ -841,7 +841,7 @@ export default function BoardsPage() {
                   {canEditFunnels && (
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditModal(f) }}
-                      className="hidden group-hover:flex h-4 w-4 self-center mr-1 items-center justify-center rounded text-white/20 hover:text-white/60 hover:bg-white/10 transition-colors cursor-pointer"
+                      className="hidden group-hover:flex h-4 w-4 self-center mr-1 items-center justify-center rounded text-white/90 hover:text-white/90 hover:bg-white/10 transition-colors cursor-pointer"
                       title="Editar funil"
                     >
                       <DotsThree className="h-3.5 w-3.5" weight="bold" />
@@ -857,7 +857,7 @@ export default function BoardsPage() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex h-full w-9 shrink-0 items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors cursor-pointer"
+                  className="flex h-full w-9 shrink-0 items-center justify-center text-white/85 hover:text-white/85 hover:bg-white/[0.06] transition-colors cursor-pointer"
                   title="Novo funil"
                 >
                   <Plus className="h-4 w-4" weight="bold" />
@@ -898,19 +898,19 @@ export default function BoardsPage() {
         <div className="flex items-center gap-2 pr-4 shrink-0">
           {/* Search */}
           <div className="relative hidden sm:block">
-            <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/40 pointer-events-none" />
+            <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/90 pointer-events-none" />
             <input
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Buscar contato..."
-              className="h-7 w-36 rounded-lg bg-muted/30 pl-7 pr-2 text-[11px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:w-48 transition-all duration-300"
+              className="h-7 w-36 rounded-lg bg-muted/30 pl-7 pr-2 text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:w-48 transition-all duration-300"
             />
           </div>
 
           {/* Refresh */}
           <button
             onClick={() => refetch()}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/40 hover:text-foreground hover:bg-muted/40 transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 text-muted-foreground/90 hover:text-foreground hover:bg-muted/40 transition-colors"
             title="Atualizar"
           >
             <ArrowsClockwise className="h-3.5 w-3.5" />
@@ -926,7 +926,7 @@ export default function BoardsPage() {
             <button
               onClick={() => updateFunnel.mutate({ id: selectedFunnelId, body: { isDefault: true } })}
               disabled={updateFunnel.isPending}
-              className="flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 text-[10px] font-semibold text-white/30 hover:border-emerald-500/30 hover:bg-emerald-500/[0.06] hover:text-emerald-400 transition-all duration-200 disabled:opacity-50"
+              className="flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 text-[10px] font-semibold text-white/85 hover:border-emerald-500/30 hover:bg-emerald-500/[0.06] hover:text-emerald-400 transition-all duration-200 disabled:opacity-50"
             >
               Definir como padrão
             </button>
@@ -958,7 +958,7 @@ export default function BoardsPage() {
         {boardError && !isLoading && (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <Warning className="h-8 w-8 text-rose-400/50" weight="duotone" />
-            <p className="text-[13px] text-muted-foreground/50">Erro ao carregar o board</p>
+            <p className="text-[13px] text-muted-foreground/85">Erro ao carregar o board</p>
             <button
               onClick={() => refetch()}
               className="flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
@@ -977,7 +977,7 @@ export default function BoardsPage() {
             </div>
             <div>
               <h3 className="text-[15px] font-semibold text-foreground">Nenhum funil criado ainda</h3>
-              <p className="mt-1.5 text-[13px] text-muted-foreground/50 max-w-[300px] leading-relaxed">
+              <p className="mt-1.5 text-[13px] text-muted-foreground/85 max-w-[300px] leading-relaxed">
                 Crie um funil para organizar seus contatos por etapas e acompanhar o progresso de cada atendimento.
               </p>
             </div>
@@ -1085,7 +1085,7 @@ export default function BoardsPage() {
                     type="button"
                     onClick={handleAddStage}
                     disabled={createStage.isPending}
-                    className="flex w-[268px] shrink-0 items-center gap-2 rounded-xl border-2 border-dashed border-border/20 px-4 py-3 text-[12px] text-muted-foreground/30 hover:text-muted-foreground/60 hover:border-border/40 transition-all duration-200 self-start mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex w-[268px] shrink-0 items-center gap-2 rounded-xl border-2 border-dashed border-border/20 px-4 py-3 text-[12px] text-muted-foreground/85 hover:text-muted-foreground/90 hover:border-border/40 transition-all duration-200 self-start mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     {createStage.isPending ? "Criando..." : "Adicionar etapa"}
