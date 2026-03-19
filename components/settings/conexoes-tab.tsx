@@ -29,6 +29,7 @@ import {
   useSaveAsaas,
   useRemoveIntegration,
 } from "@/hooks/use-integrations"
+import { useMe } from "@/hooks/use-me"
 import type { Integration } from "@/lib/api/integrations"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -503,8 +504,29 @@ function AsaasCard({ integration, open, onToggle }: { integration: Integration |
 // ── ConexoesTab ────────────────────────────────────────────────────────────────
 
 export function ConexoesTab() {
+  const { data: me } = useMe()
+  const isAdmin = me?.role === "ADMIN"
   const { data: integrations, isLoading, isError, refetch } = useIntegrations()
   const [openCard, setOpenCard] = useState<string | null>(null)
+
+  if (me && !isAdmin) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col items-center justify-center py-24 text-center gap-3"
+      >
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border/50 bg-background/50">
+          <PlugsConnected className="h-7 w-7 text-muted-foreground/60" weight="duotone" />
+        </div>
+        <p className="text-[14px] font-semibold text-foreground/80">Sem permissão</p>
+        <p className="text-[13px] text-muted-foreground max-w-xs">
+          Apenas administradores podem gerenciar integrações.
+        </p>
+      </motion.div>
+    )
+  }
 
   const toggle = (id: string) => setOpenCard((v) => (v === id ? null : id))
   const get = (provider: string) => integrations?.find((i) => i.provider === provider) ?? null

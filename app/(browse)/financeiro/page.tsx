@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/tooltip"
 import { FadeIn, StaggerContainer, staggerItem } from "@/components/landing/motion"
 import { useIntegrations } from "@/hooks/use-integrations"
+import { useMe } from "@/hooks/use-me"
 import {
   useFinanceBalance,
   useAsaasPayments,
@@ -117,8 +118,8 @@ function FinanceCards({
       icon: Warning,
       label: "Vencido",
       value: overdue ?? 0,
-      color: "text-rose-400",
-      gradient: "from-rose-500/10 to-rose-500/5",
+      color: "text-orange-400",
+      gradient: "from-orange-500/10 to-orange-500/5",
     },
   ]
 
@@ -272,7 +273,7 @@ function PaymentsTable({ onEmitInvoice }: { onEmitInvoice: (p: AsaasPayment) => 
                             : p.status === "PENDING"
                             ? "border border-amber-500/20 bg-amber-500/10 text-amber-400"
                             : p.status === "OVERDUE"
-                            ? "border border-rose-500/20 bg-rose-500/10 text-rose-400"
+                            ? "border border-orange-500/20 bg-orange-500/10 text-orange-400"
                             : "border border-border/50 bg-muted/30 text-muted-foreground"
                         }`}
                       >
@@ -508,9 +509,16 @@ export default function FinanceiroPage() {
   const [paymentLinkModalOpen, setPaymentLinkModalOpen] = useState(false)
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false)
 
+  const { data: me } = useMe()
+  const isAdmin = me?.role === "ADMIN"
+
+  // Não-admins não têm acesso a GET /integrations (403), mas têm BILLING_READ
+  // e podem acessar os dados do Asaas diretamente — tratamos como configurado.
   const { data: integrations } = useIntegrations()
   const asaasIntegration = integrations?.find((i) => i.provider === "asaas")
-  const asaasConfigured = !!(asaasIntegration?.isActive && asaasIntegration?.hasApiKey)
+  const asaasConfigured = isAdmin
+    ? !!(asaasIntegration?.isActive && asaasIntegration?.hasApiKey)
+    : me !== undefined // não-admin: assume configurado assim que me carregou
 
   const balanceQuery = useFinanceBalance({ refetchInterval: 60_000 })
   const receivedQuery = useAsaasPayments({

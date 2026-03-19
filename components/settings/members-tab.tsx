@@ -26,6 +26,7 @@ import {
   useRemoveMember,
 } from "@/hooks/use-members"
 import { useProfessionals } from "@/hooks/use-professionals"
+import { useMe } from "@/hooks/use-me"
 import type { Member as ApiMember, MemberRole } from "@/lib/api/members"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -43,7 +44,7 @@ function roleLabel(r: string): string {
 }
 
 function hasProfessionalBadge(member: ApiMember): boolean {
-  return !!member.professionalId
+  return !!member.professionalId && member.role !== "PROFESSIONAL"
 }
 
 // ── Create Account Modal ───────────────────────────────────────────────────────
@@ -345,7 +346,7 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
 
 // ── Member Card ────────────────────────────────────────────────────────────────
 
-function MemberCard({ member, index, onEdit }: { member: ApiMember; index: number; onEdit: () => void }) {
+function MemberCard({ member, index, onEdit, canManage }: { member: ApiMember; index: number; onEdit: () => void; canManage: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [removeConfirm, setRemoveConfirm] = useState(false)
   const removeMember = useRemoveMember()
@@ -403,9 +404,11 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
       </div>
 
       <div className="relative shrink-0 w-6 flex justify-end">
+        {canManage && (
         <button onClick={() => setMenuOpen((v) => !v)} className="cursor-pointer flex h-6 w-6 items-center justify-center rounded text-white/90 opacity-0 group-hover:opacity-100 hover:bg-white/[0.06] hover:text-white/85 transition-all duration-150">
           <DotsThree className="h-3.5 w-3.5" weight="bold" />
         </button>
+        )}
         <AnimatePresence>
           {menuOpen && (
             <>
@@ -440,6 +443,8 @@ function MemberCard({ member, index, onEdit }: { member: ApiMember; index: numbe
 // ── MembersTab ─────────────────────────────────────────────────────────────────
 
 export function MembersTab() {
+  const { data: me } = useMe()
+  const canManage = me?.role === "ADMIN"
   const { data: members, isLoading, error, refetch } = useMembers()
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<ApiRoleFilter>("all")
@@ -489,10 +494,12 @@ export function MembersTab() {
                 </button>
               )
             })}
-            <button onClick={() => setCreateOpen(true)}
-              className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-2.5 py-1.5 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all duration-150">
-              <Plus className="h-3 w-3" weight="bold" /> Criar conta
-            </button>
+            {canManage && (
+              <button onClick={() => setCreateOpen(true)}
+                className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-2.5 py-1.5 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all duration-150">
+                <Plus className="h-3 w-3" weight="bold" /> Criar conta
+              </button>
+            )}
           </div>
         </div>
 
@@ -521,7 +528,7 @@ export function MembersTab() {
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
                 {filtered.length > 0 ? (
                   filtered.map((m, i) => (
-                    <MemberCard key={m.id} member={m} index={i} onEdit={() => setEditMember(m)} />
+                    <MemberCard key={m.id} member={m} index={i} onEdit={() => setEditMember(m)} canManage={canManage} />
                   ))
                 ) : (
                   <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">

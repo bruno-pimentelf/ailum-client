@@ -11,7 +11,6 @@ import {
   User,
   PlugsConnected,
   Storefront,
-  CalendarBlank,
   Robot,
   TextAa,
   Brain,
@@ -30,19 +29,19 @@ import { CaptacaoTab } from "@/components/settings/captacao-tab"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "disponibilidade" | "templates" | "ia" | "captacao" | "voz"
+type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "meus-servicos" | "templates" | "ia" | "captacao" | "voz"
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: "geral",           label: "Geral",         icon: Gear          },
-  { id: "perfil",          label: "Meu Perfil",    icon: User          },
-  { id: "conexoes",        label: "Conexões",      icon: PlugsConnected },
-  { id: "servicos",        label: "Serviços",      icon: Storefront    },
-  { id: "membros",         label: "Membros",       icon: Users         },
-  { id: "disponibilidade", label: "Disponibilidade", icon: CalendarBlank },
-  { id: "templates",       label: "Templates",     icon: TextAa        },
-  { id: "ia",              label: "IA",            icon: Robot         },
-  { id: "captacao",        label: "Captação",      icon: Brain         },
-  { id: "voz",             label: "Voz",           icon: Microphone    },
+  { id: "geral",         label: "Geral",          icon: Gear          },
+  { id: "perfil",        label: "Meu Perfil",     icon: User          },
+  { id: "conexoes",      label: "Conexões",       icon: PlugsConnected },
+  { id: "servicos",      label: "Serviços",       icon: Storefront    },
+  { id: "membros",       label: "Membros",        icon: Users         },
+  { id: "meus-servicos", label: "Meus Serviços",  icon: Storefront    },
+  { id: "templates",     label: "Templates",      icon: TextAa        },
+  { id: "ia",            label: "IA",             icon: Robot         },
+  { id: "captacao",      label: "Captação",       icon: Brain         },
+  { id: "voz",           label: "Voz",            icon: Microphone    },
 ]
 
 const VALID_TABS = TABS.map((t) => t.id)
@@ -100,7 +99,7 @@ function SettingsContent() {
             {activeTab === "conexoes"        && <ConexoesTab        key="conexoes"        />}
             {activeTab === "servicos"        && <ServicosTab        key="servicos"        />}
             {activeTab === "membros"         && <MembersTab         key="membros"         />}
-            {activeTab === "disponibilidade" && <DisponibilidadeTab key="disponibilidade" />}
+            {activeTab === "meus-servicos"   && <DisponibilidadeTab key="meus-servicos"   />}
             {activeTab === "templates"       && <TemplatesTab       key="templates"       />}
             {activeTab === "ia"              && <IATab              key="ia"              />}
             {activeTab === "captacao"        && <CaptacaoTab        key="captacao"        />}
