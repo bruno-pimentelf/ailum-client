@@ -9,7 +9,7 @@ import {
   Check,
   Warning,
   ArrowsClockwise,
-  Info,
+  Lock,
 } from "@phosphor-icons/react"
 import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
 import { useMe } from "@/hooks/use-me"
@@ -19,13 +19,29 @@ interface MemoryKey {
   description: string
 }
 
-const PREDEFINED_KEYS = [
-  "name", "preferred_time", "main_complaint", "insurance", "cancelled_once",
-  "price_sensitive", "preferred_professional", "preferred_weekday",
-  "preferred_time_of_day", "wants_slot_on_cancellation", "flexible_schedule",
-  "preferred_service", "has_children", "chronic_condition", "location",
-  "contact_preference", "urgency", "referral_source",
+// Chaves padrão com label em português e descrição para a IA
+const PREDEFINED: Array<{ key: string; label: string; description: string }> = [
+  { key: "name",                      label: "Nome",                    description: "nome pelo qual o paciente se identificou" },
+  { key: "main_complaint",            label: "Queixa principal",        description: "queixa principal ou motivo de busca" },
+  { key: "insurance",                 label: "Plano de saúde",          description: "plano de saúde ou convênio" },
+  { key: "preferred_professional",    label: "Profissional preferido",  description: "nome do profissional preferido" },
+  { key: "preferred_service",         label: "Serviço preferido",       description: "serviço preferido quando há vários" },
+  { key: "preferred_weekday",         label: "Dia preferido",           description: "dia da semana preferido" },
+  { key: "preferred_time_of_day",     label: "Turno preferido",         description: "turno preferido (manhã, tarde, qualquer)" },
+  { key: "preferred_time",            label: "Horário preferido",       description: "horário preferido de consulta" },
+  { key: "flexible_schedule",         label: "Aceita outros horários",  description: "se aceita horários alternativos" },
+  { key: "wants_slot_on_cancellation",label: "Lista de espera",         description: "pediu para ser avisado quando abrir vaga" },
+  { key: "urgency",                   label: "Urgência",                description: "se demonstrou urgência no atendimento" },
+  { key: "price_sensitive",           label: "Sensível a preço",        description: "se demonstrou sensibilidade a preço" },
+  { key: "cancelled_once",            label: "Cancelou antes",          description: "se já cancelou consulta" },
+  { key: "chronic_condition",         label: "Condição crônica",        description: "condição crônica mencionada pelo paciente" },
+  { key: "has_children",              label: "Tem filhos",              description: "se tem filhos" },
+  { key: "location",                  label: "Bairro / Cidade",         description: "bairro ou cidade" },
+  { key: "contact_preference",        label: "Preferência de contato",  description: "como prefere ser contatado" },
+  { key: "referral_source",           label: "Como soube",              description: "como soube da clínica" },
 ]
+
+const PREDEFINED_KEYS = new Set(PREDEFINED.map((p) => p.key))
 
 const labelCls = "block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
 const inputCls = "h-9 w-full rounded-lg bg-muted/30 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all duration-200 border border-border/40"
@@ -37,40 +53,47 @@ export function CaptacaoTab() {
 
   const canEdit = me?.role === "ADMIN" || me?.role === "SECRETARY"
 
-  const [keys, setKeys] = useState<MemoryKey[]>([])
+  const [customKeys, setCustomKeys] = useState<MemoryKey[]>([])
   const [newKey, setNewKey] = useState("")
   const [newDesc, setNewDesc] = useState("")
+  const [newLabel, setNewLabel] = useState("")
   const [addError, setAddError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!tenant) return
-    setKeys(Array.isArray(tenant.customMemoryKeys) ? tenant.customMemoryKeys : [])
+    const stored = Array.isArray(tenant.customMemoryKeys) ? tenant.customMemoryKeys : []
+    // Filter out any that are now predefined (cleanup)
+    setCustomKeys(stored.filter((k: MemoryKey) => !PREDEFINED_KEYS.has(k.key)))
   }, [tenant])
 
   function handleAdd() {
     const k = newKey.trim().toLowerCase().replace(/\s+/g, "_")
     const d = newDesc.trim()
+    const l = newLabel.trim()
     if (!k) { setAddError("Informe um identificador"); return }
-    if (!d) { setAddError("Informe uma descrição"); return }
-    if (PREDEFINED_KEYS.includes(k)) { setAddError("Essa chave já existe por padrão"); return }
-    if (keys.some((m) => m.key === k)) { setAddError("Chave já adicionada"); return }
+    if (!d) { setAddError("Informe uma descrição para a IA"); return }
+    if (!l) { setAddError("Informe um nome de exibição"); return }
+    if (PREDEFINED_KEYS.has(k)) { setAddError("Essa chave já existe por padrão"); return }
+    if (customKeys.some((m) => m.key === k)) { setAddError("Chave já adicionada"); return }
     if (!/^[a-z0-9_]+$/.test(k)) { setAddError("Use apenas letras minúsculas, números e _"); return }
     setAddError(null)
-    setKeys((prev) => [...prev, { key: k, description: d }])
+    // Store both key, description (for AI), and label (for display) in description field as "label::description"
+    setCustomKeys((prev) => [...prev, { key: k, description: `${l}::${d}` }])
     setNewKey("")
     setNewDesc("")
+    setNewLabel("")
   }
 
   function handleRemove(key: string) {
-    setKeys((prev) => prev.filter((m) => m.key !== key))
+    setCustomKeys((prev) => prev.filter((m) => m.key !== key))
   }
 
   async function handleSave() {
     setSaveError(null)
     try {
-      await update.mutateAsync({ customMemoryKeys: keys.length > 0 ? keys : null })
+      await update.mutateAsync({ customMemoryKeys: customKeys.length > 0 ? customKeys : null })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (err) {
@@ -78,14 +101,21 @@ export function CaptacaoTab() {
     }
   }
 
+  function parseCustomKey(k: MemoryKey): { label: string; description: string } {
+    const sep = k.description.indexOf("::")
+    if (sep === -1) return { label: k.key, description: k.description }
+    return { label: k.description.slice(0, sep), description: k.description.slice(sep + 2) }
+  }
+
   if (isLoading) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 w-full">
         <div className="rounded-xl border border-border/50 bg-card/30 p-5">
           <div className="h-3 w-36 rounded bg-muted/30 animate-pulse mb-4" />
-          <div className="space-y-3">
-            <div className="h-20 rounded-lg bg-muted/20 animate-pulse" />
-            <div className="h-20 rounded-lg bg-muted/20 animate-pulse" />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-10 rounded-lg bg-muted/20 animate-pulse" />
+            ))}
           </div>
         </div>
       </motion.div>
@@ -121,7 +151,7 @@ export function CaptacaoTab() {
       transition={{ duration: 0.2 }}
       className="space-y-6 w-full"
     >
-      {/* Info card */}
+      {/* Header */}
       <div className="rounded-xl border border-border/50 bg-card/30 p-5">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/10">
@@ -130,115 +160,127 @@ export function CaptacaoTab() {
           <div>
             <h3 className="text-[13px] font-semibold text-foreground">Informações captadas pela IA</h3>
             <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
-              A IA coleta automaticamente informações como nome, plano de saúde, horário preferido e motivo da consulta
-              a partir das conversas. Aqui você pode adicionar campos extras específicos para a sua clínica.
+              A IA coleta essas informações naturalmente durante as conversas, sem perguntar diretamente.
+              Os campos padrão já estão ativos. Adicione campos extras específicos para a sua clínica.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Default keys reference */}
-      <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <Info className="h-4 w-4 text-muted-foreground" weight="duotone" />
-          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-            Campos padrão (já ativos)
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {PREDEFINED_KEYS.map((k) => (
-            <span key={k}
-              className="inline-flex items-center rounded-md border border-border/40 bg-muted/20 px-2 py-0.5 text-[10px] font-mono text-muted-foreground/80">
-              {k}
+      {/* All keys list */}
+      <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-2">
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
+          Campos ativos
+        </p>
+
+        {/* Predefined — locked */}
+        {PREDEFINED.map((p) => (
+          <div
+            key={p.key}
+            className="flex items-center gap-3 rounded-lg border border-border/30 bg-muted/10 px-3 py-2.5"
+          >
+            <div className="flex-1 min-w-0 flex items-center gap-2">
+              <span className="text-[12px] font-medium text-foreground/90 shrink-0">{p.label}</span>
+              <span className="text-[10px] font-mono text-muted-foreground/50 truncate hidden sm:block">
+                {p.key}
+              </span>
+            </div>
+            <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/30">
+              <Lock className="h-3 w-3" weight="fill" />
             </span>
-          ))}
-        </div>
+          </div>
+        ))}
+
+        {/* Custom — removable */}
+        <AnimatePresence initial={false}>
+          {customKeys.map((m) => {
+            const { label, description } = parseCustomKey(m)
+            return (
+              <motion.div
+                key={m.key}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.15 }}
+                className="flex items-center gap-3 rounded-lg border border-accent/20 bg-accent/[0.04] px-3 py-2.5"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-medium text-foreground/90 shrink-0">{label}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground/50 truncate hidden sm:block">
+                      {m.key}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/60 truncate mt-0.5">{description}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemove(m.key)}
+                  className="cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground/40 hover:text-rose-400 hover:bg-rose-400/10 transition-colors"
+                >
+                  <Trash className="h-3.5 w-3.5" />
+                </button>
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
       </div>
 
-      {/* Custom keys */}
+      {/* Add custom key */}
       <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Plus className="h-4 w-4 text-muted-foreground" weight="duotone" />
           <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-            Campos personalizados
+            Adicionar campo personalizado
           </span>
         </div>
 
-        {/* Existing custom keys */}
-        <AnimatePresence initial={false}>
-          {keys.length === 0 ? (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="text-[12px] text-muted-foreground/60 py-2">
-              Nenhum campo personalizado adicionado ainda.
-            </motion.p>
-          ) : (
-            <div className="space-y-2">
-              {keys.map((m) => (
-                <motion.div
-                  key={m.key}
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -8 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/15 px-3 py-2.5"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-mono text-accent/80 leading-none mb-0.5">{m.key}</p>
-                    <p className="text-[12px] text-foreground/80 truncate">{m.description}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(m.key)}
-                    className="cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-rose-400 hover:bg-rose-400/10 transition-colors"
-                  >
-                    <Trash className="h-3.5 w-3.5" />
-                  </button>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Add form */}
-        <div className="rounded-lg border border-dashed border-border/50 bg-muted/10 p-4 space-y-3">
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-            Adicionar campo
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Identificador</label>
-              <input
-                value={newKey}
-                onChange={(e) => { setNewKey(e.target.value); setAddError(null) }}
-                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                placeholder="ex: tipo_pele"
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Descrição para a IA</label>
-              <input
-                value={newDesc}
-                onChange={(e) => { setNewDesc(e.target.value); setAddError(null) }}
-                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                placeholder="ex: tipo de pele do paciente"
-                className={inputCls}
-              />
-            </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className={labelCls}>Nome de exibição</label>
+            <input
+              value={newLabel}
+              onChange={(e) => { setNewLabel(e.target.value); setAddError(null) }}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              placeholder="ex: Tipo de pele"
+              className={inputCls}
+            />
           </div>
-          {addError && (
-            <p className="text-[11px] text-rose-400 flex items-center gap-1">
-              <Warning className="h-3 w-3" /> {addError}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-3 py-2 text-[12px] font-semibold text-accent hover:bg-accent/15 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" /> Adicionar campo
-          </button>
+          <div>
+            <label className={labelCls}>Identificador</label>
+            <input
+              value={newKey}
+              onChange={(e) => { setNewKey(e.target.value); setAddError(null) }}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              placeholder="ex: tipo_pele"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Descrição para a IA</label>
+            <input
+              value={newDesc}
+              onChange={(e) => { setNewDesc(e.target.value); setAddError(null) }}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              placeholder="ex: tipo de pele do paciente"
+              className={inputCls}
+            />
+          </div>
         </div>
+
+        {addError && (
+          <p className="text-[11px] text-rose-400 flex items-center gap-1">
+            <Warning className="h-3 w-3" /> {addError}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-3 py-2 text-[12px] font-semibold text-accent hover:bg-accent/15 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" /> Adicionar
+        </button>
       </div>
 
       {/* Save */}
@@ -264,7 +306,7 @@ export function CaptacaoTab() {
           {update.isPending ? (
             <><ArrowsClockwise className="h-4 w-4 animate-spin" /> Salvando...</>
           ) : (
-            <><Check className="h-4 w-4" weight="bold" /> Salvar alterações</>
+            <><Check className="h-4 w-4" weight="bold" /> Salvar campos extras</>
           )}
         </button>
       </div>

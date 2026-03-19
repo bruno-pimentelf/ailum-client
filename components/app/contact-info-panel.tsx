@@ -22,6 +22,7 @@ import {
   UsersThree,
 } from "@phosphor-icons/react"
 import { useContactDoc } from "@/hooks/use-contact-doc"
+import { useTenant } from "@/hooks/use-tenant"
 import type { FirestoreContact } from "@/lib/types/firestore"
 
 // ─── Memory key labels & icons ────────────────────────────────────────────────
@@ -79,11 +80,10 @@ function IdentityRow({ icon: Icon, value, color }: { icon: React.ElementType; va
 
 // ─── Memory fact card ─────────────────────────────────────────────────────────
 
-function MemoryCard({ memKey, value }: { memKey: string; value: string }) {
+function MemoryCard({ memKey, value, label }: { memKey: string; value: string; label: string }) {
   const meta = MEMORY_META[memKey]
   const Icon = meta?.icon ?? Brain
   const color = meta?.color ?? "text-muted-foreground"
-  const label = meta?.label ?? memKey.replace(/_/g, " ")
   const display = formatMemoryValue(memKey, value)
 
   return (
@@ -116,6 +116,21 @@ interface ContactInfoPanelProps {
 export function ContactInfoPanel({ contactId, initialContact }: ContactInfoPanelProps) {
   const liveContact = useContactDoc(contactId)
   const contact = liveContact ?? initialContact
+  const { data: tenant } = useTenant()
+
+  // Build label lookup for custom keys (stored as "Label::description for AI")
+  const customLabelMap = new Map<string, string>()
+  if (Array.isArray(tenant?.customMemoryKeys)) {
+    for (const ck of tenant.customMemoryKeys as Array<{ key: string; description: string }>) {
+      const sep = ck.description.indexOf("::")
+      const label = sep === -1 ? ck.key : ck.description.slice(0, sep)
+      customLabelMap.set(ck.key, label)
+    }
+  }
+
+  function getLabel(key: string): string {
+    return MEMORY_META[key]?.label ?? customLabelMap.get(key) ?? key.replace(/_/g, " ")
+  }
 
   const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
   const memories = contact.memories ?? {}
@@ -187,7 +202,7 @@ export function ContactInfoPanel({ contactId, initialContact }: ContactInfoPanel
             </div>
             <div className="grid grid-cols-1 gap-2">
               {filteredMemories.map(([key, value]) => (
-                <MemoryCard key={key} memKey={key} value={value} />
+                <MemoryCard key={key} memKey={key} value={value} label={getLabel(key)} />
               ))}
             </div>
           </div>

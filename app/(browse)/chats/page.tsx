@@ -11,6 +11,7 @@ import {
   Robot,
   User,
 } from "@phosphor-icons/react"
+import { formatMessagePreview } from "@/components/app/message-preview"
 import { ChatView } from "@/components/app/chat-view"
 import { useContacts, useWhatsappStatus } from "@/hooks/use-chats"
 import { useAuthStore } from "@/lib/auth-store"
@@ -120,20 +121,6 @@ function formatRelativeTime(ts: FirestoreContact["lastMessageAt"] | undefined): 
   }
 }
 
-function formatConversationPreview(lastMessage?: string | null): string {
-  const raw = (lastMessage ?? "").trim()
-  if (!raw) return ""
-
-  const normalized = raw.toLowerCase()
-  if (["[imagem]", "imagem", "[image]", "image"].includes(normalized)) return "📷 Imagem"
-  if (["[áudio]", "áudio", "[audio]", "audio"].includes(normalized)) return "🎤 Áudio"
-  if (["[vídeo]", "vídeo", "[video]", "video"].includes(normalized)) return "🎬 Vídeo"
-  if (["[documento]", "documento", "[document]", "document", "[arquivo]", "arquivo", "[file]", "file"].includes(normalized)) {
-    return "📄 Documento"
-  }
-
-  return raw
-}
 
 // ─── Conversation item ────────────────────────────────────────────────────────
 
@@ -190,7 +177,7 @@ function ConversationItem({
         <p className="mt-0.5 text-[12px] text-muted-foreground/85 truncate leading-snug">
           {isTyping
             ? (contact.agentTyping ? "agente escrevendo..." : "digitando...")
-            : formatConversationPreview(contact.lastMessage)}
+            : formatMessagePreview(contact.lastMessage)}
         </p>
 
         <div className="mt-1.5 flex items-center justify-between gap-2">

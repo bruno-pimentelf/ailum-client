@@ -111,6 +111,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [funnelAgentPersonality, setFunnelAgentPersonality] = useState("")
   const [stageContext, setStageContext] = useState("")
   const [allowedTools, setAllowedTools] = useState<AllowedTool[]>([])
+  const [requiredFields, setRequiredFields] = useState<string[]>([])
   const [requirePaymentBeforeConfirm, setRequirePaymentBeforeConfirm] = useState(false)
   const [model, setModel] = useState<"HAIKU" | "SONNET">("SONNET")
   const [temperature, setTemperature] = useState(0.4)
@@ -130,6 +131,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setFunnelAgentPersonality(config.funnelAgentPersonality ?? "")
       setStageContext(config.stageContext ?? "")
       setAllowedTools(config.allowedTools ?? [])
+      setRequiredFields(config.requiredFields ?? [])
       setRequirePaymentBeforeConfirm(config.requirePaymentBeforeConfirm ?? false)
       setModel(config.model ?? "SONNET")
       setTemperature(config.temperature ?? 0.4)
@@ -138,6 +140,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setFunnelAgentPersonality("")
       setStageContext("")
       setAllowedTools(["search_availability", "create_appointment", "move_stage", "send_message", "notify_operator"])
+      setRequiredFields([])
       setRequirePaymentBeforeConfirm(false)
       setModel("SONNET")
       setTemperature(0.4)
@@ -169,6 +172,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
           funnelAgentPersonality: funnelAgentPersonality.trim() || undefined,
           stageContext: stageContext.trim() || undefined,
           allowedTools: finalAllowedTools,
+          requiredFields: requiredFields.length > 0 ? requiredFields : [],
           requirePaymentBeforeConfirm: requirePaymentBeforeConfirm || undefined,
           model,
           temperature,
@@ -265,11 +269,11 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
             </div>
 
             {/* Body */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 sm:px-8 py-5 flex flex-col gap-5">
+            <div className="flex-1 min-h-0 flex flex-col">
               {activeTab === "triggers" ? (
                 /* ─── Triggers tab ─── */
-                <>
-                  {triggersLoading ? (
+                <div className="flex-1 overflow-y-auto overscroll-contain px-6 sm:px-8 py-5 flex flex-col gap-5">
+                {triggersLoading ? (
                     <div className="flex justify-center py-12">
                       <Spinner className="h-6 w-6 text-accent animate-spin" />
                     </div>
@@ -375,16 +379,16 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                         await createTrigger.mutateAsync({ stageId: stageId!, body })
                     }}
                   />
-                </>
+                </div>
               ) : isLoading ? (
-                <div className="flex items-center justify-center py-12">
+                <div className="flex-1 flex items-center justify-center">
                   <Spinner className="h-6 w-6 text-accent animate-spin" />
                 </div>
               ) : (
                 /* ─── Agente tab ─── */
-                <>
+                <div className="flex-1 min-h-0 flex flex-col px-6 sm:px-8 pt-5 gap-4 overflow-hidden">
                   {/* Row 1: Name + Model + Temperature */}
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-4 items-end">
+                  <div className="shrink-0 grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-4 items-end">
                     <div className="space-y-1.5">
                       <label className={labelCls}>Nome do assistente</label>
                       <div className="flex items-center gap-2.5">
@@ -425,12 +429,12 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                     </div>
                   </div>
 
-                  {/* Row 2: Prompts (left) + Tools (right) — side by side on large screens */}
-                  <div className="flex flex-col lg:flex-row gap-5">
-                    {/* Left: Prompt tabs */}
-                    <div className="flex-1 min-w-0 flex flex-col">
+                  {/* Row 2: Prompts (left) + Tools (right) */}
+                  <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5">
+                    {/* Left: Prompt tabs — fills height */}
+                    <div className="flex-1 min-h-0 min-w-0 flex flex-col">
                       {/* Sub-tabs */}
-                      <div className="flex items-center gap-1 mb-3">
+                      <div className="shrink-0 flex items-center gap-1 mb-3">
                         <button
                           type="button"
                           onClick={() => setPromptTab("personality")}
@@ -457,7 +461,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                         </button>
                       </div>
 
-                      {/* Tab content */}
+                      {/* Tab content — fills remaining height */}
                       <AnimatePresence mode="wait">
                         {promptTab === "personality" ? (
                           <motion.div
@@ -466,16 +470,16 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 6 }}
                             transition={{ duration: 0.12 }}
-                            className="flex flex-col gap-2"
+                            className="flex-1 min-h-0 flex flex-col gap-2 pb-5"
                           >
-                            <p className="text-[11px] text-muted-foreground/85">
+                            <p className="shrink-0 text-[11px] text-muted-foreground/85">
                               Como o assistente fala e age — tom, estilo, regras gerais.
                             </p>
                             <InstructionTextarea
                               value={funnelAgentPersonality}
                               onChange={setFunnelAgentPersonality}
                               placeholder="Ex: Você é cordial e acolhedor. Use linguagem clara e evite termos técnicos. Seja breve e objetivo. Use @ para mencionar etapas, profissionais, serviços ou ferramentas."
-                              rows={9}
+                              className="flex-1 min-h-0"
                             />
                           </motion.div>
                         ) : (
@@ -485,24 +489,24 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 6 }}
                             transition={{ duration: 0.12 }}
-                            className="flex flex-col gap-2"
+                            className="flex-1 min-h-0 flex flex-col gap-2 pb-5"
                           >
-                            <p className="text-[11px] text-muted-foreground/85">
+                            <p className="shrink-0 text-[11px] text-muted-foreground/85">
                               O que o assistente deve fazer nesta etapa. Instruções específicas.
                             </p>
                             <InstructionTextarea
                               value={stageContext}
                               onChange={setStageContext}
                               placeholder="Ex: Apresente a clínica, colete nome e motivo. Ofereça horários com @tool:search_availability. Use @ para mencionar etapas, profissionais, serviços ou ferramentas."
-                              rows={9}
+                              className="flex-1 min-h-0"
                             />
                           </motion.div>
                         )}
                       </AnimatePresence>
                     </div>
 
-                    {/* Right: Tools + PIX */}
-                    <div className="lg:w-[250px] shrink-0 flex flex-col gap-4">
+                    {/* Right: Tools + PIX — independently scrollable */}
+                    <div className="lg:w-[260px] shrink-0 flex flex-col gap-4 overflow-y-auto overscroll-contain pb-5 pr-1">
                       <div>
                         <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                           Ferramentas permitidas
@@ -540,6 +544,65 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                         )}
                       </div>
 
+                      {/* Required fields before payment */}
+                      {(allowedTools.includes("generate_pix") || allowedTools.includes("create_appointment") || requirePaymentBeforeConfirm) && (
+                        <div className="rounded-xl border border-border/40 bg-muted/5 px-3 py-3 space-y-2">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <ListChecks className="h-3.5 w-3.5 text-muted-foreground/80" weight="duotone" />
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                              Exigir antes de pagar/agendar
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                            A IA bloqueará pagamento e agendamento até coletar esses dados.
+                          </p>
+                          {[
+                            { value: "cpf",        label: "CPF" },
+                            { value: "birth_date", label: "Data de nascimento" },
+                            { value: "insurance",  label: "Plano de saúde" },
+                            { value: "email",      label: "E-mail" },
+                            { value: "name",       label: "Nome" },
+                          ].map((field) => {
+                            const pixActive = allowedTools.includes("generate_pix") || requirePaymentBeforeConfirm
+                            const locked = field.value === "cpf" && pixActive
+                            const checked = locked || requiredFields.includes(field.value)
+                            return (
+                              <button
+                                key={field.value}
+                                type="button"
+                                disabled={locked}
+                                onClick={() =>
+                                  setRequiredFields((prev) =>
+                                    prev.includes(field.value)
+                                      ? prev.filter((f) => f !== field.value)
+                                      : [...prev, field.value]
+                                  )
+                                }
+                                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all ${
+                                  locked
+                                    ? "bg-accent/10 border border-accent/25 opacity-70 cursor-not-allowed"
+                                    : checked
+                                    ? "bg-accent/10 border border-accent/25 cursor-pointer"
+                                    : "bg-transparent border border-transparent hover:bg-muted/20 cursor-pointer"
+                                }`}
+                              >
+                                <div
+                                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-[1.5px] transition-colors ${
+                                    checked ? "border-accent bg-accent" : "border-muted-foreground/30"
+                                  }`}
+                                >
+                                  {checked && <Check className="h-2 w-2 text-accent-foreground" weight="bold" />}
+                                </div>
+                                <span className="text-[11px] font-medium text-foreground">{field.label}</span>
+                                {locked && (
+                                  <span className="ml-auto text-[9px] text-muted-foreground/50 font-mono">obrigatório</span>
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+
                       {/* PIX toggle */}
                       <div className="rounded-xl border border-border/40 bg-muted/5 px-3 py-3">
                         <div className="flex items-start gap-2.5">
@@ -576,12 +639,12 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-[12px] text-rose-400"
+                      className="shrink-0 text-[12px] text-rose-400 pb-2"
                     >
                       {error}
                     </motion.p>
                   )}
-                </>
+                </div>
               )}
             </div>
 

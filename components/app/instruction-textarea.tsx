@@ -380,6 +380,7 @@ export function InstructionTextarea({
   onChange,
   placeholder,
   rows = 5,
+  className,
   id,
 }: Props) {
   const { data: mentionData } = useMentions()
@@ -708,10 +709,10 @@ export function InstructionTextarea({
   return (
     <div
       ref={wrapperRef}
-      className="group relative w-full rounded-xl border border-border/60 bg-background/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-accent/30 focus-within:border-accent/40"
+      className={`group relative w-full flex flex-col rounded-xl border border-border/60 bg-background/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-accent/30 focus-within:border-accent/40${className ? ` ${className}` : ""}`}
     >
       {/* Editor area */}
-      <div className="relative">
+      <div className="flex-1 relative">
         {/* Fake placeholder */}
         {!hasText && placeholder && (
           <div
@@ -767,7 +768,7 @@ export function InstructionTextarea({
           onScroll={syncScroll}
           rows={rows}
           spellCheck={false}
-          className="relative z-[2] w-full resize-none bg-transparent px-4 py-3 text-[14px] leading-[1.625] outline-none selection:bg-accent/30"
+          className="relative z-[2] w-full h-full resize-none bg-transparent px-4 py-3 text-[14px] leading-[1.625] outline-none selection:bg-accent/30"
           style={{
             color: "transparent",
             caretColor: "rgb(255 255 255 / 0.9)",
@@ -776,7 +777,7 @@ export function InstructionTextarea({
       </div>
 
       {/* Bottom hint */}
-      <div className="flex items-center gap-1.5 border-t border-border/30 px-3 py-1.5">
+      <div className="shrink-0 flex items-center gap-1.5 border-t border-border/30 px-3 py-1.5">
         <At className="h-3 w-3 text-muted-foreground/85" weight="bold" />
         <p className="text-[10px] text-muted-foreground/85 select-none">
           Digite{" "}

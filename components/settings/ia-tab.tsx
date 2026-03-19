@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Robot, Check, ArrowsClockwise, Warning, Bell } from "@phosphor-icons/react"
+import { Robot, Check, ArrowsClockwise, Warning, Bell, CurrencyDollar } from "@phosphor-icons/react"
 import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
 import { useMe } from "@/hooks/use-me"
 import { InstructionTextarea } from "@/components/app/instruction-textarea"
@@ -19,6 +19,7 @@ export function IATab() {
   const [form, setForm] = useState({
     agentBasePrompt: "",
     guardrailRules: "",
+    pixTerms: "",
   })
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -28,6 +29,7 @@ export function IATab() {
     setForm({
       agentBasePrompt: tenant.agentBasePrompt ?? "",
       guardrailRules: tenant.guardrailRules ?? "",
+      pixTerms: tenant.pixTerms ?? "",
     })
   }, [tenant])
 
@@ -41,6 +43,7 @@ export function IATab() {
       await update.mutateAsync({
         agentBasePrompt: form.agentBasePrompt.trim() || null,
         guardrailRules: form.guardrailRules.trim() || null,
+        pixTerms: form.pixTerms.trim() || null,
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
@@ -183,6 +186,28 @@ export function IATab() {
               onChange={set("guardrailRules")}
               placeholder="Ex: Não dê diagnósticos. Não confirme consultas sem verificar disponibilidade... Use @ para mencionar etapas ou ferramentas."
               rows={4}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <CurrencyDollar className="h-4 w-4 text-muted-foreground" weight="duotone" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Termos de pagamento PIX
+            </span>
+          </div>
+          <p className="text-[12px] text-muted-foreground">
+            Enviado automaticamente ao paciente junto com o PIX. Ex: política de cancelamento, reembolso, validade do horário...
+          </p>
+          <div>
+            <label className={labelCls}>Condições</label>
+            <textarea
+              value={form.pixTerms}
+              onChange={(e) => setForm((prev) => ({ ...prev, pixTerms: e.target.value }))}
+              placeholder="Ex: Consultas canceladas com menos de 24h de antecedência não são reembolsadas. O horário é garantido somente após a confirmação do pagamento."
+              rows={4}
+              className="w-full rounded-xl border border-border/60 bg-background/40 px-4 py-3 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 resize-none transition-all duration-200"
             />
           </div>
         </div>

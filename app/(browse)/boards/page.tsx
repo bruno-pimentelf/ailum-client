@@ -44,6 +44,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import type { BoardContact, BoardStage, FunnelListItem } from "@/lib/api/funnels"
+import { formatMessagePreview } from "@/components/app/message-preview"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -181,7 +182,7 @@ function KanbanCard({
               {lastMsg.role === "AGENT" ? "Agente:" : "Você:"}
             </span>
           )}
-          {lastMsg.content}
+          {formatMessagePreview(lastMsg.content)}
         </p>
       )}
 

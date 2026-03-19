@@ -19,6 +19,7 @@ export interface Tenant {
   addressZip: string | null
   agentBasePrompt: string | null
   guardrailRules: string | null
+  pixTerms: string | null
   isAgentEnabledForWhatsApp?: boolean
   isSlotRecallEnabled?: boolean
   customMemoryKeys?: Array<{ key: string; description: string }> | null
@@ -47,6 +48,7 @@ export type TenantUpdateInput = Partial<
     | "addressZip"
     | "agentBasePrompt"
     | "guardrailRules"
+    | "pixTerms"
     | "isAgentEnabledForWhatsApp"
     | "isSlotRecallEnabled"
     | "customMemoryKeys"
