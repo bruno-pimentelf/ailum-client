@@ -40,16 +40,24 @@ export interface AgendaDayItem {
   completed: number
   cancelled: number
   noShow: number
+  slotsCapacity?: number
+}
+
+export interface AgendaByProfessional {
+  professionalId: string
+  byDay: AgendaDayItem[]
 }
 
 export interface StatsAgenda {
   byDay: AgendaDayItem[]
+  byProfessional?: AgendaByProfessional[]
 }
 
 export interface StatsAgendaParams {
   from?: string
   to?: string
   professionalId?: string
+  groupByProfessional?: boolean
 }
 
 export interface StatsRevenue {
@@ -98,8 +106,14 @@ export const statsApi = {
   funnel: (params?: StatsFunnelParams) =>
     apiFetch<StatsFunnel>(`/stats/funnel${buildQuery(params as Record<string, string | undefined>)}`),
 
-  agenda: (params?: StatsAgendaParams) =>
-    apiFetch<StatsAgenda>(`/stats/agenda${buildQuery(params as Record<string, string | undefined>)}`),
+  agenda: (params?: StatsAgendaParams) => {
+    const p: Record<string, string | undefined> = {}
+    if (params?.from) p.from = params.from
+    if (params?.to) p.to = params.to
+    if (params?.professionalId) p.professionalId = params.professionalId
+    if (params?.groupByProfessional) p.groupByProfessional = "true"
+    return apiFetch<StatsAgenda>(`/stats/agenda${buildQuery(p)}`)
+  },
 
   revenue: (params?: StatsRevenueParams) =>
     apiFetch<StatsRevenue>(`/stats/revenue${buildQuery(params as Record<string, string | undefined>)}`),

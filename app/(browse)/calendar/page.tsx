@@ -13,15 +13,16 @@ import {
   CheckCircle,
   Circle,
   DotsThree,
-  Funnel,
-  MagnifyingGlass,
+  Sparkle,
 } from "@phosphor-icons/react"
 import { useProfessionals } from "@/hooks/use-professionals"
 import { useAppointments } from "@/hooks/use-appointments"
+import { useStatsAgenda } from "@/hooks/use-stats"
 import { useMe } from "@/hooks/use-me"
 import { NovoAgendamentoModal } from "@/components/calendar/novo-agendamento-modal"
 import { ProfessionalCalendar } from "@/components/calendar/professional-calendar"
 import { AppointmentStatusModal } from "@/components/calendar/appointment-status-modal"
+import { AvailabilityDrawer } from "@/components/calendar/availability-drawer"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
 
@@ -393,7 +394,9 @@ export default function CalendarPage() {
   const [activeDoctor, setActiveDoctor] = useState("all")
   const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false)
   const [novoAgendamentoDefaultDate, setNovoAgendamentoDefaultDate] = useState<Date | undefined>(undefined)
+  const [novoAgendamentoDefaultTime, setNovoAgendamentoDefaultTime] = useState<string | undefined>(undefined)
   const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null)
+  const [availabilityDrawerOpen, setAvailabilityDrawerOpen] = useState(false)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -419,11 +422,59 @@ export default function CalendarPage() {
       from: fromStr,
       to: toStr,
       professionalId: professionalIdParam,
-      limit: 100,
+      limit: 1000,
     }
   }, [year, month, me?.role, me?.professionalId, activeDoctor])
 
   const { data: appointmentsData, isLoading: loadingAppointments } = useAppointments(appointmentsParams)
+
+  // Stats for occupancy bars (month view)
+  const statsParams = useMemo(() => ({
+    from: appointmentsParams.from,
+    to: appointmentsParams.to,
+    groupByProfessional: true,
+  }), [appointmentsParams.from, appointmentsParams.to])
+
+  const { data: agendaStats } = useStatsAgenda(statsParams)
+
+  // Build lookup: date string → { total, capacity, byProfessional[] }
+  const occupancyByDate = useMemo(() => {
+    const map = new Map<string, {
+      total: number
+      capacity: number
+      byProfessional: { professionalId: string; total: number; capacity: number }[]
+    }>()
+    if (!agendaStats) return map
+
+    // Aggregate totals from byDay
+    agendaStats.byDay.forEach(d => {
+      map.set(d.date, {
+        total: d.total,
+        capacity: d.slotsCapacity ?? 0,
+        byProfessional: [],
+      })
+    })
+    // Fill per-professional breakdown
+    agendaStats.byProfessional?.forEach(pb => {
+      pb.byDay.forEach(d => {
+        const existing = map.get(d.date)
+        if (existing) {
+          existing.byProfessional.push({
+            professionalId: pb.professionalId,
+            total: d.total,
+            capacity: d.slotsCapacity ?? 0,
+          })
+        } else {
+          map.set(d.date, {
+            total: d.total,
+            capacity: d.slotsCapacity ?? 0,
+            byProfessional: [{ professionalId: pb.professionalId, total: d.total, capacity: d.slotsCapacity ?? 0 }],
+          })
+        }
+      })
+    })
+    return map
+  }, [agendaStats])
 
   const professionalColorMap = useMemo(
     () => buildProfessionalColorMap(professionals ?? []),
@@ -470,7 +521,19 @@ export default function CalendarPage() {
   }, [firstDay, daysInMonth])
 
   const navigate = (dir: 1 | -1) => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + dir, 1))
+    if (viewMode === "week") {
+      const next = new Date(selectedDate)
+      next.setDate(next.getDate() + dir * 7)
+      setSelectedDate(next)
+      setCurrentDate(new Date(next.getFullYear(), next.getMonth(), 1))
+    } else if (viewMode === "day") {
+      const next = new Date(selectedDate)
+      next.setDate(next.getDate() + dir)
+      setSelectedDate(next)
+      setCurrentDate(new Date(next.getFullYear(), next.getMonth(), 1))
+    } else {
+      setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + dir, 1))
+    }
   }
 
   const aptsForDay = (day: number) =>
@@ -502,8 +565,16 @@ export default function CalendarPage() {
                 ? () => setActiveDoctor("all")
                 : undefined
             }
+            onOpenAvailability={
+              canEditAvailability ? () => setAvailabilityDrawerOpen(true) : undefined
+            }
           />
         </div>
+        <AvailabilityDrawer
+          open={availabilityDrawerOpen}
+          onClose={() => setAvailabilityDrawerOpen(false)}
+          defaultProfessionalId={professionalCalendarId}
+        />
       </div>
     )
   }
@@ -530,13 +601,13 @@ export default function CalendarPage() {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => navigate(-1)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85 hover:border-white/[0.14] hover:bg-white/[0.07] transition-all duration-200"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85 hover:border-white/[0.14] hover:bg-white/[0.07] transition-all duration-200 cursor-pointer"
               >
                 <CaretLeft className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => navigate(1)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85 hover:border-white/[0.14] hover:bg-white/[0.07] transition-all duration-200"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85 hover:border-white/[0.14] hover:bg-white/[0.07] transition-all duration-200 cursor-pointer"
               >
                 <CaretRight className="h-3.5 w-3.5" />
               </button>
@@ -544,15 +615,26 @@ export default function CalendarPage() {
 
             <AnimatePresence mode="wait">
               <motion.h1
-                key={`${year}-${month}`}
+                key={viewMode === "week" ? `week-${selectedDate.toDateString()}` : viewMode === "day" ? `day-${selectedDate.toDateString()}` : `${year}-${month}`}
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.25, ease }}
                 className="text-[16px] font-black text-white/90 tracking-tight"
               >
-                {MONTHS_PT[month]}{" "}
-                <span className="text-white/88 font-semibold">{year}</span>
+                {viewMode === "week" ? (() => {
+                  const start = new Date(selectedDate)
+                  start.setDate(selectedDate.getDate() - selectedDate.getDay())
+                  const end = new Date(start)
+                  end.setDate(start.getDate() + 6)
+                  return start.getMonth() === end.getMonth()
+                    ? <>{start.getDate()}–{end.getDate()} <span className="text-white/88 font-semibold">{MONTHS_PT[start.getMonth()]} {start.getFullYear()}</span></>
+                    : <>{MONTHS_PT[start.getMonth()]} <span className="text-white/88 font-semibold">{start.getDate()}–{MONTHS_PT[end.getMonth()]} {end.getDate()}</span></>
+                })() : viewMode === "day" ? (
+                  <>{WEEKDAYS[selectedDate.getDay()]}, {selectedDate.getDate()} <span className="text-white/88 font-semibold">{MONTHS_PT[selectedDate.getMonth()]}</span></>
+                ) : (
+                  <>{MONTHS_PT[month]} <span className="text-white/88 font-semibold">{year}</span></>
+                )}
               </motion.h1>
             </AnimatePresence>
 
@@ -561,32 +643,20 @@ export default function CalendarPage() {
                 setCurrentDate(new Date(THIS_YEAR, THIS_MONTH, 1))
                 setSelectedDate(new Date())
               }}
-              className="text-[11px] font-bold text-accent border border-accent/25 hover:border-accent/50 hover:bg-accent/8 rounded-lg px-2.5 py-1 transition-all duration-200"
+              className="text-[11px] font-bold text-accent border border-accent/25 hover:border-accent/50 hover:bg-accent/[0.08] rounded-lg px-2.5 py-1 transition-all duration-200 cursor-pointer"
             >
               Hoje
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="relative hidden sm:block">
-              <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-white/90 pointer-events-none" />
-              <input
-                placeholder="Buscar paciente..."
-                className="h-8 w-44 rounded-lg border border-white/[0.08] bg-white/[0.06] pl-7 pr-3 text-[12px] font-medium text-white/85 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/30 transition-all duration-200"
-              />
-            </div>
-
-            <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/90 hover:bg-white/[0.07] transition-all duration-200">
-              <Funnel className="h-3.5 w-3.5" />
-            </button>
-
             {/* View mode toggle */}
             <div className="flex items-center rounded-lg border border-white/[0.08] bg-white/[0.05] p-0.5">
               {(["month", "week", "day"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`relative px-3 py-1 text-[11px] font-bold rounded-md transition-all duration-200 ${
+                  className={`relative px-3 py-1 text-[11px] font-bold rounded-md transition-all duration-200 cursor-pointer ${
                     viewMode === mode ? "text-white/90" : "text-white/85 hover:text-white/85"
                   }`}
                 >
@@ -605,11 +675,19 @@ export default function CalendarPage() {
             </div>
 
             <button
+              onClick={() => setAvailabilityDrawerOpen(true)}
+              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-white/[0.08] bg-white/[0.05] text-white/85 text-[12px] font-bold hover:bg-white/[0.08] hover:border-white/[0.14] transition-colors duration-200 group cursor-pointer"
+            >
+              <Sparkle className="h-3.5 w-3.5 text-accent group-hover:scale-110 transition-transform duration-200" weight="duotone" />
+              Disponibilidade
+            </button>
+
+            <button
               onClick={() => {
                 setNovoAgendamentoDefaultDate(undefined)
                 setNovoAgendamentoOpen(true)
               }}
-              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-accent text-accent-foreground text-[12px] font-bold hover:bg-accent/90 transition-colors duration-200 group"
+              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-accent text-accent-foreground text-[12px] font-bold hover:bg-accent/90 transition-colors duration-200 group cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5 group-hover:rotate-90 transition-transform duration-300" />
               Agendar
@@ -629,7 +707,7 @@ export default function CalendarPage() {
                 <button
                   key={doc.id}
                   onClick={() => setActiveDoctor(doc.id)}
-                  className={`relative px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                  className={`relative px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 cursor-pointer ${
                     activeDoctor === doc.id ? "text-white/90" : "text-white/85 hover:text-white/85"
                   }`}
                 >
@@ -683,6 +761,8 @@ export default function CalendarPage() {
                       year < THIS_YEAR || (year === THIS_YEAR && month < THIS_MONTH) ||
                       (year === THIS_YEAR && month === THIS_MONTH && day < TODAY_DAY)
                     ) : false
+                    const dateStr = day ? toYMD(new Date(year, month, day)) : null
+                    const occ = dateStr ? occupancyByDate.get(dateStr) : null
 
                     return (
                       <motion.div
@@ -729,6 +809,43 @@ export default function CalendarPage() {
                                 </span>
                               )}
                             </div>
+
+                            {/* Occupancy bar */}
+                            {occ && occ.capacity > 0 && (
+                              <div className="mt-auto pt-1.5 flex flex-col gap-1">
+                                {occ.byProfessional.length > 1 ? (
+                                  occ.byProfessional.map((pb) => {
+                                    const style = getAptColorStyle(pb.professionalId, professionalColorMap)
+                                    const pct = pb.capacity > 0 ? Math.min(100, (pb.total / pb.capacity) * 100) : 0
+                                    return (
+                                      <div key={pb.professionalId} className="flex items-center gap-1.5">
+                                        <div className="flex-1 h-[5px] rounded-full bg-white/[0.12] overflow-hidden">
+                                          <div
+                                            className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
+                                            style={{ width: `${pct}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-[9px] font-bold font-mono text-white/70 shrink-0 tabular-nums">
+                                          {pb.total}<span className="text-white/35">/{pb.capacity}</span>
+                                        </span>
+                                      </div>
+                                    )
+                                  })
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="flex-1 h-[5px] rounded-full bg-white/[0.12] overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full bg-accent transition-all duration-300"
+                                        style={{ width: `${Math.min(100, (occ.total / occ.capacity) * 100)}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-[9px] font-bold font-mono text-white/70 shrink-0 tabular-nums">
+                                      {occ.total}<span className="text-white/35">/{occ.capacity}</span>
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </>
                         )}
                       </motion.div>
@@ -752,7 +869,7 @@ export default function CalendarPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1))}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/90 hover:bg-white/[0.07] transition-all duration-200"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/90 hover:bg-white/[0.07] transition-all duration-200 cursor-pointer"
                     >
                       <CaretLeft className="h-3 w-3" />
                     </button>
@@ -764,7 +881,7 @@ export default function CalendarPage() {
                     </span>
                     <button
                       onClick={() => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1))}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/90 hover:bg-white/[0.07] transition-all duration-200"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/90 hover:bg-white/[0.07] transition-all duration-200 cursor-pointer"
                     >
                       <CaretRight className="h-3 w-3" />
                     </button>
@@ -776,14 +893,24 @@ export default function CalendarPage() {
 
                 <div className="relative">
                   {HOURS.map((hour) => (
-                    <div key={hour} className="flex border-b border-white/[0.12]" style={{ height: 64 }}>
+                    <div
+                      key={hour}
+                      className="flex border-b border-white/[0.12] group/hour cursor-pointer"
+                      style={{ height: 64 }}
+                      onClick={() => {
+                        setNovoAgendamentoDefaultDate(selectedDate)
+                        setNovoAgendamentoDefaultTime(`${String(hour).padStart(2, "0")}:00`)
+                        setNovoAgendamentoOpen(true)
+                      }}
+                    >
                       <div className="w-16 shrink-0 flex items-start justify-end pr-3 pt-1">
                         <span className="text-[10px] font-bold text-white/90 font-mono tabular-nums">
                           {String(hour).padStart(2, "0")}:00
                         </span>
                       </div>
-                      <div className="flex-1 relative border-l border-white/[0.10]">
+                      <div className="flex-1 relative border-l border-white/[0.10] hover:bg-accent/[0.03] transition-colors duration-100">
                         <div className="absolute top-1/2 left-0 right-0 border-t border-dashed border-white/[0.06]" />
+                        <Plus className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3.5 w-3.5 text-accent/50 opacity-0 group-hover/hour:opacity-100 transition-opacity duration-100" />
                       </div>
                     </div>
                   ))}
@@ -841,21 +968,32 @@ export default function CalendarPage() {
                   })
                   return (
                     <>
-                      <div className="grid grid-cols-8 border-b border-white/[0.14]">
-                        <div className="w-16" />
+                      <div className="flex border-b border-white/[0.14]">
+                        <div className="w-16 shrink-0" />
                         {weekDays.map((d, i) => {
                           const today = d.toDateString() === new Date().toDateString()
                           const sel = d.toDateString() === selectedDate.toDateString()
+                          const dayKey = toYMD(d)
+                          const dayOcc = occupancyByDate.get(dayKey)
+                          const isWorkingDay = dayOcc !== undefined && (dayOcc.capacity > 0 || dayOcc.total > 0)
                           return (
                             <button
                               key={i}
                               onClick={() => setSelectedDate(d)}
-                              className="py-3 flex flex-col items-center gap-0.5 hover:bg-white/[0.05] transition-colors duration-150"
+                              className="flex-1 py-3 flex flex-col items-center gap-0.5 hover:bg-white/[0.05] transition-colors duration-150 cursor-pointer"
                             >
                               <span className="text-[9px] font-extrabold uppercase tracking-widest text-white/90">{WEEKDAYS[d.getDay()]}</span>
                               <span className={`h-7 w-7 flex items-center justify-center rounded-full text-[13px] font-black transition-colors ${
                                 today ? "bg-accent text-accent-foreground" : sel ? "bg-white/[0.10] text-white/90" : "text-white/90 hover:text-white/85"
                               }`}>{d.getDate()}</span>
+                              {isWorkingDay && dayOcc!.capacity > 0 && (
+                                <span className="text-[8px] font-mono text-white/40 tabular-nums">
+                                  {dayOcc!.total}/{dayOcc!.capacity}
+                                </span>
+                              )}
+                              {!isWorkingDay && agendaStats && (
+                                <span className="text-[8px] text-white/20 italic">—</span>
+                              )}
                             </button>
                           )
                         })}
@@ -871,14 +1009,37 @@ export default function CalendarPage() {
                                 a => a.day === d.getDate() && a.month === d.getMonth() && a.year === d.getFullYear() &&
                                   parseInt(a.time.split(":")[0]) === hour
                               )
+                              const dayKey = toYMD(d)
+                              const dayOcc = occupancyByDate.get(dayKey)
+                              // A working day is one where we have capacity OR has appointments
+                              const isWorkingDay = dayOcc !== undefined && (dayOcc.capacity > 0 || dayOcc.total > 0)
                               return (
-                                <div key={di} className="flex-1 border-l border-white/[0.10] relative px-0.5 py-0.5 flex flex-col gap-0.5">
+                                <div
+                                  key={di}
+                                  className={`flex-1 border-l relative px-0.5 py-0.5 flex flex-col gap-0.5 transition-colors duration-100 ${
+                                    isWorkingDay
+                                      ? "border-white/[0.10] group/cell cursor-pointer hover:bg-accent/[0.03]"
+                                      : "border-white/[0.05] opacity-40"
+                                  }`}
+                                  onClick={() => {
+                                    if (isWorkingDay && apts.length === 0) {
+                                      setNovoAgendamentoDefaultDate(d)
+                                      setNovoAgendamentoDefaultTime(`${String(hour).padStart(2, "0")}:00`)
+                                      setNovoAgendamentoOpen(true)
+                                    }
+                                  }}
+                                >
+                                  {isWorkingDay && apts.length === 0 && (
+                                    <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity duration-100">
+                                      <Plus className="h-3 w-3 text-accent/60" />
+                                    </span>
+                                  )}
                                   {apts.map((apt) => {
                                     const c = getAptColorStyle(apt.color, professionalColorMap)
                                     return (
                                       <button
                                         key={apt.id}
-                                        onClick={() => setSelectedAppointment(apt)}
+                                        onClick={(e) => { e.stopPropagation(); setSelectedAppointment(apt) }}
                                         className={`w-full text-left rounded px-1.5 py-0.5 text-[9px] font-bold truncate border cursor-pointer hover:ring-1 hover:ring-accent/40 transition-all ${c.bg} ${c.border} ${c.text} flex items-center gap-1`}
                                       >
                                         <span className="truncate">{apt.time} {apt.patientName.split(" ")[0]}</span>
@@ -903,8 +1064,18 @@ export default function CalendarPage() {
 
       <NovoAgendamentoModal
         open={novoAgendamentoOpen}
-        onClose={() => setNovoAgendamentoOpen(false)}
+        onClose={() => {
+          setNovoAgendamentoOpen(false)
+          setNovoAgendamentoDefaultDate(undefined)
+          setNovoAgendamentoDefaultTime(undefined)
+        }}
         defaultDate={novoAgendamentoDefaultDate}
+        defaultTime={novoAgendamentoDefaultTime}
+      />
+
+      <AvailabilityDrawer
+        open={availabilityDrawerOpen}
+        onClose={() => setAvailabilityDrawerOpen(false)}
       />
 
       {selectedAppointment && (

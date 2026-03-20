@@ -20,6 +20,7 @@ import {
   Warning,
   X,
   Trash,
+  Sparkle,
 } from "@phosphor-icons/react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -565,6 +566,7 @@ function DayContextMenu({
   onUnblockDay,
   onAddOverride,
   onBlockRange,
+  onSchedule,
   onClose,
   canEdit,
 }: {
@@ -576,6 +578,7 @@ function DayContextMenu({
   onUnblockDay: () => void
   onAddOverride: () => void
   onBlockRange: () => void
+  onSchedule: () => void
   onClose: () => void
   canEdit: boolean
 }) {
@@ -590,6 +593,14 @@ function DayContextMenu({
         className="fixed z-50 min-w-[180px] rounded-xl border border-white/[0.08] bg-background/95 backdrop-blur py-1 shadow-xl"
         style={{ left: x, top: y }}
       >
+        <button
+          onClick={() => { onSchedule(); onClose() }}
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
+        >
+          <CalendarBlank className="h-3.5 w-3.5 text-accent" weight="duotone" />
+          Agendar consulta
+        </button>
+        <div className="mx-3 my-1 border-t border-white/[0.06]" />
         {isBlocked ? (
           <button
             onClick={() => { onUnblockDay(); onClose() }}
@@ -636,6 +647,7 @@ export function ProfessionalCalendar({
   canEdit,
   accentColor = "#22c55e",
   onBackToAll,
+  onOpenAvailability,
 }: {
   professionalId: string
   professionalName: string
@@ -643,10 +655,14 @@ export function ProfessionalCalendar({
   accentColor?: string
   /** Se passado, exibe botão para voltar à visão de todos os profissionais (Admin/Secretary) */
   onBackToAll?: () => void
+  /** Abre o drawer de disponibilidade IA */
+  onOpenAvailability?: () => void
 }) {
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false)
+  const [novoAgendamentoDate, setNovoAgendamentoDate] = useState<Date | undefined>(undefined)
+  const [novoAgendamentoTime, setNovoAgendamentoTime] = useState<string | undefined>(undefined)
   const [contextMenu, setContextMenu] = useState<{
     date: Date
     x: number
@@ -898,6 +914,20 @@ export function ProfessionalCalendar({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            )}
+            {onOpenAvailability && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={onOpenAvailability}
+                    className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.05] px-3.5 text-[12px] font-bold text-white/85 hover:bg-white/[0.08] hover:border-white/[0.14] transition-colors duration-200 group"
+                  >
+                    <Sparkle className="h-3.5 w-3.5 text-accent group-hover:scale-110 transition-transform duration-200" weight="duotone" />
+                    Disponibilidade
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Gerenciar disponibilidade com IA</TooltipContent>
+              </Tooltip>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -1696,6 +1726,11 @@ export function ProfessionalCalendar({
               to: new Date(contextMenu.date.getTime() + 86400000),
             })
           }
+          onSchedule={() => {
+            setNovoAgendamentoDate(contextMenu.date)
+            setNovoAgendamentoTime(undefined)
+            setNovoAgendamentoOpen(true)
+          }}
           onClose={() => setContextMenu(null)}
           canEdit={canEdit}
         />
@@ -1703,8 +1738,13 @@ export function ProfessionalCalendar({
 
       <NovoAgendamentoModal
         open={novoAgendamentoOpen}
-        onClose={() => setNovoAgendamentoOpen(false)}
-        defaultDate={selectedDate}
+        onClose={() => {
+          setNovoAgendamentoOpen(false)
+          setNovoAgendamentoDate(undefined)
+          setNovoAgendamentoTime(undefined)
+        }}
+        defaultDate={novoAgendamentoDate ?? selectedDate}
+        defaultTime={novoAgendamentoTime}
         defaultProfessionalId={professionalId}
       />
 

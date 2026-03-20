@@ -17,11 +17,9 @@ import {
   User,
   Phone,
   Robot,
-  Sparkle,
   ChartLineUp,
   CurrencyCircleDollar,
 } from "@phosphor-icons/react"
-import { useMe } from "@/hooks/use-me"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -54,7 +52,6 @@ const baseNavigation: NavEntry[] = [
   },
   { label: "Calendário", href: "/calendar", icon: CalendarBlank },
   { label: "Financeiro", href: "/financeiro", icon: CurrencyCircleDollar },
-  { label: "Concierge", href: "/ai-availability", icon: Sparkle },
   { label: "Configurações", href: "/settings", icon: Gear },
 ]
 
@@ -146,12 +143,8 @@ interface SidebarProps {
   accountManagerPhone?: string
 }
 
-function getNavigation(role: string | undefined): NavEntry[] {
-  const nav = [...baseNavigation]
-  if (role === "SECRETARY") {
-    return nav.filter((e) => !("href" in e && e.href === "/ai-availability"))
-  }
-  return nav
+function getNavigation(): NavEntry[] {
+  return [...baseNavigation]
 }
 
 export function AppSidebar({
@@ -161,10 +154,9 @@ export function AppSidebar({
   accountManagerPhone,
 }: SidebarProps) {
   const pathname = usePathname()
-  const { data: me } = useMe()
   const [openGroups, setOpenGroups] = useState<string[]>(["Atendimento"])
 
-  const navigation = getNavigation(me?.role)
+  const navigation = getNavigation()
 
   const toggleGroup = (label: string) => {
     setOpenGroups((prev) =>
