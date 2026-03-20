@@ -17,8 +17,10 @@ import {
   ToggleLeft,
   ToggleRight,
   CurrencyDollar,
+  UserCircle,
 } from "@phosphor-icons/react"
 import { useStageAgentConfig, useFunnelMutations, useTriggers, useFunnels } from "@/hooks/use-board"
+import { useProfessionals } from "@/hooks/use-professionals"
 import type { BoardStage } from "@/lib/api/funnels"
 import type { AllowedTool, Trigger } from "@/lib/api/funnels"
 import { TriggerEditorModal } from "./trigger-editor-modal"
@@ -85,6 +87,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const { data: config, isLoading } = useStageAgentConfig(stageId)
   const { data: triggers = [], isLoading: triggersLoading } = useTriggers(stageId)
   const { data: funnels = [] } = useFunnels()
+  const { data: professionals = [] } = useProfessionals()
   const {
     upsertAgentConfig,
     createTrigger,
@@ -112,6 +115,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [stageContext, setStageContext] = useState("")
   const [allowedTools, setAllowedTools] = useState<AllowedTool[]>([])
   const [requiredFields, setRequiredFields] = useState<string[]>([])
+  const [allowedProfessionalIds, setAllowedProfessionalIds] = useState<string[]>([])
   const [requirePaymentBeforeConfirm, setRequirePaymentBeforeConfirm] = useState(false)
   const [model, setModel] = useState<"HAIKU" | "SONNET">("SONNET")
   const [temperature, setTemperature] = useState(0.4)
@@ -132,6 +136,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setStageContext(config.stageContext ?? "")
       setAllowedTools(config.allowedTools ?? [])
       setRequiredFields(config.requiredFields ?? [])
+      setAllowedProfessionalIds(config.allowedProfessionalIds ?? [])
       setRequirePaymentBeforeConfirm(config.requirePaymentBeforeConfirm ?? false)
       setModel(config.model ?? "SONNET")
       setTemperature(config.temperature ?? 0.4)
@@ -141,6 +146,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setStageContext("")
       setAllowedTools(["search_availability", "create_appointment", "move_stage", "send_message", "notify_operator"])
       setRequiredFields([])
+      setAllowedProfessionalIds([])
       setRequirePaymentBeforeConfirm(false)
       setModel("SONNET")
       setTemperature(0.4)
@@ -173,6 +179,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
           stageContext: stageContext.trim() || undefined,
           allowedTools: finalAllowedTools,
           requiredFields: requiredFields.length > 0 ? requiredFields : [],
+          allowedProfessionalIds: allowedProfessionalIds.length > 0 ? allowedProfessionalIds : [],
           requirePaymentBeforeConfirm: requirePaymentBeforeConfirm || undefined,
           model,
           temperature,
@@ -600,6 +607,67 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                               </button>
                             )
                           })}
+                        </div>
+                      )}
+
+                      {/* Professionals filter */}
+                      {professionals.length > 1 && (
+                        <div className="rounded-xl border border-border/40 bg-muted/5 px-3 py-3 space-y-2">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <UserCircle className="h-3.5 w-3.5 text-muted-foreground/80" weight="duotone" />
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                              Profissionais neste stage
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                            Vazio = todos visíveis. Selecione para restringir.
+                          </p>
+                          {professionals.map((prof) => {
+                            const checked = allowedProfessionalIds.includes(prof.id)
+                            return (
+                              <button
+                                key={prof.id}
+                                type="button"
+                                onClick={() =>
+                                  setAllowedProfessionalIds((prev) =>
+                                    prev.includes(prof.id)
+                                      ? prev.filter((id) => id !== prof.id)
+                                      : [...prev, prof.id]
+                                  )
+                                }
+                                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all cursor-pointer ${
+                                  checked
+                                    ? "bg-accent/10 border border-accent/25"
+                                    : "bg-transparent border border-transparent hover:bg-muted/20"
+                                }`}
+                              >
+                                <div
+                                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-[1.5px] transition-colors ${
+                                    checked ? "border-accent bg-accent" : "border-muted-foreground/30"
+                                  }`}
+                                >
+                                  {checked && <Check className="h-2 w-2 text-accent-foreground" weight="bold" />}
+                                </div>
+                                <div
+                                  className="h-2 w-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: prof.calendarColor || "#3b82f6" }}
+                                />
+                                <span className="text-[11px] font-medium text-foreground truncate flex-1">{prof.fullName}</span>
+                                {prof.specialty && (
+                                  <span className="text-[10px] text-muted-foreground/60 truncate">{prof.specialty}</span>
+                                )}
+                              </button>
+                            )
+                          })}
+                          {allowedProfessionalIds.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setAllowedProfessionalIds([])}
+                              className="text-[10px] text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                            >
+                              Limpar seleção
+                            </button>
+                          )}
                         </div>
                       )}
 

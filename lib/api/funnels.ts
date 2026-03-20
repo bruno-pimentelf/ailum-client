@@ -99,6 +99,7 @@ export interface StageAgentConfig {
   stageContext: string | null
   allowedTools: AllowedTool[]
   requiredFields?: string[]
+  allowedProfessionalIds?: string[]
   requirePaymentBeforeConfirm?: boolean
   model: "HAIKU" | "SONNET"
   temperature: number
@@ -110,6 +111,7 @@ export interface StageAgentConfigInput {
   stageContext?: string
   allowedTools?: AllowedTool[]
   requiredFields?: string[]
+  allowedProfessionalIds?: string[]
   requirePaymentBeforeConfirm?: boolean
   model?: "HAIKU" | "SONNET"
   temperature?: number
