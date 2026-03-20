@@ -461,7 +461,7 @@ export function HowItWorks() {
               <p className="text-[13px] leading-relaxed text-white/85 mb-5">
                 {steps[activeStep].description}
               </p>
-              {steps[activeStep].demo(true)}
+              {steps[activeStep].demo(isInView)}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -555,7 +555,7 @@ export function HowItWorks() {
                 transition={{ duration: 0.5, ease }}
                 className="w-full px-4 md:px-8 py-8"
               >
-                {steps[activeStep].demo(true)}
+                {steps[activeStep].demo(isInView)}
               </motion.div>
             </AnimatePresence>
           </div>
