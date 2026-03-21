@@ -17,6 +17,7 @@ import { useMe } from "@/hooks/use-me"
 import { useProfessionals, useProfessional, useProfessionalServiceLinks } from "@/hooks/use-professionals"
 import { useServices } from "@/hooks/use-services"
 import type { Service } from "@/lib/api/services"
+import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -322,9 +323,7 @@ export function DisponibilidadeTab() {
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (loadingProfs || (effectiveProfId && loadingProfessional)) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="h-8 w-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
-      </div>
+      <AilumLoader variant="section" />
     )
   }
 

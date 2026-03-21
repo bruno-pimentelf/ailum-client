@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { Users, ArrowRight, CheckCircle, Warning, SignIn, UserPlus } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
+import { AilumLoader } from "@/components/ui/ailum-loader"
 
 function InviteContent({ invitationId }: { invitationId: string }) {
   const searchParams = useSearchParams()
@@ -198,11 +199,7 @@ function InviteContent({ invitationId }: { invitationId: string }) {
 export default function InviteAcceptPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<AilumLoader variant="page" />}>
       <InviteContent invitationId={id} />
     </Suspense>
   )

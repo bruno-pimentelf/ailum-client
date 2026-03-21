@@ -67,6 +67,7 @@ import {
   minutesToHHMM,
   minutesToPx,
 } from "@/lib/availability-utils"
+import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -981,9 +982,7 @@ export function ProfessionalCalendar({
       {/* Body: Week view */}
       <div className="flex-1 overflow-auto">
         {loadingProf ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
-          </div>
+          <AilumLoader variant="section" />
         ) : viewMode === "week" ? (
           <>
           <div className="flex border-b border-white/[0.14] min-w-[800px] shrink-0">

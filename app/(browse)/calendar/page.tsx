@@ -25,6 +25,7 @@ import { AppointmentStatusModal } from "@/components/calendar/appointment-status
 import { AvailabilityDrawer } from "@/components/calendar/availability-drawer"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
+import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -698,10 +699,7 @@ export default function CalendarPage() {
           {/* Doctor filter tabs */}
           <div className="flex items-center gap-1 px-6 pb-3">
             {loadingProfessionals ? (
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent/30 border-t-accent shrink-0" />
-                <span className="text-[11px] font-medium text-white/90">Carregando profissionais...</span>
-              </div>
+              <AilumLoader variant="section" className="py-2" />
             ) : (
               doctorsList.map((doc) => (
                 <button
@@ -729,7 +727,7 @@ export default function CalendarPage() {
         <div className="flex-1 overflow-y-auto relative">
           {loadingAppointments && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[1px] z-10">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+              <AilumLoader variant="section" className="py-0" />
             </div>
           )}
           <AnimatePresence mode="wait">

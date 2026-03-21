@@ -23,6 +23,7 @@ import { professionalsApi } from "@/lib/api/professionals"
 import type { ApiContact } from "@/lib/api/contacts"
 import { useQuery } from "@tanstack/react-query"
 import { toYMD, todayYMD } from "@/lib/date-utils"
+import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const inputCls =
   "w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
@@ -667,9 +668,7 @@ function WizardForm({
               <div className="space-y-2">
                 <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Horário disponível</label>
                 {slotsQuery.isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
-                  </div>
+                  <AilumLoader variant="section" className="py-6" />
                 ) : slots.length === 0 ? (
                   <p className="text-[12px] text-white/90 py-2">
                     {slotsQuery.data?.reason ?? "Nenhum horário disponível nesta data."}

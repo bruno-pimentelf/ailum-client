@@ -1,11 +1,12 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Eye, EyeSlash, Sparkle, CheckCircle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
+import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -20,11 +21,46 @@ function LoginContent() {
   const searchParams = useSearchParams()
   const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"))
 
+  const [checkingSession, setCheckingSession] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function checkExistingSession() {
+      try {
+        const { data: session } = await authClient.getSession()
+        if (!session?.user) {
+          setCheckingSession(false)
+          return
+        }
+
+        const { data: orgs } = await authClient.organization.list()
+
+        if (!orgs || orgs.length === 0) {
+          window.location.href = callbackUrl ?? "/select-org?new=1"
+          return
+        }
+
+        if (orgs.length === 1) {
+          const activeOrgId = (session.session as { activeOrganizationId?: string | null })?.activeOrganizationId
+          if (!activeOrgId) {
+            await authClient.organization.setActive({ organizationId: orgs[0].id })
+          }
+          window.location.href = callbackUrl ?? "/dashboard"
+          return
+        }
+
+        window.location.href = callbackUrl ? `/select-org?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/select-org"
+      } catch {
+        setCheckingSession(false)
+      }
+    }
+    checkExistingSession()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [showForgot, setShowForgot] = useState(false)
   const [forgotEmail, setForgotEmail] = useState("")
@@ -85,6 +121,10 @@ function LoginContent() {
     }
 
     setForgotSent(true)
+  }
+
+  if (checkingSession) {
+    return <AilumLoader variant="page" />
   }
 
   return (
@@ -301,11 +341,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<AilumLoader variant="page" />}>
       <LoginContent />
     </Suspense>
   )

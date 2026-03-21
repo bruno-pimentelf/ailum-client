@@ -15,6 +15,7 @@ import {
   TextAa,
   Brain,
 } from "@phosphor-icons/react"
+import { AilumLoader } from "@/components/ui/ailum-loader"
 
 import { GeralTab }            from "@/components/settings/geral-tab"
 import { PerfilTab }           from "@/components/settings/perfil-tab"
@@ -113,14 +114,7 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={
-      <div className="flex flex-col h-full min-h-0">
-        <div className="h-11 border-b border-border/50" />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<AilumLoader variant="section" />}>
       <SettingsContent />
     </Suspense>
   )

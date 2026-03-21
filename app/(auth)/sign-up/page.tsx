@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Eye, EyeSlash, Sparkle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
+import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -226,11 +227,7 @@ function SignUpContent() {
 
 export default function SignUpPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<AilumLoader variant="page" />}>
       <SignUpContent />
     </Suspense>
   )
