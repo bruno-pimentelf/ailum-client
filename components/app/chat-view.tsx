@@ -147,6 +147,9 @@ function getMsgDateKey(ts: { toDate: () => Date } | undefined): string {
 
 // ─── Linkify text ─────────────────────────────────────────────────────────────
 
+// Email regex — must run before URL regex so emails aren't partially matched as domains
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
+
 // Matches:
 //   - Full URLs: http(s)://... or ftp://...
 //   - www. prefixed: www.example.com
@@ -154,6 +157,9 @@ function getMsgDateKey(ts: { toDate: () => Date } | undefined): string {
 //   - Bare domains with common TLDs (with optional path/query): example.com, example.com.br/path
 const URL_REGEX =
   /(?:https?:\/\/|ftp:\/\/|www\.)[^\s<>"')\]]+|(?:^|(?<=\s))(?:wa\.me\/[^\s<>"')\]]+)|(?<![/@\w])(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:com|net|org|io|app|dev|ai|br|co|uk|de|fr|pt|me|info|online|store|tech|gov|edu|mil|int|mobi|biz|pro|tv|cc|us|ca|au|jp|cn|in|mx|ar|cl|pe|uy|py|bo|ec|ve|co\.uk|com\.br|com\.ar|com\.mx|com\.au|co\.jp|net\.br|org\.br|gov\.br|edu\.br)(?:\/[^\s<>"')\]]*)?(?=[^\w]|$)/gi
+
+// Combined regex: emails first, then URLs (order matters — first match wins)
+const LINK_REGEX = new RegExp(`(${EMAIL_REGEX.source})|(${URL_REGEX.source})`, "gi")
 
 function normalizeHref(url: string): string {
   if (/^(?:https?|ftp):\/\//i.test(url)) return url
@@ -190,25 +196,36 @@ function formatWhatsAppText(text: string): React.ReactNode[] {
 }
 
 function LinkifiedText({ text }: { text: string }) {
-  const parts = text.split(URL_REGEX)
-  const matches = text.match(URL_REGEX) ?? []
+  // Build segments by walking LINK_REGEX matches
+  const segments: { text: string; isLink: boolean; isEmail: boolean }[] = []
+  let lastIdx = 0
+  LINK_REGEX.lastIndex = 0
+  let m: RegExpExecArray | null
+  while ((m = LINK_REGEX.exec(text)) !== null) {
+    if (m.index > lastIdx) segments.push({ text: text.slice(lastIdx, m.index), isLink: false, isEmail: false })
+    const isEmail = /^[^@]+@/.test(m[0])
+    segments.push({ text: m[0], isLink: true, isEmail })
+    lastIdx = m.index + m[0].length
+  }
+  if (lastIdx < text.length) segments.push({ text: text.slice(lastIdx), isLink: false, isEmail: false })
+
   return (
     <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
-      {parts.map((part, i) => (
-        <span key={i}>
-          {formatWhatsAppText(part)}
-          {matches[i] && (
-            <a
-              href={normalizeHref(matches[i])}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 text-accent hover:text-accent/80 transition-colors break-all"
-            >
-              {matches[i]}
-            </a>
-          )}
-        </span>
-      ))}
+      {segments.map((seg, i) =>
+        seg.isLink ? (
+          <a
+            key={i}
+            href={seg.isEmail ? `mailto:${seg.text}` : normalizeHref(seg.text)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 text-accent hover:text-accent/80 transition-colors break-all"
+          >
+            {seg.text}
+          </a>
+        ) : (
+          <span key={i}>{formatWhatsAppText(seg.text)}</span>
+        )
+      )}
     </p>
   )
 }

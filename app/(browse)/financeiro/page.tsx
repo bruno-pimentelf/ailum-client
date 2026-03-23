@@ -38,6 +38,7 @@ import { PaymentLinkModal } from "@/components/finance/payment-link-modal"
 import { PaymentLinksTable } from "@/components/finance/payment-links-table"
 import { SubscriptionModal } from "@/components/finance/subscription-modal"
 import { SubscriptionsTable } from "@/components/finance/subscriptions-table"
+import { OverdueChargesTable } from "@/components/finance/overdue-charges-table"
 import type { AsaasPayment } from "@/lib/api/finance"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -503,7 +504,7 @@ function EmptyState() {
 
 export default function FinanceiroPage() {
   const [activeTab, setActiveTab] = useState<
-    "cobrancas" | "clientes" | "links" | "assinaturas"
+    "cobrancas" | "clientes" | "links" | "assinaturas" | "inadimplentes"
   >("cobrancas")
   const [invoicePayment, setInvoicePayment] = useState<AsaasPayment | null>(null)
   const [paymentLinkModalOpen, setPaymentLinkModalOpen] = useState(false)
@@ -597,6 +598,7 @@ export default function FinanceiroPage() {
         <div className="flex items-stretch gap-0 overflow-x-auto scrollbar-none border-b border-border/50 -mb-px">
           {[
             { id: "cobrancas" as const, icon: Receipt, label: "Cobranças" },
+            { id: "inadimplentes" as const, icon: Warning, label: "Inadimplentes" },
             { id: "clientes" as const, icon: Users, label: "Clientes" },
             { id: "links" as const, icon: LinkSimple, label: "Links" },
             { id: "assinaturas" as const, icon: Repeat, label: "Assinaturas" },
@@ -631,6 +633,17 @@ export default function FinanceiroPage() {
               transition={{ duration: 0.3, ease }}
             >
               <PaymentsTable onEmitInvoice={(p) => setInvoicePayment(p)} />
+            </motion.div>
+          )}
+          {activeTab === "inadimplentes" && (
+            <motion.div
+              key="inadimplentes"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3, ease }}
+            >
+              <OverdueChargesTable />
             </motion.div>
           )}
           {activeTab === "clientes" && (

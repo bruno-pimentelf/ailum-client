@@ -325,18 +325,7 @@ export default function ChatsPage() {
                 transition={{ duration: 0.3 }}
                 className="flex flex-1 flex-col items-center justify-center gap-4 text-center px-8"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 border border-accent/20">
-                  <ChatCircleText className="h-8 w-8 text-accent/60" weight="duotone" />
-                </div>
-                <div>
-                  <h3 className="text-[15px] font-semibold text-foreground">Selecione uma conversa</h3>
-                  <p className="mt-1.5 text-[13px] text-muted-foreground/90 max-w-[260px] leading-relaxed">
-                    Escolha uma conversa da lista ao lado para começar a visualizar e enviar mensagens
-                  </p>
-                </div>
-                <p className="text-[11px] text-muted-foreground/85 mt-2">
-                  Dica: use a busca para encontrar conversas rapidamente
-                </p>
+                <p className="text-[13px] text-muted-foreground/50">Selecione uma conversa</p>
               </motion.div>
             )}
           </AnimatePresence>
