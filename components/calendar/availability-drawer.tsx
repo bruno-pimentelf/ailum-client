@@ -8,7 +8,6 @@ import {
   XCircle,
   Warning,
   Sparkle,
-  ArrowLeft,
   X,
   User,
 } from "@phosphor-icons/react"
@@ -283,17 +282,16 @@ export function AvailabilityDrawer({ open, onClose, defaultProfessionalId }: Ava
   }, [])
 
   const handleSelectProfessional = useCallback((id: string) => {
+    const wasOnPicker = !professionalId
     setProfessionalId(id)
     setShowPicker(false)
-    setMessages([])
-  }, [])
-
-  const handleBackToPicker = useCallback(() => {
-    setProfessionalId("")
-    setMessages([])
-    setError(null)
-    setShowPicker(true)
-  }, [])
+    if (wasOnPicker) setMessages([])
+    else {
+      // Switching inline — clear conversation for the new professional
+      setMessages([])
+      setError(null)
+    }
+  }, [professionalId])
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
@@ -458,26 +456,52 @@ export function AvailabilityDrawer({ open, onClose, defaultProfessionalId }: Ava
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                {isAdmin && selectedProfessional && professionals && professionals.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={handleBackToPicker}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/[0.07] transition-all duration-150"
-                  >
-                    <ArrowLeft className="h-3 w-3" />
-                    Trocar
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.07] transition-all duration-150"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.07] transition-all duration-150 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
+
+            {/* Professional switcher strip (admin with multiple professionals) */}
+            {isAdmin && professionals && professionals.length > 1 && (
+              <div className="px-3 py-2 border-b border-border/40 shrink-0">
+                <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                  {professionals.map((p) => {
+                    const active = p.id === effectiveProfessionalId
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleSelectProfessional(p.id)}
+                        className={`relative shrink-0 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all duration-150 cursor-pointer ${
+                          active
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+                        }`}
+                      >
+                        {active && (
+                          <motion.div
+                            layoutId="avail-pro-pill"
+                            className="absolute inset-0 bg-accent/10 border border-accent/20 rounded-lg"
+                            transition={{ duration: 0.2, ease }}
+                          />
+                        )}
+                        <span
+                          className="relative z-10 h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: p.calendarColor || "#3b82f6" }}
+                        />
+                        <span className="relative z-10 truncate max-w-[100px]">
+                          {p.fullName.split(" ")[0]}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* No access for SECRETARY */}
             {role === "SECRETARY" ? (
@@ -491,7 +515,7 @@ export function AvailabilityDrawer({ open, onClose, defaultProfessionalId }: Ava
                 </p>
               </div>
             ) : showPicker && professionals && professionals.length > 1 ? (
-              /* Professional picker */
+              /* Professional picker (initial state before first selection) */
               <div className="flex-1 overflow-y-auto">
                 <ProfessionalPickerDrawer
                   professionals={professionals}

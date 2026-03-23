@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   CaretLeft,
@@ -14,6 +14,9 @@ import {
   Circle,
   DotsThree,
   Sparkle,
+  CaretUpDown,
+  MagnifyingGlass,
+  Check,
 } from "@phosphor-icons/react"
 import { useProfessionals } from "@/hooks/use-professionals"
 import { useAppointments } from "@/hooks/use-appointments"
@@ -25,7 +28,6 @@ import { AppointmentStatusModal } from "@/components/calendar/appointment-status
 import { AvailabilityDrawer } from "@/components/calendar/availability-drawer"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
-import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -36,9 +38,12 @@ type AppointmentStatus = "confirmed" | "pending" | "done" | "cancelled"
 type CalendarAppointment = {
   id: string
   patientName: string
+  contactId: string
+  contactPhone: string
   doctorName: string
   doctorId: string
   time: string
+  scheduledAt: string
   duration: number
   type: string
   status: AppointmentStatus
@@ -48,6 +53,9 @@ type CalendarAppointment = {
   month: number
   year: number
   color: string
+  notes: string | null
+  chargeAmount: number | null
+  chargeStatus: string | null
 }
 
 // ─── Helpers: map API → calendar ───────────────────────────────────────────────
@@ -65,9 +73,12 @@ function toCalendarAppointment(api: ApiAppointment): CalendarAppointment {
   return {
     id: api.id,
     patientName: api.contact?.name ?? "—",
+    contactId: api.contactId,
+    contactPhone: api.contact?.phone ?? "",
     doctorName: api.professional?.fullName ?? "—",
     doctorId: api.professionalId,
     time: formatTimeLocal(api.scheduledAt),
+    scheduledAt: api.scheduledAt,
     duration: api.durationMin ?? api.service?.durationMin ?? 50,
     type: api.service?.name ?? "Consulta",
     status: api.status === "CANCELLED" ? "cancelled" : mapApiStatus(api.status),
@@ -77,6 +88,9 @@ function toCalendarAppointment(api: ApiAppointment): CalendarAppointment {
     month: d.getMonth(),
     year: d.getFullYear(),
     color: api.professionalId,
+    notes: api.notes,
+    chargeAmount: api.charge?.amount ?? null,
+    chargeStatus: api.charge?.status ?? null,
   }
 }
 
@@ -398,6 +412,19 @@ export default function CalendarPage() {
   const [novoAgendamentoDefaultTime, setNovoAgendamentoDefaultTime] = useState<string | undefined>(undefined)
   const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null)
   const [availabilityDrawerOpen, setAvailabilityDrawerOpen] = useState(false)
+  const [doctorDropdownOpen, setDoctorDropdownOpen] = useState(false)
+  const [doctorSearch, setDoctorSearch] = useState("")
+  const doctorDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (doctorDropdownRef.current && !doctorDropdownRef.current.contains(e.target as Node)) {
+        setDoctorDropdownOpen(false)
+      }
+    }
+    if (doctorDropdownOpen) document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [doctorDropdownOpen])
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -569,6 +596,16 @@ export default function CalendarPage() {
             onOpenAvailability={
               canEditAvailability ? () => setAvailabilityDrawerOpen(true) : undefined
             }
+            allProfessionals={
+              (role === "ADMIN" || role === "SECRETARY") && professionals && professionals.length > 1
+                ? professionals.map((p) => ({ id: p.id, fullName: p.fullName, calendarColor: p.calendarColor }))
+                : undefined
+            }
+            onSwitchProfessional={
+              (role === "ADMIN" || role === "SECRETARY")
+                ? (id: string) => setActiveDoctor(id)
+                : undefined
+            }
           />
         </div>
         <AvailabilityDrawer
@@ -648,6 +685,71 @@ export default function CalendarPage() {
             >
               Hoje
             </button>
+
+            {/* Professional selector */}
+            <div className="relative ml-2 pl-3 border-l border-white/[0.08]" ref={doctorDropdownRef}>
+              <button
+                onClick={() => { setDoctorDropdownOpen((v) => !v); setDoctorSearch("") }}
+                className="flex h-8 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-[12px] text-foreground hover:bg-white/[0.05] transition-colors duration-200 cursor-pointer"
+              >
+                <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="max-w-[180px] truncate font-medium">
+                  {loadingProfessionals
+                    ? "Carregando..."
+                    : doctorsList.find((d) => d.id === activeDoctor)?.name ?? "Todos profissionais"}
+                </span>
+                <CaretUpDown className="h-3 w-3 text-muted-foreground shrink-0" />
+              </button>
+
+              <AnimatePresence>
+                {doctorDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                    transition={{ duration: 0.2, ease }}
+                    className="absolute left-0 top-full mt-1.5 w-64 rounded-xl border border-white/[0.08] bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+                  >
+                    {doctorsList.length > 5 && (
+                      <div className="p-2 border-b border-white/[0.06]">
+                        <div className="relative">
+                          <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                          <input
+                            autoFocus
+                            value={doctorSearch}
+                            onChange={(e) => setDoctorSearch(e.target.value)}
+                            placeholder="Buscar profissional..."
+                            className="h-8 w-full rounded-lg bg-white/[0.04] pl-8 pr-3 text-[12px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all duration-200"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className="p-1.5 max-h-[280px] overflow-y-auto">
+                      {doctorsList
+                        .filter((d) => d.name.toLowerCase().includes(doctorSearch.toLowerCase()))
+                        .map((doc) => {
+                          const active = doc.id === activeDoctor
+                          return (
+                            <button
+                              key={doc.id}
+                              onClick={() => { setActiveDoctor(doc.id); setDoctorDropdownOpen(false) }}
+                              className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-colors duration-150 cursor-pointer ${
+                                active
+                                  ? "bg-accent/10 text-foreground font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+                              }`}
+                            >
+                              <User className={`h-3.5 w-3.5 shrink-0 ${active ? "text-accent" : ""}`} weight={active ? "fill" : "regular"} />
+                              <span className="flex-1 text-left truncate">{doc.name}</span>
+                              {active && <Check className="h-3.5 w-3.5 text-accent shrink-0" weight="bold" />}
+                            </button>
+                          )
+                        })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -695,39 +797,13 @@ export default function CalendarPage() {
             </button>
           </div>
           </div>
-
-          {/* Doctor filter tabs */}
-          <div className="flex items-center gap-1 px-6 pb-3">
-            {loadingProfessionals ? (
-              <AilumLoader variant="section" className="py-2" />
-            ) : (
-              doctorsList.map((doc) => (
-                <button
-                  key={doc.id}
-                  onClick={() => setActiveDoctor(doc.id)}
-                  className={`relative px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 cursor-pointer ${
-                    activeDoctor === doc.id ? "text-white/90" : "text-white/85 hover:text-white/85"
-                  }`}
-                >
-                  {activeDoctor === doc.id && (
-                    <motion.div
-                      layoutId="doctor-pill"
-                      className="absolute inset-0 bg-white/[0.06] border border-white/[0.10] rounded-full"
-                      transition={{ duration: 0.22, ease }}
-                    />
-                  )}
-                  <span className="relative z-10">{doc.name}</span>
-                </button>
-              ))
-            )}
-          </div>
         </div>
 
         {/* Calendar body */}
         <div className="flex-1 overflow-y-auto relative">
           {loadingAppointments && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[1px] z-10">
-              <AilumLoader variant="section" className="py-0" />
+            <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px] z-10">
+              <div className="h-5 w-5 rounded-full border-[1.5px] border-white/10 border-t-accent/60 animate-spin" />
             </div>
           )}
           <AnimatePresence mode="wait">
@@ -1080,14 +1156,7 @@ export default function CalendarPage() {
         <AppointmentStatusModal
           open={!!selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
-          appointment={{
-            id: selectedAppointment.id,
-            patientName: selectedAppointment.patientName,
-            time: selectedAppointment.time,
-            type: selectedAppointment.type,
-            doctorName: selectedAppointment.doctorName,
-            status: selectedAppointment.statusApi,
-          }}
+          appointment={selectedAppointment}
         />
       )}
 

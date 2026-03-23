@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
+import { useState, useMemo, useEffect, useCallback } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   X,
   CheckCircle,
@@ -11,55 +11,125 @@ import {
   Warning,
   CalendarBlank,
   User,
+  Phone,
+  WhatsappLogo,
+  CurrencyDollar,
+  Stethoscope,
+  NotePencil,
 } from "@phosphor-icons/react"
 import { useUpdateAppointment } from "@/hooks/use-appointments"
+import { useAuthStore } from "@/lib/auth-store"
+import { ChatView } from "@/components/app/chat-view"
 import type { AppointmentStatus } from "@/lib/api/scheduling"
+import type { FirestoreContact } from "@/lib/types/firestore"
+import { Timestamp } from "firebase/firestore"
+
+const ease = [0.33, 1, 0.68, 1] as const
+
+// ─── Status config ──────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<
   AppointmentStatus,
-  { label: string; dot: string; card: string }
+  { label: string; color: string; bg: string; dot: string }
 > = {
   PENDING: {
     label: "Pendente",
-    dot: "bg-amber-500/50",
-    card: "border-l-amber-500/30 bg-amber-500/[0.04]",
+    color: "text-amber-400",
+    bg: "bg-amber-500/[0.08] border-amber-500/20",
+    dot: "bg-amber-400",
   },
   CONFIRMED: {
     label: "Confirmado",
-    dot: "bg-emerald-500/50",
-    card: "border-l-emerald-500/30 bg-emerald-500/[0.04]",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/[0.08] border-emerald-500/20",
+    dot: "bg-emerald-400",
   },
   CANCELLED: {
     label: "Cancelado",
-    dot: "bg-white/20",
-    card: "border-l-white/10 bg-white/[0.02]",
+    color: "text-white/40",
+    bg: "bg-white/[0.03] border-white/[0.08]",
+    dot: "bg-white/30",
   },
   COMPLETED: {
     label: "Realizado",
-    dot: "bg-cyan-500/50",
-    card: "border-l-cyan-500/30 bg-cyan-500/[0.04]",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/[0.08] border-cyan-500/20",
+    dot: "bg-cyan-400",
   },
   NO_SHOW: {
     label: "Não compareceu",
-    dot: "bg-rose-500/40",
-    card: "border-l-rose-500/25 bg-rose-500/[0.03]",
+    color: "text-rose-400",
+    bg: "bg-rose-500/[0.06] border-rose-500/20",
+    dot: "bg-rose-400",
   },
 }
 
+const STATUS_ACTIONS: {
+  target: AppointmentStatus
+  label: string
+  icon: typeof CheckCircle
+  color: string
+  hoverBg: string
+}[] = [
+  { target: "CONFIRMED", label: "Confirmar", icon: CheckCircle, color: "text-emerald-400", hoverBg: "hover:bg-emerald-500/[0.08]" },
+  { target: "COMPLETED", label: "Realizado", icon: CheckCircle, color: "text-cyan-400", hoverBg: "hover:bg-cyan-500/[0.08]" },
+  { target: "NO_SHOW", label: "Não compareceu", icon: Prohibit, color: "text-amber-400", hoverBg: "hover:bg-amber-500/[0.08]" },
+]
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface AppointmentData {
+  id: string
+  patientName: string
+  contactId: string
+  contactPhone: string
+  doctorName: string
+  doctorId: string
+  time: string
+  scheduledAt: string
+  duration: number
+  type: string
+  statusApi: AppointmentStatus
+  paid: boolean
+  notes: string | null
+  chargeAmount: number | null
+  chargeStatus: string | null
+  [key: string]: unknown
+}
 
 interface AppointmentStatusModalProps {
   open: boolean
   onClose: () => void
-  appointment: {
-    id: string
-    patientName: string
-    time: string
-    type: string
-    doctorName?: string
-    status: AppointmentStatus
-    scheduledAt?: string
-  }
+  appointment: AppointmentData
 }
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function formatDate(iso: string) {
+  const d = new Date(iso)
+  const day = d.getDate()
+  const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+  const weekdays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
+  return `${weekdays[d.getDay()]}, ${day} de ${months[d.getMonth()]}`
+}
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
+}
+
+function formatPhone(phone: string) {
+  const clean = phone.replace(/\D/g, "")
+  if (clean.startsWith("55") && clean.length >= 12) {
+    const local = clean.slice(2)
+    const ddd = local.slice(0, 2)
+    const rest = local.slice(2)
+    if (rest.length === 9) return `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`
+    if (rest.length === 8) return `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4)}`
+  }
+  return phone
+}
+
+// ─── Main Modal ─────────────────────────────────────────────────────────────
 
 export function AppointmentStatusModal({
   open,
@@ -67,169 +137,232 @@ export function AppointmentStatusModal({
   appointment,
 }: AppointmentStatusModalProps) {
   const [cancelledReason, setCancelledReason] = useState("")
+  const [showCancelInput, setShowCancelInput] = useState(false)
   const updateMutation = useUpdateAppointment()
+  const tenantId = useAuthStore((s) => s.tenantId)
+
+  const firestoreContact = useMemo<FirestoreContact>(() => ({
+    id: appointment.contactId,
+    contactName: appointment.patientName,
+    contactPhone: appointment.contactPhone,
+    status: "ACTIVE",
+    updatedAt: Timestamp.now(),
+  }), [appointment.contactId, appointment.patientName, appointment.contactPhone])
+
+  const handleEsc = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose()
+  }, [onClose])
+
+  useEffect(() => {
+    if (!open) return
+    document.addEventListener("keydown", handleEsc)
+    return () => document.removeEventListener("keydown", handleEsc)
+  }, [open, handleEsc])
 
   if (!open) return null
 
   const handleUpdate = (status: AppointmentStatus, extra?: { cancelledReason?: string }) => {
     updateMutation.mutate(
-      {
-        id: appointment.id,
-        body: { status, ...extra },
-      },
+      { id: appointment.id, body: { status, ...extra } },
       {
         onSuccess: () => {
           onClose()
           setCancelledReason("")
+          setShowCancelInput(false)
         },
       }
     )
   }
 
   const isPending = updateMutation.isPending
-  const statusCfg = STATUS_CONFIG[appointment.status]
+  const statusCfg = STATUS_CONFIG[appointment.statusApi]
+  const dateStr = appointment.scheduledAt ? formatDate(appointment.scheduledAt) : ""
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.96 }}
+        initial={{ opacity: 0, scale: 0.97, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 10 }}
+        transition={{ duration: 0.3, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[420px] rounded-2xl border border-white/[0.08] bg-background shadow-2xl overflow-hidden"
+        className="w-full max-w-[1100px] h-[calc(100vh-1rem)] sm:h-[calc(100vh-1.5rem)] rounded-2xl border border-white/[0.08] bg-background shadow-2xl overflow-hidden flex flex-row"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-          <h3 className="text-[15px] font-semibold text-foreground flex items-center gap-2">
-            <CalendarBlank className="h-4 w-4 text-muted-foreground" weight="duotone" />
-            Atualizar status
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors"
-          >
-            <X className="h-4 w-4" weight="bold" />
-          </button>
-        </div>
+        {/* ═══ Left panel — Info & Actions ═══ */}
+        <div className="w-[380px] shrink-0 flex flex-col border-r border-white/[0.06] overflow-hidden">
 
-        {/* Appointment info */}
-        <div className="px-6 py-5 space-y-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <User className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-[15px] font-semibold text-foreground">
-                {appointment.patientName}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 mt-1.5 ml-6 text-[13px] text-muted-foreground">
-              <Clock className="h-3.5 w-3.5 shrink-0" />
-              <span>{appointment.time}</span>
-              <span className="text-white/90">·</span>
-              <span>{appointment.type}</span>
-              {appointment.doctorName && (
-                <>
-                  <span className="text-white/90">·</span>
-                  <span>{appointment.doctorName}</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Status badge */}
-          <div
-            className={`flex items-center gap-2.5 rounded-xl border-l-2 px-4 py-3 ${statusCfg.card}`}
-          >
-            <span className={`h-2 w-2 rounded-full shrink-0 ${statusCfg.dot}`} />
-            <div>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                Status atual
-              </p>
-              <p className="text-[13px] font-semibold text-foreground mt-0.5">
-                {statusCfg.label}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="px-6 pb-6 space-y-3">
-          {updateMutation.isError && (
-            <div className="flex items-center gap-2.5 rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 text-[12px] text-destructive">
-              <Warning className="h-3.5 w-3.5 shrink-0" weight="fill" />
-              Erro ao atualizar. Tente novamente.
-            </div>
-          )}
-
-          {appointment.status !== "CANCELLED" && (
-            <div className="space-y-2">
-              {appointment.status !== "CONFIRMED" && (
-                <ActionCard
-                  dot="bg-emerald-500/40"
-                  cardClass="hover:border-emerald-500/20 hover:bg-emerald-500/[0.06]"
-                  icon={CheckCircle}
-                  label="Marcar como confirmado"
-                  onClick={() => handleUpdate("CONFIRMED")}
-                  disabled={isPending}
-                />
-              )}
-
-              {appointment.status !== "COMPLETED" && (
-                <ActionCard
-                  dot="bg-cyan-500/40"
-                  cardClass="hover:border-cyan-500/20 hover:bg-cyan-500/[0.06]"
-                  icon={CheckCircle}
-                  label="Marcar como realizado"
-                  onClick={() => handleUpdate("COMPLETED")}
-                  disabled={isPending}
-                />
-              )}
-
-              {appointment.status !== "NO_SHOW" && (
-                <ActionCard
-                  dot="bg-amber-500/40"
-                  cardClass="hover:border-amber-500/20 hover:bg-amber-500/[0.06]"
-                  icon={Prohibit}
-                  label="Marcar como não compareceu"
-                  onClick={() => handleUpdate("NO_SHOW")}
-                  disabled={isPending}
-                />
-              )}
-
-              {/* Cancelar */}
-              <div className="pt-3 mt-3 border-t border-white/[0.06] space-y-2">
-                <label className="block text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                  Cancelar consulta
-                </label>
-                <input
-                  type="text"
-                  value={cancelledReason}
-                  onChange={(e) => setCancelledReason(e.target.value)}
-                  placeholder="Motivo (opcional)"
-                  className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/40 transition-all"
-                />
-                <button
-                  onClick={() =>
-                    handleUpdate("CANCELLED", {
-                      cancelledReason: cancelledReason.trim() || undefined,
-                    })
-                  }
-                  disabled={isPending}
-                  className="w-full flex items-center gap-2.5 h-10 rounded-xl border border-white/[0.08] bg-white/[0.02] text-muted-foreground hover:border-white/15 hover:bg-white/[0.05] hover:text-foreground text-[13px] font-medium transition-colors disabled:opacity-50"
-                >
-                  <XCircle className="h-4 w-4" weight="regular" />
-                  Cancelar consulta
-                </button>
+          {/* Header */}
+          <div className="px-5 pt-5 pb-4 border-b border-white/[0.06] shrink-0">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-accent/[0.08] border border-accent/10 flex items-center justify-center shrink-0">
+                  <User className="h-5 w-5 text-accent/60" weight="bold" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-[15px] font-semibold text-foreground truncate">
+                    {appointment.patientName}
+                  </h3>
+                  {appointment.contactPhone && (
+                    <p className="text-[12px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                      <Phone className="h-3 w-3 shrink-0" />
+                      {formatPhone(appointment.contactPhone)}
+                    </p>
+                  )}
+                </div>
               </div>
+              <button
+                onClick={onClose}
+                className="p-1.5 -m-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" weight="bold" />
+              </button>
             </div>
-          )}
 
-          {appointment.status === "CANCELLED" && (
-            <p className="text-[13px] text-muted-foreground text-center py-6">
-              Esta consulta já está cancelada.
-            </p>
+            {/* Pills */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${statusCfg.bg} ${statusCfg.color}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dot}`} />
+                {statusCfg.label}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
+                <CalendarBlank className="h-2.5 w-2.5" />
+                {dateStr}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
+                <Clock className="h-2.5 w-2.5" />
+                {appointment.time} · {appointment.duration}min
+              </span>
+              {appointment.chargeAmount != null && (
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                  appointment.chargeStatus === "PAID"
+                    ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400"
+                    : "border-amber-500/20 bg-amber-500/[0.06] text-amber-400"
+                }`}>
+                  <CurrencyDollar className="h-2.5 w-2.5" />
+                  {formatCurrency(appointment.chargeAmount)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+            {/* Service + Doctor */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <InfoBlock icon={Stethoscope} label="Serviço" value={appointment.type} />
+              <InfoBlock icon={User} label="Profissional" value={appointment.doctorName} />
+            </div>
+
+            {/* Notes */}
+            {appointment.notes && (
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-3">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <NotePencil className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Observações</span>
+                </div>
+                <p className="text-[12px] text-white/70 leading-relaxed">{appointment.notes}</p>
+              </div>
+            )}
+
+            {/* Error */}
+            <AnimatePresence>
+              {updateMutation.isError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 px-3 py-2.5 text-[11px] text-destructive"
+                >
+                  <Warning className="h-3.5 w-3.5 shrink-0" weight="fill" />
+                  Erro ao atualizar. Tente novamente.
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Status actions */}
+            {appointment.statusApi !== "CANCELLED" ? (
+              <div className="space-y-2">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Alterar status</span>
+                <div className="space-y-1.5">
+                  {STATUS_ACTIONS.filter((a) => a.target !== appointment.statusApi).map((action) => (
+                    <button
+                      key={action.target}
+                      onClick={() => handleUpdate(action.target)}
+                      disabled={isPending}
+                      className={`w-full flex items-center gap-3 h-10 rounded-xl border border-white/[0.06] bg-white/[0.015] px-3.5 text-left text-[12px] font-medium text-foreground transition-all disabled:opacity-40 cursor-pointer ${action.hoverBg} hover:border-white/[0.12] group`}
+                    >
+                      <action.icon className={`h-4 w-4 ${action.color} opacity-60 group-hover:opacity-100 transition-opacity`} weight="bold" />
+                      <span className="flex-1">{action.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Cancel */}
+                <AnimatePresence>
+                  {!showCancelInput ? (
+                    <button
+                      onClick={() => setShowCancelInput(true)}
+                      className="w-full flex items-center justify-center gap-1.5 h-9 rounded-xl border border-white/[0.04] text-[11px] text-white/30 hover:text-rose-400/70 hover:border-rose-500/15 hover:bg-rose-500/[0.04] transition-all cursor-pointer"
+                    >
+                      <XCircle className="h-3.5 w-3.5" />
+                      Cancelar consulta
+                    </button>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="rounded-xl border border-rose-500/15 bg-rose-500/[0.03] p-3 space-y-2">
+                        <input
+                          type="text"
+                          value={cancelledReason}
+                          onChange={(e) => setCancelledReason(e.target.value)}
+                          placeholder="Motivo do cancelamento (opcional)"
+                          autoFocus
+                          className="w-full h-8 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-[12px] text-foreground placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-rose-500/30 transition-all"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { setShowCancelInput(false); setCancelledReason("") }}
+                            className="flex-1 h-8 rounded-lg text-[11px] text-white/40 hover:text-white/60 transition-colors cursor-pointer"
+                          >
+                            Voltar
+                          </button>
+                          <button
+                            onClick={() => handleUpdate("CANCELLED", { cancelledReason: cancelledReason.trim() || undefined })}
+                            disabled={isPending}
+                            className="flex-1 h-8 rounded-lg bg-rose-500/15 text-rose-400 text-[11px] font-medium hover:bg-rose-500/25 transition-all disabled:opacity-40 cursor-pointer"
+                          >
+                            Confirmar
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-4 rounded-xl border border-white/[0.04] bg-white/[0.01]">
+                <p className="text-[12px] text-white/30">Esta consulta foi cancelada</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ═══ Right panel — Chat ═══ */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {tenantId ? (
+            <ChatView contact={firestoreContact} tenantId={tenantId} />
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="h-5 w-5 rounded-full border-[1.5px] border-white/10 border-t-accent/60 animate-spin" />
+            </div>
           )}
         </div>
       </motion.div>
@@ -237,30 +370,24 @@ export function AppointmentStatusModal({
   )
 }
 
-function ActionCard({
-  dot,
-  cardClass,
+// ─── Info Block ─────────────────────────────────────────────────────────────
+
+function InfoBlock({
   icon: Icon,
   label,
-  onClick,
-  disabled,
+  value,
 }: {
-  dot: string
-  cardClass: string
-  icon: typeof CheckCircle
+  icon: typeof User
   label: string
-  onClick: () => void
-  disabled: boolean
+  value: string
 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`w-full flex items-center gap-3 h-11 rounded-xl border border-white/[0.06] px-4 text-left text-[13px] font-medium text-foreground transition-all disabled:opacity-50 ${cardClass}`}
-    >
-      <span className={`h-2 w-2 rounded-full shrink-0 ${dot}`} />
-      <Icon className="h-4 w-4 text-muted-foreground shrink-0" weight="regular" />
-      <span className="flex-1">{label}</span>
-    </button>
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-3">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon className="h-3 w-3 text-muted-foreground" />
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+      </div>
+      <p className="text-[13px] font-medium text-foreground truncate">{value}</p>
+    </div>
   )
 }

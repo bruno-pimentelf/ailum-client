@@ -189,7 +189,12 @@ type AppointmentStatus = "confirmed" | "pending" | "done" | "cancelled"
 type CalendarAppointment = {
   id: string
   patientName: string
+  contactId: string
+  contactPhone: string
+  doctorName: string
+  doctorId: string
   time: string
+  scheduledAt: string
   duration: number
   type: string
   status: AppointmentStatus
@@ -198,6 +203,10 @@ type CalendarAppointment = {
   day: number
   month: number
   year: number
+  color: string
+  notes: string | null
+  chargeAmount: number | null
+  chargeStatus: string | null
 }
 
 function mapApiStatus(api: ApiAppointment["status"]): AppointmentStatus {
@@ -213,7 +222,12 @@ function toCalendarAppointment(api: ApiAppointment): CalendarAppointment {
   return {
     id: api.id,
     patientName: api.contact?.name ?? "—",
+    contactId: api.contactId,
+    contactPhone: api.contact?.phone ?? "",
+    doctorName: api.professional?.fullName ?? "—",
+    doctorId: api.professionalId,
     time: formatTimeLocal(api.scheduledAt),
+    scheduledAt: api.scheduledAt,
     duration: api.durationMin ?? api.service?.durationMin ?? 50,
     type: api.service?.name ?? "Consulta",
     status: api.status === "CANCELLED" ? "cancelled" : mapApiStatus(api.status),
@@ -222,6 +236,10 @@ function toCalendarAppointment(api: ApiAppointment): CalendarAppointment {
     day: d.getDate(),
     month: d.getMonth(),
     year: d.getFullYear(),
+    color: api.professionalId,
+    notes: api.notes,
+    chargeAmount: api.charge?.amount ?? null,
+    chargeStatus: api.charge?.status ?? null,
   }
 }
 
@@ -649,6 +667,8 @@ export function ProfessionalCalendar({
   accentColor = "#22c55e",
   onBackToAll,
   onOpenAvailability,
+  allProfessionals,
+  onSwitchProfessional,
 }: {
   professionalId: string
   professionalName: string
@@ -658,6 +678,10 @@ export function ProfessionalCalendar({
   onBackToAll?: () => void
   /** Abre o drawer de disponibilidade IA */
   onOpenAvailability?: () => void
+  /** Lista de todos os profissionais para switcher inline (admin only) */
+  allProfessionals?: { id: string; fullName: string; calendarColor: string }[]
+  /** Callback para trocar de profissional inline */
+  onSwitchProfessional?: (id: string) => void
 }) {
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -952,31 +976,77 @@ export function ProfessionalCalendar({
           )}
           <div className="flex items-center gap-1.5">
             <div
-              className="h-2 w-2 rounded opacity-80"
+              className="h-2 w-4 rounded-sm"
               style={{
-                backgroundColor: `${accentColor}60`,
-                backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 1px, rgba(255,255,255,0.05) 1px, rgba(255,255,255,0.05) 2px)",
+                background: "repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(255,255,255,0.06) 2px, rgba(255,255,255,0.06) 4px)",
               }}
             />
-            <span className="text-white/90">Recorrente</span>
+            <span className="text-white/90">Sem agenda</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded bg-emerald-500/50" />
+            <div
+              className="h-2 w-4 rounded-sm bg-background"
+              style={{ borderLeft: `2px solid ${accentColor}40` }}
+            />
+            <span className="text-white/90">Toda semana</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-4 rounded-sm border-l-2 border-emerald-500/50 bg-background" />
             <span className="text-white/90">Avulso</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded bg-amber-500/50" />
+            <div
+              className="h-2 w-4 rounded-sm"
+              style={{
+                background: "repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(245,158,11,0.20) 2px, rgba(245,158,11,0.20) 4px)",
+              }}
+            />
             <span className="text-white/90">Bloqueado</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded bg-blue-500/60" />
+            <div className="h-2 w-4 rounded-sm bg-blue-500/50 border border-blue-500/60" />
             <span className="text-white/90">Confirmado</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded border border-dashed border-white/30" />
+            <div className="h-2 w-4 rounded-sm border border-dashed border-white/30 bg-white/[0.06]" />
             <span className="text-white/90">Pendente</span>
           </div>
         </div>
+
+        {/* Professional switcher strip (admin with multiple professionals) */}
+        {allProfessionals && allProfessionals.length > 1 && onSwitchProfessional && (
+          <div className="flex items-center gap-1 px-6 pb-3 overflow-x-auto no-scrollbar">
+            {allProfessionals.map((p) => {
+              const active = p.id === professionalId
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => onSwitchProfessional(p.id)}
+                  className={`relative shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all duration-200 cursor-pointer ${
+                    active ? "text-white/90" : "text-white/50 hover:text-white/70"
+                  }`}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="pro-switch-pill"
+                      className="absolute inset-0 rounded-full border"
+                      style={{
+                        backgroundColor: `${p.calendarColor}12`,
+                        borderColor: `${p.calendarColor}30`,
+                      }}
+                      transition={{ duration: 0.22, ease }}
+                    />
+                  )}
+                  <span
+                    className="relative z-10 h-2 w-2 rounded-full shrink-0"
+                    style={{ backgroundColor: p.calendarColor || "#3b82f6" }}
+                  />
+                  <span className="relative z-10">{p.fullName.split(" ")[0]}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Body: Week view */}
@@ -1078,24 +1148,39 @@ export function ProfessionalCalendar({
                           : undefined
                       }
                     >
-                      {/* Hour lines */}
+                      {/* Hour + half-hour lines */}
                       {HOURS.slice(0, -1).map((hour) => (
-                        <div
-                          key={hour}
-                          className="absolute left-0 right-0 border-t border-white/[0.08]"
-                          style={{ top: (hour - 7) * HOUR_HEIGHT }}
-                        />
+                        <div key={hour}>
+                          <div
+                            className="absolute left-0 right-0 border-t border-white/[0.06]"
+                            style={{ top: (hour - 7) * HOUR_HEIGHT }}
+                          />
+                          <div
+                            className="absolute left-0 right-0 border-t border-dashed border-white/[0.03]"
+                            style={{ top: (hour - 7) * HOUR_HEIGHT + HOUR_HEIGHT / 2 }}
+                          />
+                        </div>
                       ))}
-                      {/* Blocked overlay */}
+
+                      {/* Default: neutral hatch covering entire column — "no schedule" */}
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.025) 4px, rgba(255,255,255,0.025) 8px)",
+                        }}
+                      />
+
+                      {/* Blocked overlay (amber hatch, replaces neutral) */}
                       {dayAvail.blocked && (
                         <div
-                          className="absolute inset-0 rounded-sm opacity-40 pointer-events-none"
+                          className="absolute inset-0 pointer-events-none"
                           style={{
-                            background: "repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(245,158,11,0.25) 4px, rgba(245,158,11,0.25) 8px)",
+                            background: "repeating-linear-gradient(-45deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 4px, rgba(245,158,11,0.20) 4px, rgba(245,158,11,0.20) 8px)",
                           }}
                         />
                       )}
-                      {/* Availability blocks */}
+
+                      {/* Availability blocks — "clear" the hatch where the professional is available */}
                       {!dayAvail.blocked &&
                         getEffectiveSlots(d, dayAvail, pendingAdditions).map((slot, i) => {
                           const top = timeToTop(slot.startTime)
@@ -1110,20 +1195,17 @@ export function ProfessionalCalendar({
                           const blockEl = (
                             <div
                               key={`${slot.startTime}-${slot.endTime}-${i}`}
-                              className={`absolute left-0.5 right-0.5 rounded-sm cursor-pointer transition-opacity ${
-                                canEdit ? "hover:opacity-90" : "pointer-events-none"
-                              } ${isSelected ? "ring-2 ring-white/50 ring-inset" : ""}`}
+                              className={`absolute left-0 right-0 group/slot transition-all ${
+                                canEdit ? "cursor-pointer" : "pointer-events-none"
+                              } ${isSelected ? "ring-2 ring-white/40 ring-inset" : ""}`}
                               style={{
                                 top,
                                 height: h,
                                 backgroundColor: isRecurring
-                                  ? `${accentColor}12`
-                                  : "rgba(34, 197, 94, 0.10)",
-                                borderLeft: `2px solid ${isRecurring ? accentColor + "55" : "rgba(34,197,94,0.4)"}`,
-                                opacity: isPending ? 0.5 : 0.7,
-                                backgroundImage: isRecurring
-                                  ? "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px)"
-                                  : undefined,
+                                  ? `color-mix(in srgb, ${accentColor} 3%, var(--background))`
+                                  : "color-mix(in srgb, rgb(34,197,94) 3%, var(--background))",
+                                borderLeft: `2px solid ${isRecurring ? accentColor + "40" : "rgba(34,197,94,0.50)"}`,
+                                opacity: isPending ? 0.6 : 1,
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
@@ -1150,10 +1232,13 @@ export function ProfessionalCalendar({
                           return isRecurring ? (
                             <Tooltip key={`${slot.startTime}-${slot.endTime}-${i}`}>
                               <TooltipTrigger asChild>{blockEl}</TooltipTrigger>
-                              <TooltipContent side="top">Toda Semana</TooltipContent>
+                              <TooltipContent side="top">Toda semana</TooltipContent>
                             </Tooltip>
                           ) : (
-                            blockEl
+                            <Tooltip key={`${slot.startTime}-${slot.endTime}-${i}`}>
+                              <TooltipTrigger asChild>{blockEl}</TooltipTrigger>
+                              <TooltipContent side="top">Disponibilidade avulsa</TooltipContent>
+                            </Tooltip>
                           )
                         })}
                       {/* Drag preview */}
@@ -1174,10 +1259,10 @@ export function ProfessionalCalendar({
                       })()}
                       {/* Appointments */}
                       {dayApts.map((apt) => {
-                        const [ah, am] = apt.time.split(":").map(Number)
-                        const startMin = ah * 60 + (am ?? 0)
                         const top = timeToTop(apt.time)
-                        const h = Math.max(24, durationToPx(apt.duration) - 4)
+                        const h = Math.max(26, durationToPx(apt.duration) - 4)
+                        const initial = (apt.patientName ?? "?")[0]?.toUpperCase() ?? "?"
+                        const showService = h >= 44
                         return (
                           <button
                             key={apt.id}
@@ -1185,19 +1270,50 @@ export function ProfessionalCalendar({
                               e.stopPropagation()
                               setSelectedAppointment(apt)
                             }}
-                            className={`absolute left-0.5 right-0.5 rounded px-1.5 py-1 text-[9px] font-bold truncate border overflow-hidden text-left cursor-pointer hover:ring-2 hover:ring-accent/40 transition-all ${
+                            className={`absolute left-1 right-1 rounded-md px-1.5 py-1 text-left cursor-pointer hover:ring-2 hover:ring-accent/40 transition-all overflow-hidden z-[2] ${
                               apt.status === "confirmed"
-                                ? "bg-blue-500/50 border-blue-500/60 text-white/95"
+                                ? "bg-blue-500/50 border border-blue-500/60 text-white/95"
                                 : apt.status === "cancelled"
-                                  ? "bg-white/[0.04] border-white/10 opacity-40 line-through"
-                                  : "border-dashed border-white/30 bg-white/[0.06] text-white/90"
+                                  ? "bg-white/[0.04] border border-white/10 opacity-40 line-through"
+                                  : "border border-dashed border-white/30 bg-white/[0.06] text-white/90"
                             }`}
                             style={{ top, height: h }}
                           >
-                            {apt.time} {apt.patientName.split(" ")[0]}
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className={`h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black shrink-0 ${
+                                apt.status === "confirmed" ? "bg-blue-400/30 text-white/90" : "bg-white/10 text-white/60"
+                              }`}>
+                                {initial}
+                              </span>
+                              <span className="text-[9px] font-bold truncate">{apt.patientName.split(" ")[0]}</span>
+                              <span className="text-[8px] font-medium opacity-60 shrink-0 ml-auto">{apt.time}</span>
+                            </div>
+                            {showService && (
+                              <p className="text-[8px] font-medium opacity-50 truncate mt-0.5 pl-[22px]">{apt.type}</p>
+                            )}
                           </button>
                         )
                       })}
+
+                      {/* Now indicator */}
+                      {(() => {
+                        const now = new Date()
+                        const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+                        if (!isToday) return null
+                        const nowMin = now.getHours() * 60 + now.getMinutes()
+                        const firstMin = HOURS[0] * 60
+                        const lastMin = HOURS[HOURS.length - 1] * 60
+                        if (nowMin < firstMin || nowMin > lastMin) return null
+                        const topPx = minutesToPx(nowMin)
+                        return (
+                          <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: topPx }}>
+                            <div className="relative">
+                              <div className="absolute -left-[3px] -top-[3px] h-[7px] w-[7px] rounded-full bg-rose-500" />
+                              <div className="h-[1.5px] bg-rose-500/80 w-full" />
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   )
                 })}
@@ -1751,13 +1867,7 @@ export function ProfessionalCalendar({
         <AppointmentStatusModal
           open={!!selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
-          appointment={{
-            id: selectedAppointment.id,
-            patientName: selectedAppointment.patientName,
-            time: selectedAppointment.time,
-            type: selectedAppointment.type,
-            status: selectedAppointment.statusApi,
-          }}
+          appointment={selectedAppointment}
         />
       )}
     </div>

@@ -160,6 +160,35 @@ function normalizeHref(url: string): string {
   return `https://${url}`
 }
 
+// WhatsApp-style formatting: *bold*, _italic_, ~strikethrough_, ```monospace```
+function formatWhatsAppText(text: string): React.ReactNode[] {
+  // Order matters: monospace first (greedy), then bold, italic, strikethrough
+  const WA_REGEX = /```([\s\S]+?)```|\*(.+?)\*|_(.+?)_|~(.+?)~/g
+  const result: React.ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = WA_REGEX.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      result.push(text.slice(lastIndex, match.index))
+    }
+    if (match[1] != null) {
+      result.push(<code key={match.index} className="px-1 py-0.5 rounded bg-white/[0.06] text-[12px] font-mono">{match[1]}</code>)
+    } else if (match[2] != null) {
+      result.push(<strong key={match.index} className="font-semibold">{match[2]}</strong>)
+    } else if (match[3] != null) {
+      result.push(<em key={match.index}>{match[3]}</em>)
+    } else if (match[4] != null) {
+      result.push(<s key={match.index} className="opacity-60">{match[4]}</s>)
+    }
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) {
+    result.push(text.slice(lastIndex))
+  }
+  return result
+}
+
 function LinkifiedText({ text }: { text: string }) {
   const parts = text.split(URL_REGEX)
   const matches = text.match(URL_REGEX) ?? []
@@ -167,7 +196,7 @@ function LinkifiedText({ text }: { text: string }) {
     <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
       {parts.map((part, i) => (
         <span key={i}>
-          {part}
+          {formatWhatsAppText(part)}
           {matches[i] && (
             <a
               href={normalizeHref(matches[i])}
