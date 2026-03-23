@@ -39,6 +39,8 @@ import { PaymentLinksTable } from "@/components/finance/payment-links-table"
 import { SubscriptionModal } from "@/components/finance/subscription-modal"
 import { SubscriptionsTable } from "@/components/finance/subscriptions-table"
 import { OverdueChargesTable } from "@/components/finance/overdue-charges-table"
+import { PaymentDetailModal } from "@/components/finance/payment-detail-modal"
+import { useContactNames } from "@/hooks/use-contact-names"
 import type { AsaasPayment } from "@/lib/api/finance"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -177,6 +179,7 @@ function PaymentsTable({ onEmitInvoice }: { onEmitInvoice: (p: AsaasPayment) => 
   const [offset, setOffset] = useState(0)
   const [status, setStatus] = useState<string>("")
   const [billingType, setBillingType] = useState<string>("")
+  const [selectedPayment, setSelectedPayment] = useState<AsaasPayment | null>(null)
   const limit = 20
 
   const { data, isLoading } = useAsaasPayments({
@@ -187,8 +190,10 @@ function PaymentsTable({ onEmitInvoice }: { onEmitInvoice: (p: AsaasPayment) => 
   })
 
   const payments = data?.data ?? []
+  const contactNames = useContactNames(payments.map((p) => p.externalReference))
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -245,6 +250,7 @@ function PaymentsTable({ onEmitInvoice }: { onEmitInvoice: (p: AsaasPayment) => 
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/50 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-left">
+                  <th className="py-3 pr-3">Paciente</th>
                   <th className="py-3 pr-3">Data</th>
                   <th className="py-3 pr-3">Valor</th>
                   <th className="py-3 pr-3">Tipo</th>
@@ -257,8 +263,14 @@ function PaymentsTable({ onEmitInvoice }: { onEmitInvoice: (p: AsaasPayment) => 
                 {payments.map((p) => (
                   <tr
                     key={p.id}
-                    className="border-b border-border/30 transition-colors hover:bg-muted/20"
+                    onClick={() => setSelectedPayment(p)}
+                    className="border-b border-border/30 transition-colors hover:bg-muted/20 cursor-pointer"
                   >
+                    <td className="py-2.5 pr-3 font-medium truncate max-w-[140px]">
+                          {p.externalReference && contactNames[p.externalReference]
+                            ? contactNames[p.externalReference]
+                            : <span className="text-muted-foreground">—</span>}
+                        </td>
                     <td className="py-2.5 pr-3 text-muted-foreground">{formatDate(p.dateCreated)}</td>
                     <td className="py-2.5 pr-3 font-semibold tabular-nums">{formatCurrency(p.value)}</td>
                     <td className="py-2.5 pr-3">
@@ -297,7 +309,7 @@ function PaymentsTable({ onEmitInvoice }: { onEmitInvoice: (p: AsaasPayment) => 
                         "—"
                       )}
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         {p.invoiceUrl && (
                           <a
@@ -341,6 +353,18 @@ function PaymentsTable({ onEmitInvoice }: { onEmitInvoice: (p: AsaasPayment) => 
         )}
       </div>
     </motion.div>
+
+    <AnimatePresence>
+      {selectedPayment && (
+        <PaymentDetailModal
+          open={!!selectedPayment}
+          onClose={() => setSelectedPayment(null)}
+          payment={selectedPayment}
+          contactName={selectedPayment.externalReference ? contactNames[selectedPayment.externalReference] : undefined}
+        />
+      )}
+    </AnimatePresence>
+    </>
   )
 }
 

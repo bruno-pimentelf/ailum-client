@@ -40,3 +40,17 @@ export async function uploadTenantLogo(tenantId: string, file: File): Promise<st
   )
   return withTimeout(getDownloadURL(fileRef), 10_000, "Obter URL falhou")
 }
+
+/** Upload template media file to Firebase Storage and return public URL */
+export async function uploadTemplateMedia(tenantId: string, file: File): Promise<string> {
+  const ext = (file.name.split(".").pop() ?? "bin").toLowerCase()
+  const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const path = `tenants/${tenantId}/templates/${uniqueId}.${ext}`
+  const fileRef = ref(storage, path)
+  await withTimeout(
+    uploadBytes(fileRef, file, { contentType: file.type || "application/octet-stream" }),
+    60_000,
+    "Upload falhou"
+  )
+  return withTimeout(getDownloadURL(fileRef), 10_000, "Obter URL falhou")
+}
