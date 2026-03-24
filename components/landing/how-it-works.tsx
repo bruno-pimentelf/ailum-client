@@ -15,7 +15,7 @@ import {
 import { FadeIn } from "./motion"
 
 const ease = [0.32, 0.72, 0, 1] as const
-const STEP_AUTOPLAY_DURATIONS = [5600, 5400, 6000] as const
+const STEP_AUTOPLAY_DURATIONS = [8000, 7000, 7500] as const
 
 /* ═══ Step 1: Chat ═══════════════════════════════════════════════════════════ */
 

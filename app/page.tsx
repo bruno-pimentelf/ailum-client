@@ -5,6 +5,7 @@ import { Marquee } from "@/components/landing/marquee"
 import { HowItWorks } from "@/components/landing/how-it-works"
 import { Features } from "@/components/landing/features"
 import { ImpactStats } from "@/components/landing/impact-stats"
+import { MarketProof } from "@/components/landing/market-proof"
 import { Testimonials } from "@/components/landing/testimonials"
 import { Bento } from "@/components/landing/bento"
 import { CTA } from "@/components/landing/cta"
@@ -20,6 +21,7 @@ export default function Home() {
         <Hero />
         <Marquee />
         <ImpactStats />
+        <MarketProof />
         <HowItWorks />
         <Features />
         <Testimonials />

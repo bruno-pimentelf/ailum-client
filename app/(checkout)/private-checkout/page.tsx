@@ -9,6 +9,14 @@ import {
   LockSimple,
   Sparkle,
   CaretRight,
+  Lightning,
+  UserCircleGear,
+  ChartLineUp,
+  WhatsappLogo,
+  Robot,
+  Clock,
+  Warning,
+  Crown,
 } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -69,6 +77,27 @@ const PLANS = [
   },
 ]
 
+const SECRETARY_CONS = [
+  { icon: Warning, text: "Salário: R$ 2.500/mês" },
+  { icon: Warning, text: "Encargos (INSS, FGTS, férias, 13º): +R$ 1.000/mês" },
+  { icon: Warning, text: "Treinamentos em vendas: R$ 3.000/ano" },
+  { icon: Clock, text: "Supervisão constante: seu tempo (inestimável)" },
+  { icon: Warning, text: "Depende de uma pessoa (férias, atestado, rotatividade)" },
+  { icon: Warning, text: "Capacidade limitada — não escala" },
+  { icon: X, text: "Sem dados estruturados" },
+  { icon: X, text: "Zero automação" },
+]
+
+const AILUM_PROS = [
+  { icon: Lightning, text: "Funciona 24/7, sem férias, sem atestado" },
+  { icon: ChartLineUp, text: "Capacidade ilimitada — 10 ou 1.000 leads com mesma eficiência" },
+  { icon: Robot, text: "Dados estruturados + dashboard de crescimento" },
+  { icon: Lightning, text: "Automação inteligente que multiplica resultado" },
+  { icon: WhatsappLogo, text: "Integração total (WhatsApp, CRM, Dashboard...)" },
+  { icon: Robot, text: "IA que aprende e melhora continuamente" },
+  { icon: UserCircleGear, text: "Gerente de conta dedicado" },
+]
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function maskPhoneBR(value: string) {
@@ -98,7 +127,7 @@ function CheckoutModal({
   plan,
   onClose,
 }: {
-  plan: (typeof PLANS)[number]
+  plan: (typeof PLANS)[number] | { id: string; name: string; price: string }
   onClose: () => void
 }) {
   const [clinicName, setClinicName] = useState("")
@@ -145,7 +174,6 @@ function CheckoutModal({
         transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
         className="fixed inset-x-4 top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-md rounded-2xl border border-white/10 bg-zinc-950/95 shadow-2xl shadow-black/60 backdrop-blur-2xl overflow-hidden"
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
@@ -164,7 +192,6 @@ function CheckoutModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-4">
           <div>
             <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider">Nome da clínica</label>
@@ -236,10 +263,123 @@ function CheckoutModal({
   )
 }
 
+// ─── Comparison section ───────────────────────────────────────────────────────
+
+function ComparisonSection() {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.2 }}
+      className="mb-24"
+    >
+      <div className="mx-auto max-w-2xl text-center mb-12">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
+          Comparativo real
+        </p>
+        <h2 className="mt-4 font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.1] tracking-tight text-foreground">
+          Secretária treinada{" "}
+          <span className="text-white/40">vs.</span>{" "}
+          <span className="text-accent">Ailum</span>
+        </h2>
+        <p className="mt-3 text-sm text-white/45">
+          Veja por que clínicas estão migrando para IA.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Secretária */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.015] p-7"
+        >
+          <div className="absolute -top-20 -left-20 h-40 w-40 bg-rose-500/[0.04] rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex items-center gap-2.5 mb-6">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 border border-rose-500/20">
+              <UserCircleGear className="h-4 w-4 text-rose-400" weight="duotone" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-white">Secretária Treinada</h3>
+              <p className="text-[10px] text-rose-400/70 font-medium uppercase tracking-wider">Alternativa tradicional</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {SECRETARY_CONS.map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 + i * 0.06 }}
+                className="flex items-start gap-2.5"
+              >
+                <item.icon className="h-3.5 w-3.5 shrink-0 text-rose-400/60 mt-0.5" weight="fill" />
+                <span className="text-[13px] text-white/50 leading-snug">{item.text}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-xl border border-rose-500/15 bg-rose-500/[0.05] px-4 py-3">
+            <p className="text-[11px] font-medium text-rose-300/80">
+              Custo total estimado: <span className="font-bold text-rose-300">R$ 3.750+/mês</span>
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Ailum */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="relative overflow-hidden rounded-2xl border border-accent/20 bg-white/[0.02] p-7 shadow-lg shadow-accent/[0.06]"
+        >
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+          <div className="absolute -top-20 -right-20 h-40 w-40 bg-accent/[0.06] rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex items-center gap-2.5 mb-6">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+              <Sparkle className="h-4 w-4 text-accent" weight="fill" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-white">Ailum</h3>
+              <p className="text-[10px] text-accent/70 font-medium uppercase tracking-wider">Inteligência artificial</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {AILUM_PROS.map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.5 + i * 0.06 }}
+                className="flex items-start gap-2.5"
+              >
+                <item.icon className="h-3.5 w-3.5 shrink-0 text-accent mt-0.5" weight="fill" />
+                <span className="text-[13px] text-white/65 leading-snug">{item.text}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-xl border border-accent/20 bg-accent/[0.06] px-4 py-3">
+            <p className="text-[11px] font-medium text-accent/80">
+              A partir de <span className="font-bold text-accent">R$ 1.200/mês</span> — escala infinita
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    </motion.section>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PrivateCheckoutPage() {
   const [selectedPlan, setSelectedPlan] = useState<(typeof PLANS)[number] | null>(null)
+  const [customPlanOpen, setCustomPlanOpen] = useState(false)
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background pt-20 pb-10 md:pt-28 md:pb-16">
@@ -248,6 +388,7 @@ export default function PrivateCheckoutPage() {
         <div className="absolute left-[6%] top-[6%] h-72 w-72 rounded-full bg-accent/10 blur-[120px]" />
         <div className="absolute right-[4%] top-[24%] h-[28rem] w-[28rem] rounded-full bg-cyan-500/8 blur-[140px]" />
         <div className="absolute left-[36%] bottom-[0%] h-80 w-80 rounded-full bg-accent/7 blur-[120px]" />
+        <div className="absolute right-[20%] bottom-[20%] h-64 w-64 rounded-full bg-violet-500/5 blur-[100px]" />
       </div>
 
       <div className="relative mx-auto w-full max-w-6xl px-6">
@@ -275,6 +416,9 @@ export default function PrivateCheckoutPage() {
             Planos anuais. Em até 12x no cartão de crédito.
           </p>
         </motion.div>
+
+        {/* Comparison */}
+        <ComparisonSection />
 
         {/* Plans grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -345,6 +489,69 @@ export default function PrivateCheckoutPage() {
           ))}
         </div>
 
+        {/* Custom plan */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="relative mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.015] p-7 md:p-8"
+        >
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-gradient-to-b from-violet-500/[0.04] via-accent/[0.03] to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
+
+          <div className="relative flex flex-col items-center text-center md:flex-row md:text-left md:items-start md:justify-between gap-6">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 border border-violet-500/20">
+                  <Crown className="h-4 w-4 text-violet-400" weight="fill" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Custom</h3>
+                  <p className="text-[10px] text-violet-400/70 font-medium uppercase tracking-wider">Sob medida</p>
+                </div>
+              </div>
+
+              <p className="text-[14px] text-white/55 leading-relaxed max-w-xl">
+                Precisa de mais conversas, múltiplos WhatsApps ou integrações específicas?
+                Montamos um plano sob medida para a sua operação. Fale direto com o nosso time.
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
+                {[
+                  "Volume ilimitado",
+                  "Múltiplos WhatsApps",
+                  "Integrações custom",
+                  "SLA dedicado",
+                ].map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/15 bg-violet-500/[0.06] px-3 py-1 text-[11px] text-violet-300/80"
+                  >
+                    <Check className="h-3 w-3 text-violet-400" />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-3 shrink-0">
+              <div className="text-center">
+                <span className="text-2xl font-bold tracking-tight text-white">Personalizado</span>
+                <p className="text-[11px] text-white/40 mt-0.5">montado para você</p>
+              </div>
+              <Button
+                onClick={() => setCustomPlanOpen(true)}
+                className="cta-shimmer relative overflow-hidden h-11 px-8 rounded-xl border border-violet-500/25 bg-violet-500/15 text-[13px] font-semibold text-violet-200 transition-all duration-500 hover:bg-violet-500/25 hover:border-violet-500/40 hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] cursor-pointer"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  Começar agora
+                  <CaretRight className="h-3.5 w-3.5" />
+                </span>
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Security note */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -363,6 +570,16 @@ export default function PrivateCheckoutPage() {
           <CheckoutModal
             plan={selectedPlan}
             onClose={() => setSelectedPlan(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Custom plan modal */}
+      <AnimatePresence>
+        {customPlanOpen && (
+          <CheckoutModal
+            plan={{ id: "ailum-custom", name: "Custom", price: "Personalizado" }}
+            onClose={() => setCustomPlanOpen(false)}
           />
         )}
       </AnimatePresence>
