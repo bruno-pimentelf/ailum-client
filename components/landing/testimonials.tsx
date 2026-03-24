@@ -26,6 +26,12 @@ const AMBASSADORS = [
     specialty: "Geriatra",
     rqe: "RQE 13603",
   },
+  {
+    image: "/images/embaixadores/guilherme-scalzer.jpg",
+    name: "Prof. Dr. Guilherme Scalzer",
+    specialty: "Cirurgião-Dentista",
+    rqe: "CRO ES-CD-5929",
+  },
 ]
 
 export function Testimonials() {
@@ -56,7 +62,7 @@ export function Testimonials() {
         </FadeIn>
 
         {/* Cards grid */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
           {AMBASSADORS.map((person, i) => (
             <motion.div
               key={person.name}
@@ -95,14 +101,18 @@ export function Testimonials() {
                   <p className="text-[15px] font-semibold text-white leading-tight">
                     {person.name}
                   </p>
-                  <p className="mt-1 text-[12px] text-white/60">
-                    {person.specialty}
-                  </p>
-                  <div className="mt-2 inline-flex items-center rounded-full border border-accent/20 bg-accent/[0.08] px-2.5 py-0.5">
-                    <span className="text-[10px] font-medium text-accent/80 tracking-wide">
-                      {person.rqe}
-                    </span>
-                  </div>
+                  {person.specialty && (
+                    <p className="mt-1 text-[12px] text-white/60">
+                      {person.specialty}
+                    </p>
+                  )}
+                  {person.rqe && (
+                    <div className="mt-2 inline-flex items-center rounded-full border border-accent/20 bg-accent/[0.08] px-2.5 py-0.5">
+                      <span className="text-[10px] font-medium text-accent/80 tracking-wide">
+                        {person.rqe}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
