@@ -134,8 +134,6 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setModel(config.model ?? "SONNET")
       setTemperature(config.temperature ?? 0.4)
     } else if (open && !isLoading) {
-      setFunnelAgentName(stage?.name ?? "")
-      setFunnelAgentPersonality("")
       setStageContext("")
       setAllowedTools(["search_availability", "create_appointment", "move_stage", "send_message", "notify_operator"])
       setRequiredFields([])
