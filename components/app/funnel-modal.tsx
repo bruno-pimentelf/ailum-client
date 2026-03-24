@@ -15,6 +15,7 @@ import {
 } from "@phosphor-icons/react"
 import { useFunnelMutations } from "@/hooks/use-board"
 import type { FunnelListItem } from "@/lib/api/funnels"
+import { InstructionTextarea } from "@/components/app/instruction-textarea"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -170,6 +171,8 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
   const [stages, setStages] = useState<DraftStage[]>([])
   const [entryKeywords, setEntryKeywords] = useState<string[]>([])
   const [keywordInput, setKeywordInput] = useState("")
+  const [agentName, setAgentName] = useState("")
+  const [agentPersonality, setAgentPersonality] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -192,10 +195,14 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
           order: s.order ?? i,
         }))
       )
+      setAgentName(funnel.agentName ?? "")
+      setAgentPersonality(funnel.agentPersonality ?? "")
     } else {
       setName("")
       setDescription("")
       setEntryKeywords([])
+      setAgentName("")
+      setAgentPersonality("")
       setStages([
         { _key: "s0", name: "Novo contato", color: "#64748b", isTerminal: false, order: 0 },
         { _key: "s1", name: "Qualificando", color: "#f59e0b", isTerminal: false, order: 1 },
@@ -263,7 +270,16 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
     try {
       if (isEdit && funnel) {
         // ── Edit mode ──
-        await updateFunnel.mutateAsync({ id: funnel.id, body: { name: name.trim(), description: description.trim() || null, entryKeywords } })
+        await updateFunnel.mutateAsync({
+          id: funnel.id,
+          body: {
+            name: name.trim(),
+            description: description.trim() || null,
+            entryKeywords,
+            agentName: agentName.trim() || undefined,
+            agentPersonality: agentPersonality.trim() || null,
+          },
+        })
 
         const existingIds = new Set(funnel.stages.map((s) => s.id))
 
@@ -284,7 +300,13 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
         }
       } else {
         // ── Create mode ──
-        const created = await createFunnel.mutateAsync({ name: name.trim(), description: description.trim() || null, entryKeywords })
+        const created = await createFunnel.mutateAsync({
+          name: name.trim(),
+          description: description.trim() || null,
+          entryKeywords,
+          agentName: agentName.trim() || undefined,
+          agentPersonality: agentPersonality.trim() || null,
+        })
         for (const [i, stage] of stages.entries()) {
           await createStage.mutateAsync({
             funnelId: created.id,
@@ -336,7 +358,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.28, ease }}
-            className="fixed inset-x-4 top-[10vh] z-50 mx-auto max-w-lg rounded-2xl border border-border/60 bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+            className="fixed inset-x-4 top-[10vh] z-50 mx-auto max-w-2xl rounded-2xl border border-border/60 bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
@@ -382,6 +404,34 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Ex: Do primeiro contato à consulta paga"
                     className="mt-1.5 w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* ─── Assistente do funil ─── */}
+              <div className="flex flex-col gap-3">
+                <label className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">
+                  Assistente do funil
+                </label>
+                <div>
+                  <label className="text-[11px] text-muted-foreground/85">Nome do assistente</label>
+                  <input
+                    value={agentName}
+                    onChange={(e) => setAgentName(e.target.value)}
+                    placeholder="Ex: Recepção, Miguel"
+                    className="mt-1 w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground/85">Personalidade e instruções gerais</label>
+                  <p className="text-[10px] text-muted-foreground/70 mb-1.5">
+                    Como o assistente fala e age neste funil. Use @ para referenciar etapas, profissionais, serviços, ferramentas ou modelos de mensagem.
+                  </p>
+                  <InstructionTextarea
+                    value={agentPersonality}
+                    onChange={setAgentPersonality}
+                    placeholder="Ex: Você é cordial e acolhedor. Use linguagem clara e evite termos técnicos."
+                    className="min-h-[100px]"
                   />
                 </div>
               </div>

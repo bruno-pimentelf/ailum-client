@@ -7,8 +7,6 @@ import {
   Robot,
   Check,
   Spinner,
-  TextAa,
-  Sparkle,
   ListChecks,
   Lightning,
   Plus,
@@ -78,12 +76,12 @@ interface StageConfigModalProps {
 }
 
 type TabId = "agente" | "triggers"
-type PromptTab = "personality" | "context"
+// PromptTab removed — personality moved to funnel-modal
 
 export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps) {
   const stageId = stage?.id ?? null
   const [activeTab, setActiveTab] = useState<TabId>("agente")
-  const [promptTab, setPromptTab] = useState<PromptTab>("personality")
+  // promptTab removed — personality now lives in funnel-modal
   const { data: config, isLoading } = useStageAgentConfig(stageId)
   const { data: triggers = [], isLoading: triggersLoading } = useTriggers(stageId)
   const { data: funnels = [] } = useFunnels()
@@ -110,8 +108,6 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [editingTrigger, setEditingTrigger] = useState<Trigger | null>(null)
   const [addingTrigger, setAddingTrigger] = useState(false)
 
-  const [funnelAgentName, setFunnelAgentName] = useState("")
-  const [funnelAgentPersonality, setFunnelAgentPersonality] = useState("")
   const [stageContext, setStageContext] = useState("")
   const [allowedTools, setAllowedTools] = useState<AllowedTool[]>([])
   const [requiredFields, setRequiredFields] = useState<string[]>([])
@@ -125,14 +121,11 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   useEffect(() => {
     if (open) {
       setActiveTab("agente")
-      setPromptTab("personality")
     }
   }, [open])
 
   useEffect(() => {
     if (config) {
-      setFunnelAgentName(config.funnelAgentName ?? "")
-      setFunnelAgentPersonality(config.funnelAgentPersonality ?? "")
       setStageContext(config.stageContext ?? "")
       setAllowedTools(config.allowedTools ?? [])
       setRequiredFields(config.requiredFields ?? [])
@@ -174,8 +167,6 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       await upsertAgentConfig.mutateAsync({
         stageId,
         body: {
-          funnelAgentName: funnelAgentName.trim() || undefined,
-          funnelAgentPersonality: funnelAgentPersonality.trim() || undefined,
           stageContext: stageContext.trim() || undefined,
           allowedTools: finalAllowedTools,
           requiredFields: requiredFields.length > 0 ? requiredFields : [],
@@ -394,22 +385,9 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
               ) : (
                 /* ─── Agente tab ─── */
                 <div className="flex-1 min-h-0 flex flex-col px-6 sm:px-8 pt-5 gap-4 overflow-hidden">
-                  {/* Row 1: Name + Model + Temperature */}
-                  <div className="shrink-0 grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-4 items-end">
-                    <div className="space-y-1.5">
-                      <label className={labelCls}>Nome do assistente</label>
-                      <div className="flex items-center gap-2.5">
-                        <TextAa className="h-4 w-4 text-muted-foreground/90 shrink-0" weight="duotone" />
-                        <input
-                          type="text"
-                          value={funnelAgentName}
-                          onChange={(e) => setFunnelAgentName(e.target.value)}
-                          placeholder="Ex: Recepção, Pré-triagem"
-                          className={inputCls}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 sm:w-[130px]">
+                  {/* Row 1: Model + Temperature */}
+                  <div className="shrink-0 flex items-end gap-4">
+                    <div className="space-y-1.5 w-[150px]">
                       <label className={labelCls}>Modelo</label>
                       <select
                         value={model}
@@ -438,78 +416,21 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
 
                   {/* Row 2: Prompts (left) + Tools (right) */}
                   <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5">
-                    {/* Left: Prompt tabs — fills height */}
+                    {/* Left: Stage instructions — fills height */}
                     <div className="flex-1 min-h-0 min-w-0 flex flex-col">
-                      {/* Sub-tabs */}
-                      <div className="shrink-0 flex items-center gap-1 mb-3">
-                        <button
-                          type="button"
-                          onClick={() => setPromptTab("personality")}
-                          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors cursor-pointer ${
-                            promptTab === "personality"
-                              ? "bg-accent/15 text-accent"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                          }`}
-                        >
-                          <Sparkle className="h-3.5 w-3.5" weight="duotone" />
-                          Personalidade
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPromptTab("context")}
-                          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-colors cursor-pointer ${
-                            promptTab === "context"
-                              ? "bg-accent/15 text-accent"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                          }`}
-                        >
-                          <ListChecks className="h-3.5 w-3.5" weight="duotone" />
-                          Instruções
-                        </button>
+                      <div className="shrink-0 flex items-center gap-1.5 mb-2">
+                        <ListChecks className="h-3.5 w-3.5 text-muted-foreground/90" weight="duotone" />
+                        <label className={labelCls}>Instruções da etapa</label>
                       </div>
-
-                      {/* Tab content — fills remaining height */}
-                      <AnimatePresence mode="wait">
-                        {promptTab === "personality" ? (
-                          <motion.div
-                            key="personality"
-                            initial={{ opacity: 0, x: -6 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 6 }}
-                            transition={{ duration: 0.12 }}
-                            className="flex-1 min-h-0 flex flex-col gap-2 pb-5"
-                          >
-                            <p className="shrink-0 text-[11px] text-muted-foreground/85">
-                              Como o assistente fala e age — tom, estilo, regras gerais.
-                            </p>
-                            <InstructionTextarea
-                              value={funnelAgentPersonality}
-                              onChange={setFunnelAgentPersonality}
-                              placeholder="Ex: Você é cordial e acolhedor. Use linguagem clara e evite termos técnicos. Seja breve e objetivo. Use @ para mencionar etapas, profissionais, serviços ou ferramentas."
-                              className="flex-1 min-h-0"
-                            />
-                          </motion.div>
-                        ) : (
-                          <motion.div
-                            key="context"
-                            initial={{ opacity: 0, x: -6 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 6 }}
-                            transition={{ duration: 0.12 }}
-                            className="flex-1 min-h-0 flex flex-col gap-2 pb-5"
-                          >
-                            <p className="shrink-0 text-[11px] text-muted-foreground/85">
-                              O que o assistente deve fazer nesta etapa. Instruções específicas.
-                            </p>
-                            <InstructionTextarea
-                              value={stageContext}
-                              onChange={setStageContext}
-                              placeholder="Ex: Apresente a clínica, colete nome e motivo. Ofereça horários com @tool:search_availability. Use @ para mencionar etapas, profissionais, serviços ou ferramentas."
-                              className="flex-1 min-h-0"
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      <p className="shrink-0 text-[11px] text-muted-foreground/85 mb-2">
+                        O que o assistente deve fazer nesta etapa. Use @ para referenciar etapas, profissionais, serviços, ferramentas ou modelos.
+                      </p>
+                      <InstructionTextarea
+                        value={stageContext}
+                        onChange={setStageContext}
+                        placeholder="Ex: Apresente a clínica, colete nome e motivo. Ofereça horários com @tool:search_availability."
+                        className="flex-1 min-h-0"
+                      />
                     </div>
 
                     {/* Right: Tools + PIX — independently scrollable */}

@@ -56,6 +56,8 @@ export interface FunnelListItem {
   description: string | null
   isDefault?: boolean
   entryKeywords?: string[]
+  agentName?: string
+  agentPersonality?: string | null
   stages: Array<{
     id: string
     name: string
@@ -71,6 +73,8 @@ export interface FunnelInput {
   order?: number
   isDefault?: boolean
   entryKeywords?: string[]
+  agentName?: string
+  agentPersonality?: string | null
 }
 
 export interface StageInput {
@@ -94,8 +98,6 @@ export type AllowedTool =
 export interface StageAgentConfig {
   id: string
   stageId: string
-  funnelAgentName: string
-  funnelAgentPersonality: string | null
   stageContext: string | null
   allowedTools: AllowedTool[]
   requiredFields?: string[]
@@ -106,8 +108,6 @@ export interface StageAgentConfig {
 }
 
 export interface StageAgentConfigInput {
-  funnelAgentName?: string
-  funnelAgentPersonality?: string
   stageContext?: string
   allowedTools?: AllowedTool[]
   requiredFields?: string[]

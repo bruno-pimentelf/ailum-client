@@ -15,13 +15,14 @@ import {
   Stethoscope,
   Wrench,
   At,
+  EnvelopeSimple,
 } from "@phosphor-icons/react"
 import { useMentions } from "@/hooks/use-mentions"
 import type { MentionItem } from "@/lib/api/agent"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type MentionCategory = "stage" | "professional" | "service" | "tool"
+type MentionCategory = "stage" | "professional" | "service" | "tool" | "template"
 
 interface FlatMention {
   category: MentionCategory
@@ -72,6 +73,12 @@ const CATEGORY_META: Record<
     chipCls: "bg-amber-500/20 text-amber-300",
     tagColor: "text-amber-400",
   },
+  template: {
+    label: "Modelos de mensagem",
+    icon: EnvelopeSimple,
+    chipCls: "bg-violet-500/20 text-violet-300",
+    tagColor: "text-violet-400",
+  },
 }
 
 const CATEGORY_PREFIXES: Record<string, MentionCategory> = {
@@ -79,6 +86,7 @@ const CATEGORY_PREFIXES: Record<string, MentionCategory> = {
   "professional:": "professional",
   "service:": "service",
   "tool:": "tool",
+  "template:": "template",
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -424,6 +432,7 @@ export function InstructionTextarea({
       ...map("professional", mentionData.professionals ?? []),
       ...map("service", mentionData.services ?? []),
       ...map("tool", mentionData.tools ?? []),
+      ...map("template", mentionData.templates ?? []),
     ]
   }, [mentionData])
 

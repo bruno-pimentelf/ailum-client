@@ -35,9 +35,12 @@ export type PublicAilumPlan = {
   name?: string
   amountCents: number
   amountFormatted?: string
+  monthlyDisplay?: string
   description?: string
+  features?: string[]
   quantity?: number
   sellerHandle?: string
+  interval?: string
 }
 
 export type PublicAilumPlansResponse = PublicAilumPlan | { plans: PublicAilumPlan[] }
@@ -46,6 +49,7 @@ export type PublicCheckoutLinkInput = {
   clinicName: string
   email: string
   phoneNumber: string
+  planId?: string
   amountCents?: number
   description?: string
   quantity?: number

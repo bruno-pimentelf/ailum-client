@@ -30,7 +30,7 @@ export function Pricing() {
     {
       name: t.pricing.enterprise,
       price: t.pricing.enterprisePrice,
-      period: "",
+      period: t.pricing.essentialPeriod,
       description: t.pricing.enterpriseDesc,
       features: t.pricing.enterpriseFeatures,
       cta: t.pricing.cta,
@@ -70,9 +70,7 @@ export function Pricing() {
             >
               {plan.highlight && (
                 <>
-                  {/* Accent top bar */}
                   <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
-                  {/* Background glow */}
                   <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-accent/[0.06] rounded-full blur-3xl pointer-events-none" />
                 </>
               )}

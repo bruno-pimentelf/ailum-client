@@ -15,6 +15,7 @@ export interface MentionList {
   professionals: MentionItem[]
   services: MentionItem[]
   tools: MentionItem[]
+  templates: MentionItem[]
 }
 
 export function getAgentMentions() {

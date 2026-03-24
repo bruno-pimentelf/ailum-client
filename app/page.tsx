@@ -2,9 +2,9 @@ import { ParticlesBackground } from "@/components/landing/particles-background"
 import { Navbar } from "@/components/landing/navbar"
 import { Hero } from "@/components/landing/hero"
 import { Marquee } from "@/components/landing/marquee"
-import { Stats } from "@/components/landing/stats"
 import { HowItWorks } from "@/components/landing/how-it-works"
 import { Features } from "@/components/landing/features"
+import { ImpactStats } from "@/components/landing/impact-stats"
 import { Testimonials } from "@/components/landing/testimonials"
 import { Bento } from "@/components/landing/bento"
 import { CTA } from "@/components/landing/cta"
@@ -19,7 +19,7 @@ export default function Home() {
         <Navbar />
         <Hero />
         <Marquee />
-        <Stats />
+        <ImpactStats />
         <HowItWorks />
         <Features />
         <Testimonials />

@@ -985,13 +985,22 @@ export function ProfessionalCalendar({
           </div>
           <div className="flex items-center gap-1.5">
             <div
-              className="h-2 w-4 rounded-sm bg-background"
-              style={{ borderLeft: `2px solid ${accentColor}40` }}
+              className="h-2 w-4 rounded-sm"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${accentColor} 10%, var(--background))`,
+                borderLeft: `2.5px solid ${accentColor}60`,
+              }}
             />
             <span className="text-white/90">Toda semana</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-4 rounded-sm border-l-2 border-emerald-500/50 bg-background" />
+            <div
+              className="h-2 w-4 rounded-sm"
+              style={{
+                backgroundColor: "color-mix(in srgb, rgb(34,197,94) 10%, var(--background))",
+                borderLeft: "2.5px solid rgba(34,197,94,0.65)",
+              }}
+            />
             <span className="text-white/90">Avulso</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -1202,9 +1211,11 @@ export function ProfessionalCalendar({
                                 top,
                                 height: h,
                                 backgroundColor: isRecurring
-                                  ? `color-mix(in srgb, ${accentColor} 3%, var(--background))`
-                                  : "color-mix(in srgb, rgb(34,197,94) 3%, var(--background))",
-                                borderLeft: `2px solid ${isRecurring ? accentColor + "40" : "rgba(34,197,94,0.50)"}`,
+                                  ? `color-mix(in srgb, ${accentColor} 10%, var(--background))`
+                                  : "color-mix(in srgb, rgb(34,197,94) 10%, var(--background))",
+                                borderLeft: `2.5px solid ${isRecurring ? accentColor + "60" : "rgba(34,197,94,0.65)"}`,
+                                borderTop: `1px solid ${isRecurring ? accentColor + "15" : "rgba(34,197,94,0.10)"}`,
+                                borderBottom: `1px solid ${isRecurring ? accentColor + "15" : "rgba(34,197,94,0.10)"}`,
                                 opacity: isPending ? 0.6 : 1,
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
