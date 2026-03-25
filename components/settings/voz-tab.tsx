@@ -15,7 +15,7 @@ import {
   Waveform,
   Play,
 } from "@phosphor-icons/react"
-import { voicesApi } from "@/lib/api/voices"
+import { voicesApi, type Voice } from "@/lib/api/voices"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
