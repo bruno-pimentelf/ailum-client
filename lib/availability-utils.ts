@@ -110,12 +110,17 @@ export function computeDayAvailability(
   )
   if (exFullBlock) return { blocked: true, slots: [] }
 
+  // Check if there's an explicit "unblock" exception for this day (overrides block ranges)
+  const exUnblock = opts.exceptions.find(
+    (e) => parseDate(e.date) === dateStr && e.isUnavailable === false
+  )
+
   const inBlock = (opts.blockRanges ?? []).some((br) => {
     const from = parseDate(br.dateFrom)
     const to = parseDate(br.dateTo)
     return dateStr >= from && dateStr <= to
   })
-  if (inBlock) return { blocked: true, slots: [] }
+  if (inBlock && !exUnblock) return { blocked: true, slots: [] }
 
   const dayOverrides = (opts.overrides ?? []).filter(
     (o) => parseDate(o.date) === dateStr
@@ -191,12 +196,16 @@ export function getBlockSource(
   const dateStr = parseDate(date)
   const ex = opts.exceptions.find((e) => parseDate(e.date) === dateStr && e.isUnavailable)
   if (ex) return { type: "exception", exception: ex }
+  // Check if day is unblocked by an exception before checking block ranges
+  const exUnblock = opts.exceptions.find(
+    (e) => parseDate(e.date) === dateStr && e.isUnavailable === false
+  )
   const br = (opts.blockRanges ?? []).find((r) => {
     const from = parseDate(r.dateFrom)
     const to = parseDate(r.dateTo)
     return dateStr >= from && dateStr <= to
   })
-  if (br) return { type: "blockRange", blockRange: br }
+  if (br && !exUnblock) return { type: "blockRange", blockRange: br }
   return null
 }
 

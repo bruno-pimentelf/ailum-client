@@ -16,26 +16,25 @@ import {
   DotsThree,
   Lock,
   LockOpen,
-  CalendarPlus,
   Warning,
   X,
-  Trash,
-  Sparkle,
+  MagnifyingGlass,
 } from "@phosphor-icons/react"
-import { useQueryClient } from "@tanstack/react-query"
+// useQueryClient no longer needed — availability editing removed from calendar
 import {
   useProfessional,
   useProfessionalMutations,
   useProfessionalOverrides,
 } from "@/hooks/use-professionals"
-import { useAppointments } from "@/hooks/use-appointments"
+import { useAppointments, useCreateAppointment } from "@/hooks/use-appointments"
+import { useContactsList } from "@/hooks/use-contacts-list"
+import { useServices } from "@/hooks/use-services"
 import { NovoAgendamentoModal } from "@/components/calendar/novo-agendamento-modal"
 import { AppointmentStatusModal } from "@/components/calendar/appointment-status-modal"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
 import type {
   AvailabilityException,
   AvailabilityOverride,
-  Professional,
 } from "@/lib/api/professionals"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
 import {
@@ -44,17 +43,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+// AlertDialog removed — no longer clearing availability from calendar
 import {
   computeDayAvailability,
   getBlockSource,
@@ -71,65 +60,7 @@ import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-type PendingAddition =
-  | { id: string; type: "weekly"; dayOfWeek: number; startTime: string; endTime: string; slotDurationMin?: number }
-  | { id: string; type: "override"; date: string; slots: Array<{ startTime: string; endTime: string }> }
-  | { id: string; type: "override-add"; date: string; startTime: string; endTime: string }
-
-type EffectiveSlot = {
-  startTime: string
-  endTime: string
-  isOverride?: boolean
-  overrideId?: string
-  dayOfWeek?: number
-  pending?: boolean
-}
-
-function getEffectiveSlots(
-  d: Date,
-  dayAvail: { slots: Array<{ startTime: string; endTime: string; isOverride?: boolean; overrideId?: string; dayOfWeek?: number }> },
-  pendingAdditions: PendingAddition[]
-): EffectiveSlot[] {
-  const dateStr = toYMD(d)
-  const pendingOverride = pendingAdditions.find(
-    (p): p is PendingAddition & { type: "override" } =>
-      p.type === "override" && p.date === dateStr
-  )
-  if (pendingOverride) {
-    return pendingOverride.slots.map((s) => ({
-      ...s,
-      isOverride: true,
-      pending: true,
-    } as EffectiveSlot))
-  }
-  const base: EffectiveSlot[] = dayAvail.slots.map((s) => ({ ...s }))
-  const pendingOverrideAdd = pendingAdditions.find(
-    (p): p is PendingAddition & { type: "override-add" } =>
-      p.type === "override-add" && p.date === dateStr
-  )
-  if (pendingOverrideAdd) {
-    base.push({
-      startTime: pendingOverrideAdd.startTime,
-      endTime: pendingOverrideAdd.endTime,
-      isOverride: true,
-      pending: true,
-    })
-  }
-  const pendingWeekly = pendingAdditions.filter(
-    (p): p is PendingAddition & { type: "weekly" } =>
-      p.type === "weekly" && p.dayOfWeek === d.getDay()
-  )
-  for (const p of pendingWeekly) {
-    base.push({
-      startTime: p.startTime,
-      endTime: p.endTime,
-      isOverride: false,
-      dayOfWeek: p.dayOfWeek,
-      pending: true,
-    })
-  }
-  return base
-}
+// Availability editing types removed — availability is managed in settings only
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -414,164 +345,287 @@ function BlockRangeModal({
   )
 }
 
-// ─── Add Override Modal ───────────────────────────────────────────────────────
+// ─── Quick Schedule Card (inline, Google Calendar style) ─────────────────────
 
-function AddOverrideModal({
-  open,
+const WEEKDAYS_FULL = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
+const MONTHS_FULL = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+
+function QuickScheduleCard({
   date,
+  time,
+  x,
+  y,
+  professionalId,
+  onBlock,
   onClose,
-  onConfirm,
-  isPending,
 }: {
-  open: boolean
-  date: Date | null
+  date: Date
+  time: string
+  x: number
+  y: number
+  professionalId: string
+  onBlock: () => void
   onClose: () => void
-  onConfirm: (date: string, startTime: string, endTime: string) => void
-  isPending: boolean
 }) {
-  const [startTime, setStartTime] = useState("09:00")
-  const [endTime, setEndTime] = useState("12:00")
-  if (!open || !date) return null
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ left: x, top: y })
+  const [mode, setMode] = useState<"pick" | "schedule">("pick")
+
+  useEffect(() => {
+    const adjust = () => {
+      if (!cardRef.current) return
+      const rect = cardRef.current.getBoundingClientRect()
+      const pad = 12
+      let left = x + 12
+      let top = y - 20
+
+      if (left + rect.width + pad > window.innerWidth) left = x - rect.width - 12
+      if (top + rect.height + pad > window.innerHeight) top = window.innerHeight - rect.height - pad
+      if (left < pad) left = pad
+      if (top < pad) top = pad
+
+      setPos({ left, top })
+    }
+    adjust()
+    // Re-adjust when mode changes (card size changes)
+    const raf = requestAnimationFrame(adjust)
+    return () => cancelAnimationFrame(raf)
+  }, [x, y, mode])
+
+  const dayLabel = `${WEEKDAYS_FULL[date.getDay()]}, ${date.getDate()} de ${MONTHS_FULL[date.getMonth()]}`
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-background shadow-2xl p-6"
+        ref={cardRef}
+        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -4, scale: 0.97 }}
+        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+        className="fixed z-50 rounded-xl border border-white/[0.08] bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/40"
+        style={{ left: pos.left, top: pos.top, width: mode === "schedule" ? 340 : 240 }}
       >
-        <h3 className="text-[15px] font-bold text-white/90 flex items-center gap-2">
-          <CalendarPlus className="h-4 w-4 text-emerald-400" />
-          Adicionar horário neste dia
-        </h3>
-        <p className="text-[12px] text-white/85 mt-2">
-          {WEEKDAYS[date.getDay()]}, {date.getDate()} de {MONTHS_PT[date.getMonth()]}
-        </p>
-        <div className="mt-4 space-y-3">
-          <div>
-            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
-              Das
-            </label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              step={300}
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px]"
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
-              Até
-            </label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              step={300}
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px]"
-            />
-          </div>
+        {/* Header */}
+        <div className="px-4 pt-4 pb-3">
+          <p className="text-[22px] font-bold tracking-tight text-white leading-none">
+            {time}
+          </p>
+          <p className="text-[12px] text-white/35 mt-1.5 leading-snug">
+            {dayLabel}
+          </p>
         </div>
-        <div className="flex gap-2 mt-6">
-          <button onClick={onClose} className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/90 text-[13px] font-semibold">
-            Cancelar
-          </button>
-          <button
-            onClick={() => onConfirm(toYMD(date), startTime, endTime)}
-            disabled={isPending}
-            className="flex-1 h-10 rounded-xl bg-emerald-500/80 text-white text-[13px] font-bold disabled:opacity-50"
-          >
-            {isPending ? "…" : "Adicionar"}
-          </button>
-        </div>
+
+        <div className="h-px bg-white/[0.06]" />
+
+        {mode === "pick" ? (
+          <div className="p-1.5">
+            <button
+              onClick={() => setMode("schedule")}
+              className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-white/90 hover:bg-accent/10 transition-colors duration-150"
+            >
+              <Plus className="h-4 w-4 text-accent" weight="bold" />
+              Agendar consulta
+            </button>
+            <button
+              onClick={() => { onBlock(); onClose() }}
+              className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-white/90 hover:bg-white/[0.06] transition-colors duration-150"
+            >
+              <Lock className="h-4 w-4 text-amber-400/70" weight="fill" />
+              Bloquear horário
+            </button>
+          </div>
+        ) : (
+          <InlineScheduleForm
+            date={date}
+            time={time}
+            professionalId={professionalId}
+            onClose={onClose}
+          />
+        )}
       </motion.div>
+    </>
+  )
+}
+
+// ─── Inline schedule form (embedded in quick card) ───────────────────────────
+
+function InlineScheduleForm({
+  date,
+  time,
+  professionalId,
+  onClose,
+}: {
+  date: Date
+  time: string
+  professionalId: string
+  onClose: () => void
+}) {
+  const [patientSearch, setPatientSearch] = useState("")
+  const [debounced, setDebounced] = useState("")
+  const [selectedContact, setSelectedContact] = useState<{ id: string; name: string | null; phone: string | null } | null>(null)
+  const [serviceId, setServiceId] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  const createAppointment = useCreateAppointment()
+  const { data: services } = useServices()
+  const consultations = (services ?? []).filter((s: { isConsultation: boolean }) => s.isConsultation)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(patientSearch), 280)
+    return () => clearTimeout(t)
+  }, [patientSearch])
+
+  const { data: contactsData } = useContactsList({ search: debounced || undefined })
+  const contacts = contactsData?.data ?? []
+
+  const canConfirm = !!selectedContact && !!serviceId
+  const selectedService = consultations.find((s: { id: string }) => s.id === serviceId)
+
+  const handleConfirm = async () => {
+    setError(null)
+    if (!canConfirm) return
+    try {
+      const [h, m] = time.split(":").map(Number)
+      const d = new Date(date)
+      d.setHours(h, m, 0, 0)
+      await createAppointment.mutateAsync({
+        contactId: selectedContact!.id,
+        professionalId,
+        serviceId,
+        scheduledAt: d.toISOString(),
+        durationMin: selectedService?.durationMin,
+      })
+      onClose()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao criar agendamento.")
+    }
+  }
+
+  return (
+    <div className="p-3 space-y-3">
+      {/* Patient */}
+      {selectedContact ? (
+        <div className="flex items-center justify-between rounded-lg border border-accent/30 bg-accent/[0.06] px-3 py-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-6 w-6 rounded-full bg-white/[0.08] flex items-center justify-center text-[9px] font-bold text-white/80 shrink-0">
+              {(selectedContact.name ?? "?").slice(0, 2).toUpperCase()}
+            </div>
+            <span className="text-[12px] font-medium text-white/85 truncate">{selectedContact.name}</span>
+          </div>
+          <button onClick={() => setSelectedContact(null)} className="text-white/40 hover:text-white/70 p-0.5">
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <div className="relative">
+          <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
+          <input
+            ref={searchRef}
+            type="text"
+            value={patientSearch}
+            onChange={(e) => setPatientSearch(e.target.value)}
+            placeholder="Buscar paciente..."
+            autoFocus
+            className="w-full h-9 rounded-lg border border-white/[0.08] bg-white/[0.03] pl-8 pr-3 text-[12px] text-white/90 placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-accent/40"
+          />
+          {patientSearch.length > 0 && contacts.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 rounded-lg border border-white/[0.08] bg-background/95 backdrop-blur-xl overflow-hidden z-10 max-h-[140px] overflow-y-auto">
+              {contacts.slice(0, 4).map((c: { id: string; name: string | null; phone: string | null }) => (
+                <button
+                  key={c.id}
+                  onClick={() => { setSelectedContact(c); setPatientSearch("") }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="h-6 w-6 shrink-0 rounded-full bg-white/[0.08] flex items-center justify-center text-[9px] font-bold text-white/80">
+                    {(c.name ?? c.phone ?? "?").slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-medium text-white/85 truncate">{c.name}</p>
+                    <p className="text-[10px] text-white/40 truncate">{c.phone}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Service */}
+      {consultations.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {consultations.map((s: { id: string; name: string; durationMin: number }) => (
+            <button
+              key={s.id}
+              onClick={() => setServiceId(s.id)}
+              className={`rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all ${
+                serviceId === s.id
+                  ? "bg-accent/15 border border-accent/30 text-accent"
+                  : "border border-white/[0.08] text-white/50 hover:text-white/70 hover:border-white/[0.12]"
+              }`}
+            >
+              {s.name} · {s.durationMin}min
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <p className="text-[11px] text-rose-400 bg-rose-500/[0.08] border border-rose-500/20 rounded-lg px-2.5 py-1.5">
+          {error}
+        </p>
+      )}
+
+      {/* Confirm */}
+      <button
+        onClick={handleConfirm}
+        disabled={!canConfirm || createAppointment.isPending}
+        className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent py-2 text-[12px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {createAppointment.isPending ? "Agendando..." : "Confirmar"}
+      </button>
     </div>
   )
 }
 
-// ─── Drag Create Modal (após arrastar) ────────────────────────────────────────
+// ─── Hover time indicator (shows time on mouse position) ─────────────────────
 
-function DragCreateModal({
-  open,
-  date,
-  startMin,
-  endMin,
-  onClose,
-  onConfirm,
-  isPending,
-}: {
-  open: boolean
-  date: Date | null
-  startMin: number
-  endMin: number
-  onClose: () => void
-  onConfirm: (date: string, startTime: string, endTime: string, repeatWeekly: boolean, slotDurationMin: number) => void
-  isPending: boolean
-}) {
-  const [repeatWeekly, setRepeatWeekly] = useState(true)
-  const [slotDurationMin, setSlotDurationMin] = useState(30)
-  const startTime = minutesToHHMM(Math.min(startMin, endMin))
-  const endTime = minutesToHHMM(Math.max(startMin, endMin))
-  if (!open || !date) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-background shadow-2xl p-6"
-      >
-        <h3 className="text-[15px] font-bold text-white/90 flex items-center gap-2">
-          <CalendarPlus className="h-4 w-4 text-emerald-400" />
-          Adicionar disponibilidade
-        </h3>
-        <p className="text-[12px] text-white/85 mt-2">
-          {WEEKDAYS[date.getDay()]}, {date.getDate()} de {MONTHS_PT[date.getMonth()]} — {startTime} – {endTime}
-        </p>
-        <div className="mt-4 space-y-3">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={repeatWeekly}
-              onChange={(e) => setRepeatWeekly(e.target.checked)}
-              className="rounded border-border/60 text-accent"
-            />
-            <span className="text-[13px] text-white/90">Repetir toda semana neste horário</span>
-          </label>
-          <div>
-            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
-              Duração do slot
-            </label>
-            <select
-              value={slotDurationMin}
-              onChange={(e) => setSlotDurationMin(Number(e.target.value))}
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px]"
-            >
-              {[15, 30, 45, 50, 60].map((m) => (
-                <option key={m} value={m}>
-                  {m} min
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="flex gap-2 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/90 text-[13px] font-semibold"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={() => onConfirm(toYMD(date), startTime, endTime, repeatWeekly, slotDurationMin)}
-            disabled={isPending}
-            className="flex-1 h-10 rounded-xl bg-emerald-500/80 text-white text-[13px] font-bold disabled:opacity-50"
-          >
-            {isPending ? "…" : "Adicionar"}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  )
+function useHoverTime(containerRef: React.RefObject<HTMLDivElement | null>, enabled: boolean) {
+  const [hoverTime, setHoverTime] = useState<{ time: string; top: number } | null>(null)
+
+  useEffect(() => {
+    if (!enabled) return
+    const el = containerRef.current
+    if (!el) return
+
+    const onMove = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect()
+      const localY = e.clientY - rect.top + el.scrollTop
+      const min = snapTo15(pxToMinutes(localY))
+      const firstMin = HOURS[0] * 60
+      const lastMin = HOURS[HOURS.length - 1] * 60
+      if (min < firstMin || min > lastMin) {
+        setHoverTime(null)
+        return
+      }
+      setHoverTime({
+        time: minutesToHHMM(min),
+        top: minutesToPx(min),
+      })
+    }
+    const onLeave = () => setHoverTime(null)
+
+    el.addEventListener("mousemove", onMove)
+    el.addEventListener("mouseleave", onLeave)
+    return () => {
+      el.removeEventListener("mousemove", onMove)
+      el.removeEventListener("mouseleave", onLeave)
+    }
+  }, [containerRef, enabled])
+
+  return hoverTime
 }
 
 // ─── Day Context Menu ─────────────────────────────────────────────────────────
@@ -581,9 +635,10 @@ function DayContextMenu({
   x,
   y,
   blockSource,
+  slot,
   onBlockDay,
   onUnblockDay,
-  onAddOverride,
+  onBlockSlot,
   onBlockRange,
   onSchedule,
   onClose,
@@ -593,9 +648,10 @@ function DayContextMenu({
   x: number
   y: number
   blockSource: { type: "exception" } | { type: "blockRange" } | null
+  slot?: { startTime: string; endTime: string }
   onBlockDay: () => void
   onUnblockDay: () => void
-  onAddOverride: () => void
+  onBlockSlot: () => void
   onBlockRange: () => void
   onSchedule: () => void
   onClose: () => void
@@ -620,6 +676,15 @@ function DayContextMenu({
           Agendar consulta
         </button>
         <div className="mx-3 my-1 border-t border-white/[0.06]" />
+        {slot && !isBlocked && (
+          <button
+            onClick={() => { onBlockSlot(); onClose() }}
+            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
+          >
+            <Lock className="h-3.5 w-3.5 text-amber-400" />
+            Bloquear {slot.startTime}–{slot.endTime}
+          </button>
+        )}
         {isBlocked ? (
           <button
             onClick={() => { onUnblockDay(); onClose() }}
@@ -635,15 +700,6 @@ function DayContextMenu({
           >
             <Lock className="h-3.5 w-3.5 text-amber-400" />
             Bloquear dia
-          </button>
-        )}
-        {!isBlocked && (
-          <button
-            onClick={() => { onAddOverride(); onClose() }}
-            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
-          >
-            <CalendarPlus className="h-3.5 w-3.5 text-emerald-400" />
-            Adicionar horário neste dia
           </button>
         )}
         <button
@@ -666,7 +722,6 @@ export function ProfessionalCalendar({
   canEdit,
   accentColor = "#22c55e",
   onBackToAll,
-  onOpenAvailability,
   allProfessionals,
   onSwitchProfessional,
 }: {
@@ -676,8 +731,6 @@ export function ProfessionalCalendar({
   accentColor?: string
   /** Se passado, exibe botão para voltar à visão de todos os profissionais (Admin/Secretary) */
   onBackToAll?: () => void
-  /** Abre o drawer de disponibilidade IA */
-  onOpenAvailability?: () => void
   /** Lista de todos os profissionais para switcher inline (admin only) */
   allProfessionals?: { id: string; fullName: string; calendarColor: string }[]
   /** Callback para trocar de profissional inline */
@@ -692,69 +745,26 @@ export function ProfessionalCalendar({
     date: Date
     x: number
     y: number
+    slot?: { startTime: string; endTime: string }
   } | null>(null)
   const [blockDayModal, setBlockDayModal] = useState<Date | null>(null)
   const [blockRangeModal, setBlockRangeModal] = useState<{ from: Date; to: Date } | null>(null)
-  const [overrideModal, setOverrideModal] = useState<Date | null>(null)
-  const [dragPreview, setDragPreview] = useState<{
+  const [quickSchedule, setQuickSchedule] = useState<{
     date: Date
-    startMin: number
-    endMin: number
-    rect: { top: number; height: number }
+    time: string
+    x: number
+    y: number
   } | null>(null)
-  const [dragCreateModal, setDragCreateModal] = useState<{ date: Date; startMin: number; endMin: number } | null>(null)
-  const [pendingAdditions, setPendingAdditions] = useState<PendingAddition[]>([])
   const [toast, setToast] = useState<{ msg: string; variant: "error" | "info" } | null>(null)
-  const [selectedBlock, setSelectedBlock] = useState<{
-    date: Date
-    slot: { startTime: string; endTime: string; overrideId?: string; dayOfWeek?: number }
-  } | null>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null)
-
-  useEffect(() => {
-    if (!dragPreview) return
-    const rect = dragPreview.rect
-    const onMove = (e: MouseEvent) => {
-      const localY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
-      const endMin = snapTo15(pxToMinutes(localY))
-      setDragPreview((p) => (p ? { ...p, endMin } : null))
-    }
-    const onUp = () => {
-      setDragPreview((p) => {
-        if (!p) return null
-        const sm = snapTo15(p.startMin)
-        const em = snapTo15(p.endMin)
-        if (Math.abs(em - sm) >= 15) {
-          setDragCreateModal({
-            date: p.date,
-            startMin: Math.min(sm, em),
-            endMin: Math.max(sm, em),
-          })
-        }
-        return null
-      })
-    }
-    document.addEventListener("mousemove", onMove)
-    document.addEventListener("mouseup", onUp)
-    return () => {
-      document.removeEventListener("mousemove", onMove)
-      document.removeEventListener("mouseup", onUp)
-    }
-  }, [!!dragPreview])
-
-  const queryClient = useQueryClient()
-  const mutatingDatesRef = useRef<Set<string>>(new Set())
+  const gridScrollRef = useRef<HTMLDivElement>(null)
+  const hoverTime = useHoverTime(gridScrollRef, canEdit && viewMode === "week")
 
   const { data: professional, isLoading: loadingProf } = useProfessional(professionalId)
   const {
-    putAvailability,
-    deleteAvailability,
     addException,
     removeException,
-    removeOverride,
-    replaceOverridesForDate,
     addBlockRange,
-    removeBlockRange,
   } = useProfessionalMutations(professionalId)
 
   const fromDate = useMemo(() => {
@@ -903,57 +913,6 @@ export function ProfessionalCalendar({
               ))}
             </div>
 
-            {canEdit && (
-              <AlertDialog>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertDialogTrigger asChild>
-                      <button
-                        className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-[11px] font-bold text-white/90 hover:bg-white/5 hover:text-white/90"
-                        aria-label="Limpar disponibilidade"
-                      >
-                        <Trash className="h-3.5 w-3.5" />
-                        Limpar
-                      </button>
-                    </AlertDialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>Limpar toda a disponibilidade</TooltipContent>
-                </Tooltip>
-                <AlertDialogContent className="max-w-sm">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Limpar disponibilidade</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Limpar toda a disponibilidade deste profissional? Isso remove grade
-                      semanal, exceções, overrides e bloqueios. Os agendamentos não serão
-                      alterados.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      variant="destructive"
-                      onClick={() => deleteAvailability.mutate()}
-                    >
-                      {deleteAvailability.isPending ? "Limpando…" : "Limpar"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            {onOpenAvailability && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={onOpenAvailability}
-                    className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.05] px-3.5 text-[12px] font-bold text-white/85 hover:bg-white/[0.08] hover:border-white/[0.14] transition-colors duration-200 group"
-                  >
-                    <Sparkle className="h-3.5 w-3.5 text-accent group-hover:scale-110 transition-transform duration-200" weight="duotone" />
-                    Disponibilidade
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Gerenciar disponibilidade com IA</TooltipContent>
-              </Tooltip>
-            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -969,58 +928,12 @@ export function ProfessionalCalendar({
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 px-6 pb-3 text-[10px]">
-          {canEdit && (
-            <span className="text-white/85">Arraste para adicionar · Clique no bloco para excluir</span>
-          )}
-          <div className="flex items-center gap-1.5">
-            <div
-              className="h-2 w-4 rounded-sm"
-              style={{
-                background: "repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(255,255,255,0.06) 2px, rgba(255,255,255,0.06) 4px)",
-              }}
-            />
-            <span className="text-white/90">Sem agenda</span>
+        {/* Edit hint */}
+        {canEdit && (
+          <div className="px-6 pb-3 text-[10px]">
+            <span className="text-white/40">Clique no horário para agendar</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div
-              className="h-2 w-4 rounded-sm"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${accentColor} 10%, var(--background))`,
-                borderLeft: `2.5px solid ${accentColor}60`,
-              }}
-            />
-            <span className="text-white/90">Toda semana</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div
-              className="h-2 w-4 rounded-sm"
-              style={{
-                backgroundColor: "color-mix(in srgb, rgb(34,197,94) 10%, var(--background))",
-                borderLeft: "2.5px solid rgba(34,197,94,0.65)",
-              }}
-            />
-            <span className="text-white/90">Avulso</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div
-              className="h-2 w-4 rounded-sm"
-              style={{
-                background: "repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(245,158,11,0.20) 2px, rgba(245,158,11,0.20) 4px)",
-              }}
-            />
-            <span className="text-white/90">Bloqueado</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2 w-4 rounded-sm bg-blue-500/50 border border-blue-500/60" />
-            <span className="text-white/90">Confirmado</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2 w-4 rounded-sm border border-dashed border-white/30 bg-white/[0.06]" />
-            <span className="text-white/90">Pendente</span>
-          </div>
-        </div>
+        )}
 
         {/* Professional switcher strip (admin with multiple professionals) */}
         {allProfessionals && allProfessionals.length > 1 && onSwitchProfessional && (
@@ -1064,6 +977,26 @@ export function ProfessionalCalendar({
           <AilumLoader variant="section" />
         ) : viewMode === "week" ? (
           <>
+          {/* Legend */}
+          <div className="flex items-center gap-4 px-4 py-1.5 border-b border-white/[0.04] text-[10px] text-white/40">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm bg-background border border-white/[0.08]" />
+              Disponível
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(255,255,255,0.04) 2px, rgba(255,255,255,0.04) 4px)" }} />
+              Fora do horário
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm" style={{ background: "repeating-linear-gradient(-45deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 2px, rgba(245,158,11,0.25) 2px, rgba(245,158,11,0.25) 4px)" }} />
+              Bloqueado
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm bg-blue-500/50 border border-blue-500/60" />
+              Consulta
+            </span>
+          </div>
+
           <div className="flex border-b border-white/[0.14] min-w-[800px] shrink-0">
             <div className="w-14 shrink-0" />
             <div className="flex-1 grid grid-cols-7">
@@ -1105,7 +1038,26 @@ export function ProfessionalCalendar({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto overflow-x-auto min-w-0">
+          <div ref={gridScrollRef} className="flex-1 overflow-y-auto overflow-x-auto min-w-0 relative">
+            {/* Hover time indicator */}
+            {hoverTime && !quickSchedule && (
+              <div
+                className="absolute left-0 w-14 z-30 pointer-events-none flex items-center justify-end pr-1.5"
+                style={{ top: hoverTime.top - 9 }}
+              >
+                <span className="text-[9px] font-bold text-accent bg-background/90 rounded px-1 py-0.5 tabular-nums font-mono">
+                  {hoverTime.time}
+                </span>
+              </div>
+            )}
+            {hoverTime && !quickSchedule && (
+              <div
+                className="absolute left-14 right-0 z-20 pointer-events-none"
+                style={{ top: hoverTime.top }}
+              >
+                <div className="h-px bg-accent/20 w-full" />
+              </div>
+            )}
             <div className="flex min-w-[800px] min-h-[500px]">
               {/* Hour labels */}
               <div className="w-14 shrink-0 flex flex-col">
@@ -1132,26 +1084,26 @@ export function ProfessionalCalendar({
                       a.month === d.getMonth() &&
                       a.year === d.getFullYear()
                   )
-                  const dragForThisDay = dragPreview?.date.toDateString() === d.toDateString()
                   return (
                     <div
                       key={d.toISOString()}
                       className="relative border-l border-white/[0.10]"
                       style={{
                         minHeight: DAY_HEIGHT,
-                        cursor: canEdit && !dayAvail.blocked ? "crosshair" : undefined,
+                        cursor: canEdit && !dayAvail.blocked ? "pointer" : undefined,
                       }}
-                      onMouseDown={
+                      onClick={
                         canEdit && !dayAvail.blocked
                           ? (e) => {
                               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                               const localY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
-                              const startMin = snapTo15(pxToMinutes(localY))
-                              setDragPreview({
+                              const clickedMin = snapTo15(pxToMinutes(localY))
+                              const time = minutesToHHMM(clickedMin)
+                              setQuickSchedule({
                                 date: d,
-                                startMin,
-                                endMin: startMin,
-                                rect: { top: rect.top, height: rect.height },
+                                time,
+                                x: e.clientX,
+                                y: e.clientY,
                               })
                             }
                           : undefined
@@ -1189,85 +1141,24 @@ export function ProfessionalCalendar({
                         />
                       )}
 
-                      {/* Availability blocks — "clear" the hatch where the professional is available */}
+                      {/* Available hours — clear the hatch where professional is available */}
                       {!dayAvail.blocked &&
-                        getEffectiveSlots(d, dayAvail, pendingAdditions).map((slot, i) => {
+                        dayAvail.slots.map((slot, i) => {
                           const top = timeToTop(slot.startTime)
-                          const endPx = timeToTop(slot.endTime)
-                          const h = Math.max(4, endPx - top)
-                          const isRecurring = !slot.isOverride
-                          const isPending = !!slot.pending
-                          const isSelected =
-                            selectedBlock?.date.toDateString() === d.toDateString() &&
-                            selectedBlock?.slot.startTime === slot.startTime &&
-                            selectedBlock?.slot.endTime === slot.endTime
-                          const blockEl = (
+                          const h = Math.max(4, timeToTop(slot.endTime) - top)
+                          return (
                             <div
-                              key={`${slot.startTime}-${slot.endTime}-${i}`}
-                              className={`absolute left-0 right-0 group/slot transition-all ${
-                                canEdit ? "cursor-pointer" : "pointer-events-none"
-                              } ${isSelected ? "ring-2 ring-white/40 ring-inset" : ""}`}
+                              key={`avail-${slot.startTime}-${slot.endTime}-${i}`}
+                              className="absolute left-0 right-0 pointer-events-none"
                               style={{
                                 top,
                                 height: h,
-                                backgroundColor: isRecurring
-                                  ? `color-mix(in srgb, ${accentColor} 10%, var(--background))`
-                                  : "color-mix(in srgb, rgb(34,197,94) 10%, var(--background))",
-                                borderLeft: `2.5px solid ${isRecurring ? accentColor + "60" : "rgba(34,197,94,0.65)"}`,
-                                borderTop: `1px solid ${isRecurring ? accentColor + "15" : "rgba(34,197,94,0.10)"}`,
-                                borderBottom: `1px solid ${isRecurring ? accentColor + "15" : "rgba(34,197,94,0.10)"}`,
-                                opacity: isPending ? 0.6 : 1,
+                                backgroundColor: "var(--background)",
                               }}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (!canEdit) return
-                                setSelectedBlock({
-                                  date: d,
-                                  slot: {
-                                    startTime: slot.startTime,
-                                    endTime: slot.endTime,
-                                    overrideId: slot.overrideId,
-                                    dayOfWeek: slot.dayOfWeek,
-                                  },
-                                })
-                              }}
-                            >
-                              {isPending && (
-                                <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-80">
-                                  <Clock className="h-3 w-3 text-white/90" weight="fill" />
-                                </div>
-                              )}
-                            </div>
-                          )
-                          return isRecurring ? (
-                            <Tooltip key={`${slot.startTime}-${slot.endTime}-${i}`}>
-                              <TooltipTrigger asChild>{blockEl}</TooltipTrigger>
-                              <TooltipContent side="top">Toda semana</TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip key={`${slot.startTime}-${slot.endTime}-${i}`}>
-                              <TooltipTrigger asChild>{blockEl}</TooltipTrigger>
-                              <TooltipContent side="top">Disponibilidade avulsa</TooltipContent>
-                            </Tooltip>
+                            />
                           )
                         })}
-                      {/* Drag preview */}
-                      {dragForThisDay && dragPreview && (() => {
-                        const sm = Math.min(dragPreview.startMin, dragPreview.endMin)
-                        const em = Math.max(dragPreview.startMin, dragPreview.endMin)
-                        const topPx = minutesToPx(sm)
-                        const hPx = (em - sm) * (HOUR_HEIGHT / 60)
-                        return (
-                          <div
-                            className="absolute left-0.5 right-0.5 rounded bg-accent/40 border-2 border-accent pointer-events-none z-10"
-                            style={{
-                              top: topPx,
-                              height: Math.max(8, hPx),
-                            }}
-                          />
-                        )
-                      })()}
+                      {/* Quick schedule indicator — shows clicked time */}
                       {/* Appointments */}
                       {dayApts.map((apt) => {
                         const top = timeToTop(apt.time)
@@ -1475,349 +1366,6 @@ export function ProfessionalCalendar({
         isPending={addBlockRange.isPending}
       />
 
-      <AddOverrideModal
-        open={!!overrideModal}
-        date={overrideModal}
-        onClose={() => setOverrideModal(null)}
-        onConfirm={(date, startTime, endTime) => {
-          if (!overrideModal) return
-          setOverrideModal(null)
-          const dateStr = date
-          if (mutatingDatesRef.current.has(dateStr)) return
-          mutatingDatesRef.current.add(dateStr)
-
-          const freshProf = queryClient.getQueryData<Professional>([
-            "professional",
-            professionalId,
-          ]) as Professional | undefined
-          const freshOverrides =
-            (queryClient.getQueryData<AvailabilityOverride[]>([
-              "professionalOverrides",
-              professionalId,
-              toYMD(fromDate),
-              toYMD(toDate),
-            ]) as AvailabilityOverride[] | undefined) ??
-            freshProf?.availabilityOverrides ??
-            []
-
-          const optsForDate = {
-            availability: freshProf?.availability ?? [],
-            exceptions: (freshProf?.availabilityExceptions ?? []) as AvailabilityException[],
-            overrides: freshOverrides,
-            blockRanges: freshProf?.availabilityBlockRanges ?? [],
-          }
-          const dayAvail = computeDayAvailability(overrideModal, optsForDate)
-          const existingOverridesForDate = freshOverrides.filter(
-            (o) => (o.date?.slice(0, 10) ?? o.date) === dateStr
-          )
-
-          const slotDurationMin = 50
-          const effectiveSlots = dayAvail.blocked
-            ? []
-            : dayAvail.slots.map((s) => ({
-                startTime: s.startTime,
-                endTime: s.endTime,
-                slotDurationMin: s.slotDurationMin ?? 50,
-              }))
-          const merged = [
-            ...effectiveSlots,
-            { startTime, endTime, slotDurationMin },
-          ]
-          const pendingId = `override-add-${Date.now()}`
-          setPendingAdditions((prev) => [
-            ...prev,
-            {
-              id: pendingId,
-              type: "override",
-              date: dateStr,
-              slots: merged.map((s) => ({
-                startTime: s.startTime,
-                endTime: s.endTime,
-              })),
-            },
-          ])
-          replaceOverridesForDate.mutate(
-            {
-              removeIds: existingOverridesForDate.map((o) => o.id),
-              addSlots: merged.map((s) => ({
-                date: dateStr,
-                startTime: s.startTime,
-                endTime: s.endTime,
-                slotDurationMin: s.slotDurationMin,
-              })),
-              dateStr,
-              from: toYMD(fromDate),
-              to: toYMD(toDate),
-              onOptimisticApply: () =>
-                setPendingAdditions((prev) =>
-                  prev.filter((p) => p.id !== pendingId)
-                ),
-            },
-            {
-              onError: () => {
-                setPendingAdditions((prev) =>
-                  prev.filter((p) => p.id !== pendingId)
-                )
-                setToast({ msg: "Falha ao adicionar horário.", variant: "error" })
-              },
-              onSettled: () => {
-                mutatingDatesRef.current.delete(dateStr)
-              },
-            }
-          )
-        }}
-        isPending={replaceOverridesForDate.isPending}
-      />
-
-      <DragCreateModal
-        open={!!dragCreateModal}
-        date={dragCreateModal?.date ?? null}
-        startMin={dragCreateModal?.startMin ?? 0}
-        endMin={dragCreateModal?.endMin ?? 0}
-        onClose={() => setDragCreateModal(null)}
-        onConfirm={(date, startTime, endTime, repeatWeekly, slotDurationMin) => {
-          if (!dragCreateModal) return
-          setDragCreateModal(null)
-          const today = new Date()
-          const todayDow = today.getDay()
-          if (repeatWeekly) {
-            const dayOfWeek = dragCreateModal.date.getDay()
-            const pendingId = `weekly-${Date.now()}`
-            setPendingAdditions((prev) => [
-              ...prev,
-              { id: pendingId, type: "weekly", dayOfWeek, startTime, endTime, slotDurationMin },
-            ])
-            const freshProf = queryClient.getQueryData<Professional>([
-              "professional",
-              professionalId,
-            ]) as Professional | undefined
-            const freshAvailability = freshProf?.availability ?? []
-            const newSlot = {
-              dayOfWeek,
-              startTime,
-              endTime,
-              slotDurationMin,
-            }
-            const otherDays = freshAvailability.filter((s) => s.dayOfWeek !== dayOfWeek)
-            const sameDay = freshAvailability.filter((s) => s.dayOfWeek === dayOfWeek)
-            const merged = [...otherDays, ...sameDay, newSlot]
-            putAvailability.mutate(merged, {
-              onSuccess: () => {
-                setPendingAdditions((prev) => prev.filter((p) => p.id !== pendingId))
-                if (dayOfWeek < todayDow) {
-                  const next = WEEKDAYS[dayOfWeek]
-                  setToast({
-                    msg: `Esse horário passa a valer na próxima semana (próxima ${next}).`,
-                    variant: "info",
-                  })
-                }
-              },
-              onError: () => {
-                setPendingAdditions((prev) => prev.filter((p) => p.id !== pendingId))
-                setToast({ msg: "Falha ao salvar. Tente novamente.", variant: "error" })
-              },
-            })
-          } else {
-            const dateStr = toYMD(dragCreateModal.date)
-            if (mutatingDatesRef.current.has(dateStr)) return
-            mutatingDatesRef.current.add(dateStr)
-
-            const freshProf = queryClient.getQueryData<Professional>([
-              "professional",
-              professionalId,
-            ]) as Professional | undefined
-            const freshOverrides =
-              (queryClient.getQueryData<AvailabilityOverride[]>([
-                "professionalOverrides",
-                professionalId,
-                toYMD(fromDate),
-                toYMD(toDate),
-              ]) as AvailabilityOverride[] | undefined) ??
-              freshProf?.availabilityOverrides ??
-              []
-
-            const optsForDate = {
-              availability: freshProf?.availability ?? [],
-              exceptions: (freshProf?.availabilityExceptions ?? []) as AvailabilityException[],
-              overrides: freshOverrides,
-              blockRanges: freshProf?.availabilityBlockRanges ?? [],
-            }
-            const dayAvail = computeDayAvailability(dragCreateModal.date, optsForDate)
-            const existingOverridesForDate = freshOverrides.filter(
-              (o) => (o.date?.slice(0, 10) ?? o.date) === dateStr
-            )
-
-            const effectiveSlots = dayAvail.blocked
-              ? []
-              : dayAvail.slots.map((s) => ({
-                  startTime: s.startTime,
-                  endTime: s.endTime,
-                  slotDurationMin: s.slotDurationMin ?? 50,
-                }))
-            const merged = [...effectiveSlots, { startTime, endTime, slotDurationMin }]
-            const pendingId = `override-${Date.now()}`
-            setPendingAdditions((prev) => [
-              ...prev,
-              {
-                id: pendingId,
-                type: "override",
-                date: dateStr,
-                slots: merged.map((s) => ({ startTime: s.startTime, endTime: s.endTime })),
-              },
-            ])
-            replaceOverridesForDate.mutate(
-              {
-                removeIds: existingOverridesForDate.map((o) => o.id),
-                addSlots: merged.map((s) => ({
-                  date: dateStr,
-                  startTime: s.startTime,
-                  endTime: s.endTime,
-                  slotDurationMin: s.slotDurationMin,
-                })),
-                dateStr,
-                from: toYMD(fromDate),
-                to: toYMD(toDate),
-                onOptimisticApply: () =>
-                  setPendingAdditions((prev) =>
-                    prev.filter((p) => p.id !== pendingId)
-                  ),
-              },
-              {
-                onError: () => {
-                  setPendingAdditions((prev) =>
-                    prev.filter((p) => p.id !== pendingId)
-                  )
-                  setToast({ msg: "Falha ao salvar. Tente novamente.", variant: "error" })
-                },
-                onSettled: () => {
-                  mutatingDatesRef.current.delete(dateStr)
-                },
-              }
-            )
-          }
-        }}
-        isPending={putAvailability.isPending || replaceOverridesForDate.isPending}
-      />
-
-      {/* Delete block popover */}
-      {selectedBlock && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setSelectedBlock(null)}
-            aria-hidden
-          />
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed left-1/2 top-40 -translate-x-1/2 z-50 rounded-xl border border-white/[0.12] bg-background/95 backdrop-blur py-2 shadow-xl min-w-[220px]"
-          >
-            <p className="px-4 py-1 text-[12px] text-white/85">
-              {selectedBlock.slot.overrideId ? "Excluir este horário?" : "Excluir horário recorrente?"}
-            </p>
-            <div className="flex flex-wrap gap-2 px-4 pt-2">
-              <button
-                onClick={() => setSelectedBlock(null)}
-                className="flex-1 min-w-[70px] h-8 rounded-lg border border-white/[0.08] text-[11px] font-semibold text-white/90 hover:bg-white/[0.04]"
-              >
-                Cancelar
-              </button>
-              {selectedBlock.slot.overrideId ? (
-                <button
-                  onClick={() => {
-                    removeOverride.mutate(selectedBlock.slot.overrideId!, {
-                      onError: () => setToast({ msg: "Falha ao excluir.", variant: "error" }),
-                    })
-                    setSelectedBlock(null)
-                  }}
-                  className="flex-1 min-w-[70px] h-8 rounded-lg bg-rose-500/80 text-white text-[11px] font-bold hover:bg-rose-500/90 flex items-center justify-center gap-1"
-                >
-                  <Trash className="h-3 w-3" weight="fill" />
-                  Excluir
-                </button>
-              ) : selectedBlock.slot.dayOfWeek != null ? (
-                <>
-                  <button
-                    onClick={() => {
-                      const { date, slot } = selectedBlock
-                      setSelectedBlock(null)
-                      const dateStr = toYMD(date)
-                      const existing = exceptions.find(
-                        (e) => (e.date?.slice(0, 10) ?? e.date) === dateStr && e.isUnavailable === false && (e.slotMask?.length ?? 0) > 0
-                      )
-                      const newMaskInterval = { startTime: slot.startTime, endTime: slot.endTime }
-                      const mergedMask = existing?.slotMask
-                        ? [...(Array.isArray(existing.slotMask) ? existing.slotMask : []), newMaskInterval]
-                        : [newMaskInterval]
-                      const tempException: AvailabilityException = {
-                        id: `temp-slotmask-${Date.now()}`,
-                        professionalId: professionalId,
-                        date: dateStr,
-                        isUnavailable: false,
-                        reason: null,
-                        slotMask: mergedMask,
-                      }
-                      queryClient.setQueryData(
-                        ["professional", professionalId],
-                        (old: typeof professional) =>
-                          old
-                            ? {
-                                ...old,
-                                availabilityExceptions: [
-                                  ...(old.availabilityExceptions ?? []).filter(
-                                    (e) => (e.date?.slice(0, 10) ?? e.date) !== dateStr
-                                  ),
-                                  tempException,
-                                ],
-                              }
-                            : old
-                      )
-                      const doAdd = () =>
-                        addException.mutate(
-                          { date: dateStr, isUnavailable: false, slotMask: mergedMask },
-                          { onError: () => setToast({ msg: "Falha ao excluir.", variant: "error" }) }
-                        )
-                      if (existing) {
-                        removeException.mutate(dateStr, {
-                          onSuccess: () => doAdd(),
-                          onError: () => setToast({ msg: "Falha ao excluir.", variant: "error" }),
-                        })
-                      } else {
-                        doAdd()
-                      }
-                    }}
-                    className="flex-1 min-w-[90px] h-8 rounded-lg bg-amber-500/80 text-white text-[11px] font-bold hover:bg-amber-500/90"
-                  >
-                    Só este dia
-                  </button>
-                  <button
-                    onClick={() => {
-                      const { slot } = selectedBlock
-                      const filtered = availability.filter(
-                        (s) =>
-                          !(
-                            s.dayOfWeek === slot.dayOfWeek &&
-                            (s.startTime ?? "09:00") === slot.startTime &&
-                            (s.endTime ?? "18:00") === slot.endTime
-                          )
-                      )
-                      putAvailability.mutate(filtered, {
-                        onError: () => setToast({ msg: "Falha ao excluir.", variant: "error" }),
-                      })
-                      setSelectedBlock(null)
-                    }}
-                    className="flex-1 min-w-[90px] h-8 rounded-lg bg-rose-500/80 text-white text-[11px] font-bold hover:bg-rose-500/90 flex items-center justify-center gap-1"
-                  >
-                    <Trash className="h-3 w-3" weight="fill" />
-                    Todas as semanas
-                  </button>
-                </>
-              ) : null}
-            </div>
-          </motion.div>
-        </>
-      )}
-
       {toast && (
         <AnimatePresence>
           <CalendarToast
@@ -1828,12 +1376,29 @@ export function ProfessionalCalendar({
         </AnimatePresence>
       )}
 
+      <AnimatePresence>
+        {quickSchedule && (
+          <QuickScheduleCard
+            date={quickSchedule.date}
+            time={quickSchedule.time}
+            x={quickSchedule.x}
+            y={quickSchedule.y}
+            professionalId={professionalId}
+            onBlock={() => {
+              setBlockDayModal(quickSchedule.date)
+            }}
+            onClose={() => setQuickSchedule(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {contextMenu && (
         <DayContextMenu
           date={contextMenu.date}
           x={contextMenu.x}
           y={contextMenu.y}
           blockSource={getBlockSource(contextMenu.date, { exceptions, blockRanges })}
+          slot={contextMenu.slot}
           onBlockDay={() => setBlockDayModal(contextMenu.date)}
           onUnblockDay={() => {
             const src = getBlockSource(contextMenu!.date, { exceptions, blockRanges })
@@ -1841,11 +1406,36 @@ export function ProfessionalCalendar({
             if (src.type === "exception") {
               removeException.mutate(toYMD(contextMenu.date))
             } else {
-              removeBlockRange.mutate(src.blockRange.id)
+              addException.mutate(
+                { date: toYMD(contextMenu!.date), isUnavailable: false },
+                { onError: () => setToast({ msg: "Falha ao desbloquear dia.", variant: "error" }) }
+              )
             }
             setContextMenu(null)
           }}
-          onAddOverride={() => setOverrideModal(contextMenu.date)}
+          onBlockSlot={() => {
+            const s = contextMenu!.slot
+            if (!s) return
+            const dateStr = toYMD(contextMenu!.date)
+            const existing = exceptions.find(
+              (e) => (e.date?.slice(0, 10) ?? e.date) === dateStr && e.isUnavailable === false && (e.slotMask?.length ?? 0) > 0
+            )
+            const newMaskInterval = { startTime: s.startTime, endTime: s.endTime }
+            const mergedMask = existing?.slotMask
+              ? [...(Array.isArray(existing.slotMask) ? existing.slotMask : []), newMaskInterval]
+              : [newMaskInterval]
+            const doAdd = () =>
+              addException.mutate(
+                { date: dateStr, isUnavailable: false, slotMask: mergedMask },
+                { onError: () => setToast({ msg: "Falha ao bloquear horário.", variant: "error" }) }
+              )
+            if (existing) {
+              removeException.mutate(dateStr, { onSuccess: () => doAdd() })
+            } else {
+              doAdd()
+            }
+            setContextMenu(null)
+          }}
           onBlockRange={() =>
             setBlockRangeModal({
               from: contextMenu.date,
@@ -1854,7 +1444,7 @@ export function ProfessionalCalendar({
           }
           onSchedule={() => {
             setNovoAgendamentoDate(contextMenu.date)
-            setNovoAgendamentoTime(undefined)
+            setNovoAgendamentoTime(contextMenu.slot?.startTime)
             setNovoAgendamentoOpen(true)
           }}
           onClose={() => setContextMenu(null)}

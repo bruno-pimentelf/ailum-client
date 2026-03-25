@@ -593,9 +593,6 @@ export default function CalendarPage() {
                 ? () => setActiveDoctor("all")
                 : undefined
             }
-            onOpenAvailability={
-              canEditAvailability ? () => setAvailabilityDrawerOpen(true) : undefined
-            }
             allProfessionals={
               (role === "ADMIN" || role === "SECRETARY") && professionals && professionals.length > 1
                 ? professionals.map((p) => ({ id: p.id, fullName: p.fullName, calendarColor: p.calendarColor }))
