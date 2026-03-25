@@ -43,23 +43,22 @@ function RevenueImpact() {
 
   return (
     <div ref={ref} className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20">
-      {/* Left — Text */}
       <FadeIn direction="right">
         <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-            <CurrencyCircleDollar className="h-3.5 w-3.5 text-emerald-400" weight="duotone" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 border border-accent/15">
+            <CurrencyCircleDollar className="h-3.5 w-3.5 text-accent/70" weight="duotone" />
           </div>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-400/80">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent/60">
             Faturamento
           </span>
         </div>
         <h3 className="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-[1.1] tracking-tight text-foreground">
-          <span className="text-emerald-400">
+          <span className="text-white">
             +<AnimatedCounter target={40} suffix="%" />
           </span>{" "}
           em faturamento
           <br />
-          <span className="text-white/40 text-[0.65em]">nos primeiros 2 meses</span>
+          <span className="text-white/35 text-[0.65em]">nos primeiros 2 meses</span>
         </h3>
         <p className="mt-3 text-[13px] leading-relaxed text-white/35 max-w-sm">
           Cobrança mais rápida via Pix + menos no-show = receita que antes escapava.
@@ -67,22 +66,21 @@ function RevenueImpact() {
 
         <div className="mt-5 flex flex-wrap gap-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
-            <ChartLineUp className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-emerald-300/90 font-medium">+R$ 42k</span>
-            <span className="text-white/40">média</span>
+            <ChartLineUp className="h-3.5 w-3.5 text-accent/60" />
+            <span className="text-white/80 font-medium">+R$ 42k</span>
+            <span className="text-white/35">média</span>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
-            <CalendarCheck className="h-3.5 w-3.5 text-accent" />
-            <span className="text-accent font-medium">94%</span>
-            <span className="text-white/40">confirmação</span>
+            <CalendarCheck className="h-3.5 w-3.5 text-accent/60" />
+            <span className="text-white/80 font-medium">94%</span>
+            <span className="text-white/35">confirmação</span>
           </div>
         </div>
       </FadeIn>
 
-      {/* Right — Visual */}
       <FadeIn direction="left" delay={0.15}>
         <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-sm overflow-hidden">
-          <div className="absolute -top-20 -right-20 h-40 w-40 bg-emerald-500/[0.06] rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 -right-20 h-40 w-40 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none" />
 
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-5">
             Crescimento de receita
@@ -99,9 +97,9 @@ function RevenueImpact() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] text-white/70">Com a Ailum</span>
-                <span className="text-[12px] font-semibold text-emerald-400">R$ 142k/mês</span>
+                <span className="text-[12px] font-semibold text-accent/80">R$ 142k/mês</span>
               </div>
-              <ProgressBar value={71} color="rgb(52, 211, 153)" delay={0.5} />
+              <ProgressBar value={71} color="rgba(0,181,212,0.5)" delay={0.5} />
             </div>
           </div>
 
@@ -109,11 +107,11 @@ function RevenueImpact() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
             transition={{ duration: 0.6, delay: 1.0, ease }}
-            className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1.5"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-accent/15 bg-accent/[0.06] px-3 py-1.5"
           >
-            <TrendUp className="h-3.5 w-3.5 text-emerald-400" weight="bold" />
-            <span className="text-[12px] font-bold text-emerald-400">+40%</span>
-            <span className="text-[11px] text-emerald-400/60">em 2 meses</span>
+            <TrendUp className="h-3.5 w-3.5 text-accent/70" weight="bold" />
+            <span className="text-[12px] font-bold text-white/80">+40%</span>
+            <span className="text-[11px] text-white/40">em 2 meses</span>
           </motion.div>
         </div>
       </FadeIn>
@@ -129,10 +127,9 @@ function ConversionImpact() {
 
   return (
     <div ref={ref} className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20">
-      {/* Left — Visual */}
       <FadeIn direction="right" delay={0.15} className="order-2 lg:order-1">
         <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-sm overflow-hidden">
-          <div className="absolute -top-20 -left-20 h-40 w-40 bg-accent/[0.06] rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 -left-20 h-40 w-40 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none" />
 
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-5">
             Funil de conversão
@@ -140,10 +137,10 @@ function ConversionImpact() {
 
           <div className="space-y-2.5">
             {[
-              { label: "Leads recebidos", value: 100, color: "bg-white/[0.06]" },
-              { label: "Respondidos", value: 97, color: "bg-accent/20" },
-              { label: "Agendaram", value: 57, color: "bg-accent/40" },
-              { label: "Confirmaram", value: 48, color: "bg-accent" },
+              { label: "Leads recebidos", value: 100, opacity: "bg-white/[0.06]" },
+              { label: "Respondidos", value: 97, opacity: "bg-accent/15" },
+              { label: "Agendaram", value: 57, opacity: "bg-accent/30" },
+              { label: "Confirmaram", value: 48, opacity: "bg-accent/50" },
             ].map((step, i) => (
               <motion.div
                 key={step.label}
@@ -160,7 +157,7 @@ function ConversionImpact() {
                     initial={{ width: 0 }}
                     animate={isInView ? { width: `${step.value}%` } : { width: 0 }}
                     transition={{ duration: 1.2, delay: 0.5 + i * 0.2, ease }}
-                    className={`h-full rounded-full ${step.color}`}
+                    className={`h-full rounded-full ${step.opacity}`}
                   />
                 </div>
               </motion.div>
@@ -169,23 +166,22 @@ function ConversionImpact() {
         </div>
       </FadeIn>
 
-      {/* Right — Text */}
       <FadeIn direction="left" className="order-1 lg:order-2">
         <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
-            <WhatsappLogo className="h-3.5 w-3.5 text-accent" weight="duotone" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 border border-accent/15">
+            <WhatsappLogo className="h-3.5 w-3.5 text-accent/70" weight="duotone" />
           </div>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent/80">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent/60">
             Conversão
           </span>
         </div>
         <h3 className="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-[1.1] tracking-tight text-foreground">
-          <span className="text-accent">
+          <span className="text-white">
             +<AnimatedCounter target={57} suffix="%" />
           </span>{" "}
           agendamentos
           <br />
-          <span className="text-white/40 text-[0.65em]">com a mesma verba de marketing</span>
+          <span className="text-white/35 text-[0.65em]">com a mesma verba de marketing</span>
         </h3>
         <p className="mt-3 text-[13px] leading-relaxed text-white/35 max-w-sm">
           Resposta em 12s, 24h por dia. Nenhum lead fica sem atendimento.
@@ -193,14 +189,14 @@ function ConversionImpact() {
 
         <div className="mt-5 flex flex-wrap gap-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
-            <Lightning className="h-3.5 w-3.5 text-amber-400" />
-            <span className="text-amber-300/90 font-medium">12s</span>
-            <span className="text-white/40">resposta</span>
+            <Lightning className="h-3.5 w-3.5 text-accent/60" />
+            <span className="text-white/80 font-medium">12s</span>
+            <span className="text-white/35">resposta</span>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
-            <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-emerald-300/90 font-medium">24/7</span>
-            <span className="text-white/40">ativo</span>
+            <WhatsappLogo className="h-3.5 w-3.5 text-accent/60" />
+            <span className="text-white/80 font-medium">24/7</span>
+            <span className="text-white/35">ativo</span>
           </div>
         </div>
       </FadeIn>
@@ -216,20 +212,19 @@ function ProductivityImpact() {
 
   return (
     <div ref={ref} className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20">
-      {/* Left — Text */}
       <FadeIn direction="right">
         <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10 border border-violet-500/20">
-            <UserCircleGear className="h-3.5 w-3.5 text-violet-400" weight="duotone" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/10 border border-accent/15">
+            <UserCircleGear className="h-3.5 w-3.5 text-accent/70" weight="duotone" />
           </div>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-400/80">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent/60">
             Produtividade
           </span>
         </div>
         <h3 className="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-[1.1] tracking-tight text-foreground">
-          <span className="text-violet-400">3x</span> menos tempo
+          <span className="text-white">3x</span> menos tempo
           <br />
-          <span className="text-white/40 text-[0.65em]">gasto pela recepção</span>
+          <span className="text-white/35 text-[0.65em]">gasto pela recepção</span>
         </h3>
         <p className="mt-3 text-[13px] leading-relaxed text-white/35 max-w-sm">
           Agendamento, cobrança e lembretes no automático. Recepção foca no presencial.
@@ -237,17 +232,16 @@ function ProductivityImpact() {
 
         <div className="mt-5 flex flex-wrap gap-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
-            <Clock className="h-3.5 w-3.5 text-violet-400" />
-            <span className="text-violet-300/90 font-medium">-67%</span>
-            <span className="text-white/40">tarefas repetitivas</span>
+            <Clock className="h-3.5 w-3.5 text-accent/60" />
+            <span className="text-white/80 font-medium">-67%</span>
+            <span className="text-white/35">tarefas repetitivas</span>
           </div>
         </div>
       </FadeIn>
 
-      {/* Right — Visual */}
       <FadeIn direction="left" delay={0.15}>
         <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-sm overflow-hidden">
-          <div className="absolute -bottom-20 -right-20 h-40 w-40 bg-violet-500/[0.06] rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -right-20 h-40 w-40 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none" />
 
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-5">
             Tempo por tarefa
@@ -271,16 +265,16 @@ function ProductivityImpact() {
                   <p className="text-[12px] text-white/60 truncate">{item.task}</p>
                   <div className="mt-1 flex items-center gap-3">
                     <span className="text-[11px] text-white/30 line-through">{item.before}</span>
-                    <span className="text-[11px] font-semibold text-violet-400">{item.after}</span>
+                    <span className="text-[11px] font-semibold text-accent/70">{item.after}</span>
                   </div>
                 </div>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={isInView ? { opacity: 1, scale: 1 } : {}}
                   transition={{ duration: 0.4, delay: 0.8 + i * 0.1, ease }}
-                  className="shrink-0 ml-4 rounded-md bg-violet-500/[0.08] border border-violet-500/15 px-2 py-0.5"
+                  className="shrink-0 ml-4 rounded-md bg-accent/[0.06] border border-accent/10 px-2 py-0.5"
                 >
-                  <span className="text-[10px] font-bold text-violet-400">-{item.savings}%</span>
+                  <span className="text-[10px] font-bold text-white/60">-{item.savings}%</span>
                 </motion.div>
               </motion.div>
             ))}
@@ -307,18 +301,18 @@ export function ImpactStats() {
       {/* Ambient glow */}
       <motion.div
         style={{ y: glowY }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-accent/[0.025] rounded-full blur-[180px] pointer-events-none"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-accent/[0.02] rounded-full blur-[180px] pointer-events-none"
       />
 
       <div className="relative mx-auto max-w-7xl px-6">
         {/* Section header */}
         <FadeIn className="mx-auto max-w-xl text-center mb-20 md:mb-28">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent/70">
             Impacto real
           </p>
           <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Números que{" "}
-            <span className="font-display italic text-accent">falam sozinhos</span>
+            <span className="font-display italic text-white/50">falam sozinhos</span>
           </h2>
         </FadeIn>
 
@@ -347,7 +341,7 @@ export function ImpactStats() {
                   <span className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">
                     <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                   </span>
-                  <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white/85">
+                  <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white/50">
                     {stat.label}
                   </span>
                 </div>

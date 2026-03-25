@@ -7,6 +7,8 @@ import { Features } from "@/components/landing/features"
 import { ImpactStats } from "@/components/landing/impact-stats"
 import { MarketProof } from "@/components/landing/market-proof"
 import { Testimonials } from "@/components/landing/testimonials"
+import { CalendarShowcase } from "@/components/landing/calendar-showcase"
+import { AppTeaser } from "@/components/landing/app-teaser"
 import { Bento } from "@/components/landing/bento"
 import { CTA } from "@/components/landing/cta"
 import { Footer } from "@/components/landing/footer"
@@ -21,11 +23,13 @@ export default function Home() {
         <Hero />
         <Marquee />
         <ImpactStats />
-        <MarketProof />
         <HowItWorks />
+        <MarketProof />
         <Features />
+        <CalendarShowcase />
         <Testimonials />
         <Bento />
+        <AppTeaser />
         <CTA />
         <Footer />
       </main>

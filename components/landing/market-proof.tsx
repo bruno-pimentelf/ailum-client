@@ -13,50 +13,35 @@ const PROOFS = [
     context: "Clínicas com CRM organizado",
     highlight: "aumentam vendas em até 300%",
     source: "EBAC",
-    color: "text-emerald-400",
-    glowColor: "bg-emerald-500/[0.07]",
-    borderColor: "border-emerald-500/15",
-    span: "md:col-span-2", // wide
+    span: "md:col-span-2",
   },
   {
     number: "80%",
     context: "das vendas acontecem",
     highlight: "após o 5º follow-up",
     source: "Marketing Donut",
-    color: "text-accent",
-    glowColor: "bg-accent/[0.07]",
-    borderColor: "border-accent/15",
-    span: "", // normal
+    span: "",
   },
   {
     number: "73%",
     context: "dos pacientes dizem que",
     highlight: "experiência é fator decisivo",
     source: "PwC",
-    color: "text-violet-400",
-    glowColor: "bg-violet-500/[0.07]",
-    borderColor: "border-violet-500/15",
-    span: "", // normal
+    span: "",
   },
   {
     number: "+400%",
     context: "",
     highlight: "Atendimento rápido aumenta conversão em 400%",
     source: "Velocify",
-    color: "text-amber-400",
-    glowColor: "bg-amber-500/[0.07]",
-    borderColor: "border-amber-500/15",
-    span: "md:col-span-2", // wide
+    span: "md:col-span-2",
   },
   {
     number: "7x",
     context: "",
     highlight: "Manter um cliente custa 7x menos que conquistar um novo",
     source: "Bain & Company",
-    color: "text-rose-400",
-    glowColor: "bg-rose-500/[0.07]",
-    borderColor: "border-rose-500/15",
-    span: "md:col-span-3", // full width
+    span: "md:col-span-3",
   },
 ]
 
@@ -80,15 +65,13 @@ function ProofCard({
       transition={{ duration: 0.8, delay: index * 0.08, ease }}
       className={`group relative ${proof.span}`}
     >
-      <div
-        className={`relative h-full overflow-hidden rounded-2xl border ${proof.borderColor} bg-white/[0.015] backdrop-blur-sm transition-all duration-700 hover:bg-white/[0.03]`}
-      >
+      <div className="relative h-full overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015] backdrop-blur-sm transition-all duration-700 hover:border-white/[0.10] hover:bg-white/[0.03]">
         {/* Glow blob */}
         <motion.div
           initial={{ opacity: 0, scale: 0.4 }}
           animate={isInView ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 1.4, delay: 0.2 + index * 0.08, ease }}
-          className={`absolute -top-16 -right-16 h-36 w-36 ${proof.glowColor} rounded-full blur-3xl pointer-events-none`}
+          className="absolute -top-16 -right-16 h-36 w-36 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none"
         />
 
         <div className="relative px-6 py-7 md:px-8 md:py-8 flex flex-col gap-3">
@@ -97,7 +80,7 @@ function ProofCard({
             initial={{ opacity: 0, scale: 0.6, filter: "blur(14px)" }}
             animate={isInView ? { opacity: 1, scale: 1, filter: "blur(0px)" } : {}}
             transition={{ duration: 0.7, delay: 0.15 + index * 0.08, ease }}
-            className={`font-display text-5xl md:text-6xl font-bold tracking-tighter leading-none ${proof.color}`}
+            className="font-display text-5xl md:text-6xl font-bold tracking-tighter leading-none text-white"
           >
             {proof.number}
           </motion.span>
@@ -107,10 +90,10 @@ function ProofCard({
             initial={{ opacity: 0, y: 6 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 + index * 0.08, ease }}
-            className="text-[14px] md:text-[15px] leading-relaxed text-white/55"
+            className="text-[14px] md:text-[15px] leading-relaxed text-white/40"
           >
             {proof.context}{proof.context ? " " : ""}
-            <span className="font-semibold text-white/85">{proof.highlight}</span>
+            <span className="font-medium text-white/70">{proof.highlight}</span>
           </motion.p>
 
           {/* Source */}
@@ -118,14 +101,14 @@ function ProofCard({
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : {}}
             transition={{ duration: 0.5, delay: 0.5 + index * 0.08, ease }}
-            className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/20"
+            className="text-[10px] font-medium uppercase tracking-[0.16em] text-accent/40"
           >
             {proof.source}
           </motion.span>
         </div>
 
         {/* Bottom shimmer on hover */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </div>
     </motion.div>
   )
