@@ -53,7 +53,7 @@ function RevenueImpact() {
           </span>
         </div>
         <h3 className="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-[1.1] tracking-tight text-foreground">
-          <span className="text-white">
+          <span className="text-emerald-200">
             +<AnimatedCounter target={40} suffix="%" />
           </span>{" "}
           em faturamento
@@ -67,12 +67,12 @@ function RevenueImpact() {
         <div className="mt-5 flex flex-wrap gap-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
             <ChartLineUp className="h-3.5 w-3.5 text-accent/60" />
-            <span className="text-white/80 font-medium">+R$ 42k</span>
+            <span className="text-emerald-200/90 font-medium">+R$ 42k</span>
             <span className="text-white/35">média</span>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
             <CalendarCheck className="h-3.5 w-3.5 text-accent/60" />
-            <span className="text-white/80 font-medium">94%</span>
+            <span className="text-cyan-200/90 font-medium">94%</span>
             <span className="text-white/35">confirmação</span>
           </div>
         </div>
@@ -97,7 +97,7 @@ function RevenueImpact() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] text-white/70">Com a Ailum</span>
-                <span className="text-[12px] font-semibold text-accent/80">R$ 142k/mês</span>
+                <span className="text-[12px] font-semibold text-emerald-200">R$ 142k/mês</span>
               </div>
               <ProgressBar value={71} color="rgba(0,181,212,0.5)" delay={0.5} />
             </div>
@@ -110,7 +110,7 @@ function RevenueImpact() {
             className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-accent/15 bg-accent/[0.06] px-3 py-1.5"
           >
             <TrendUp className="h-3.5 w-3.5 text-accent/70" weight="bold" />
-            <span className="text-[12px] font-bold text-white/80">+40%</span>
+            <span className="text-[12px] font-bold text-emerald-200">+40%</span>
             <span className="text-[11px] text-white/40">em 2 meses</span>
           </motion.div>
         </div>
@@ -176,7 +176,7 @@ function ConversionImpact() {
           </span>
         </div>
         <h3 className="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-[1.1] tracking-tight text-foreground">
-          <span className="text-white">
+          <span className="text-cyan-200">
             +<AnimatedCounter target={57} suffix="%" />
           </span>{" "}
           agendamentos
@@ -190,12 +190,12 @@ function ConversionImpact() {
         <div className="mt-5 flex flex-wrap gap-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
             <Lightning className="h-3.5 w-3.5 text-accent/60" />
-            <span className="text-white/80 font-medium">12s</span>
+            <span className="text-cyan-200/90 font-medium">12s</span>
             <span className="text-white/35">resposta</span>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
             <WhatsappLogo className="h-3.5 w-3.5 text-accent/60" />
-            <span className="text-white/80 font-medium">24/7</span>
+            <span className="text-emerald-200/90 font-medium">24/7</span>
             <span className="text-white/35">ativo</span>
           </div>
         </div>
@@ -222,7 +222,7 @@ function ProductivityImpact() {
           </span>
         </div>
         <h3 className="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-[1.1] tracking-tight text-foreground">
-          <span className="text-white">3x</span> menos tempo
+          <span className="text-cyan-200">3x</span> menos tempo
           <br />
           <span className="text-white/35 text-[0.65em]">gasto pela recepção</span>
         </h3>
@@ -233,7 +233,7 @@ function ProductivityImpact() {
         <div className="mt-5 flex flex-wrap gap-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
             <Clock className="h-3.5 w-3.5 text-accent/60" />
-            <span className="text-white/80 font-medium">-67%</span>
+            <span className="text-cyan-200/90 font-medium">-67%</span>
             <span className="text-white/35">tarefas repetitivas</span>
           </div>
         </div>
@@ -265,7 +265,7 @@ function ProductivityImpact() {
                   <p className="text-[12px] text-white/60 truncate">{item.task}</p>
                   <div className="mt-1 flex items-center gap-3">
                     <span className="text-[11px] text-white/30 line-through">{item.before}</span>
-                    <span className="text-[11px] font-semibold text-accent/70">{item.after}</span>
+                    <span className="text-[11px] font-semibold text-emerald-200/80">{item.after}</span>
                   </div>
                 </div>
                 <motion.div
@@ -327,10 +327,10 @@ export function ImpactStats() {
         <div className="mt-20 md:mt-28">
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-0">
             {[
-              { value: 57, suffix: "%", label: "mais agendamentos" },
-              { value: 40, suffix: "%", label: "aumento no faturamento" },
-              { value: 3, suffix: "x", label: "menos tempo operacional" },
-              { value: 12, suffix: "s", label: "tempo de resposta" },
+              { value: 57, suffix: "%", label: "mais agendamentos", color: "text-cyan-200" },
+              { value: 40, suffix: "%", label: "aumento no faturamento", color: "text-emerald-200" },
+              { value: 3, suffix: "x", label: "menos tempo operacional", color: "text-cyan-200" },
+              { value: 12, suffix: "s", label: "tempo de resposta", color: "text-emerald-200" },
             ].map((stat, i) => (
               <FadeIn key={stat.label} delay={i * 0.1}>
                 <div
@@ -338,7 +338,7 @@ export function ImpactStats() {
                     i < 3 ? "md:border-r md:border-white/[0.06]" : ""
                   }`}
                 >
-                  <span className="font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+                  <span className={`font-display text-4xl font-bold tracking-tight md:text-5xl ${stat.color}`}>
                     <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                   </span>
                   <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white/50">

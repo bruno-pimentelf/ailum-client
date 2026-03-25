@@ -14,6 +14,7 @@ const PROOFS = [
     highlight: "aumentam vendas em até 300%",
     source: "EBAC",
     span: "md:col-span-2",
+    numColor: "text-cyan-200",
   },
   {
     number: "80%",
@@ -21,6 +22,7 @@ const PROOFS = [
     highlight: "após o 5º follow-up",
     source: "Marketing Donut",
     span: "",
+    numColor: "text-emerald-200",
   },
   {
     number: "73%",
@@ -28,6 +30,7 @@ const PROOFS = [
     highlight: "experiência é fator decisivo",
     source: "PwC",
     span: "",
+    numColor: "text-cyan-200",
   },
   {
     number: "+400%",
@@ -35,6 +38,7 @@ const PROOFS = [
     highlight: "Atendimento rápido aumenta conversão em 400%",
     source: "Velocify",
     span: "md:col-span-2",
+    numColor: "text-cyan-200",
   },
   {
     number: "7x",
@@ -42,6 +46,7 @@ const PROOFS = [
     highlight: "Manter um cliente custa 7x menos que conquistar um novo",
     source: "Bain & Company",
     span: "md:col-span-3",
+    numColor: "text-emerald-200",
   },
 ]
 
@@ -80,7 +85,7 @@ function ProofCard({
             initial={{ opacity: 0, scale: 0.6, filter: "blur(14px)" }}
             animate={isInView ? { opacity: 1, scale: 1, filter: "blur(0px)" } : {}}
             transition={{ duration: 0.7, delay: 0.15 + index * 0.08, ease }}
-            className="font-display text-5xl md:text-6xl font-bold tracking-tighter leading-none text-white"
+            className={`font-display text-5xl md:text-6xl font-bold tracking-tighter leading-none ${proof.numColor}`}
           >
             {proof.number}
           </motion.span>
