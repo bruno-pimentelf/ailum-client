@@ -19,6 +19,9 @@ import {
 } from "@phosphor-icons/react"
 import { useStageAgentConfig, useFunnelMutations, useTriggers, useFunnels } from "@/hooks/use-board"
 import { useProfessionals } from "@/hooks/use-professionals"
+import { voicesApi } from "@/lib/api/voices"
+import { useQuery } from "@tanstack/react-query"
+import { SpeakerHigh } from "@phosphor-icons/react"
 import type { BoardStage } from "@/lib/api/funnels"
 import type { AllowedTool, Trigger } from "@/lib/api/funnels"
 import { TriggerEditorModal } from "./trigger-editor-modal"
@@ -115,7 +118,10 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [requirePaymentBeforeConfirm, setRequirePaymentBeforeConfirm] = useState(false)
   const [model, setModel] = useState<"HAIKU" | "SONNET">("SONNET")
   const [temperature, setTemperature] = useState(0.4)
+  const [voiceId, setVoiceId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const voicesQuery = useQuery({ queryKey: ["voices"], queryFn: voicesApi.list, staleTime: 60_000 })
+  const voices = voicesQuery.data ?? []
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -133,6 +139,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setRequirePaymentBeforeConfirm(config.requirePaymentBeforeConfirm ?? false)
       setModel(config.model ?? "SONNET")
       setTemperature(config.temperature ?? 0.4)
+      setVoiceId(config.voiceId ?? null)
     } else if (open && !isLoading) {
       setStageContext("")
       setAllowedTools(["search_availability", "create_appointment", "move_stage", "send_message", "notify_operator"])
@@ -141,6 +148,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setRequirePaymentBeforeConfirm(false)
       setModel("SONNET")
       setTemperature(0.4)
+      setVoiceId(null)
     }
     setError(null)
   }, [config, isLoading, open, stage?.name])
@@ -172,6 +180,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
           requirePaymentBeforeConfirm: requirePaymentBeforeConfirm || undefined,
           model,
           temperature,
+          voiceId: voiceId || null,
         },
       })
       onClose()
@@ -383,8 +392,8 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
               ) : (
                 /* ─── Agente tab ─── */
                 <div className="flex-1 min-h-0 flex flex-col px-6 sm:px-8 pt-5 gap-4 overflow-hidden">
-                  {/* Row 1: Model + Temperature */}
-                  <div className="shrink-0 flex items-end gap-4">
+                  {/* Row 1: Model + Temperature + Voice */}
+                  <div className="shrink-0 flex items-end gap-4 flex-wrap">
                     <div className="space-y-1.5 w-[150px]">
                       <label className={labelCls}>Modelo</label>
                       <select
@@ -409,6 +418,23 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                         className="w-full h-2.5 rounded-full accent-accent mt-2 cursor-pointer"
                       />
                       <p className="text-[10px] text-muted-foreground/90">0 conservador · 1 criativo</p>
+                    </div>
+                    <div className="space-y-1.5 w-[200px]">
+                      <label className={labelCls}>
+                        <SpeakerHigh className="h-3 w-3 inline mr-1" weight="duotone" />
+                        Voz do assistente
+                      </label>
+                      <select
+                        value={voiceId ?? ""}
+                        onChange={(e) => setVoiceId(e.target.value || null)}
+                        className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer"
+                      >
+                        <option value="">Sem voz (texto)</option>
+                        {voices.map((v) => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-muted-foreground/90">Responde com áudio no WhatsApp</p>
                     </div>
                   </div>
 

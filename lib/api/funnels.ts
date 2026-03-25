@@ -58,8 +58,6 @@ export interface FunnelListItem {
   entryKeywords?: string[]
   agentName?: string
   agentPersonality?: string | null
-  voiceId?: string | null
-  voice?: { id: string; name: string; provider: string } | null
   stages: Array<{
     id: string
     name: string
@@ -77,7 +75,6 @@ export interface FunnelInput {
   entryKeywords?: string[]
   agentName?: string
   agentPersonality?: string | null
-  voiceId?: string | null
 }
 
 export interface StageInput {
@@ -108,6 +105,7 @@ export interface StageAgentConfig {
   requirePaymentBeforeConfirm?: boolean
   model: "HAIKU" | "SONNET"
   temperature: number
+  voiceId?: string | null
 }
 
 export interface StageAgentConfigInput {
@@ -118,6 +116,7 @@ export interface StageAgentConfigInput {
   requirePaymentBeforeConfirm?: boolean
   model?: "HAIKU" | "SONNET"
   temperature?: number
+  voiceId?: string | null
 }
 
 // ─── Triggers ──────────────────────────────────────────────────────────────────

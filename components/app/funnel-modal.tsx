@@ -16,7 +16,6 @@ import {
 import { useQuery } from "@tanstack/react-query"
 import { useFunnelMutations } from "@/hooks/use-board"
 import type { FunnelListItem } from "@/lib/api/funnels"
-import { voicesApi } from "@/lib/api/voices"
 import { InstructionTextarea } from "@/components/app/instruction-textarea"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -166,8 +165,6 @@ function StageRow({
 
 export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
   const isEdit = !!funnel
-  const voicesQuery = useQuery({ queryKey: ["voices"], queryFn: voicesApi.list, staleTime: 60_000 })
-  const voices = voicesQuery.data ?? []
   const { createFunnel, updateFunnel, deleteFunnel, createStage, updateStage, deleteStage } = useFunnelMutations()
 
   const [name, setName] = useState("")
@@ -177,7 +174,6 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
   const [keywordInput, setKeywordInput] = useState("")
   const [agentName, setAgentName] = useState("")
   const [agentPersonality, setAgentPersonality] = useState("")
-  const [voiceId, setVoiceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -202,14 +198,12 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
       )
       setAgentName(funnel.agentName ?? "")
       setAgentPersonality(funnel.agentPersonality ?? "")
-      setVoiceId(funnel.voiceId ?? null)
     } else {
       setName("")
       setDescription("")
       setEntryKeywords([])
       setAgentName("")
       setAgentPersonality("")
-      setVoiceId(null)
       setStages([
         { _key: "s0", name: "Novo contato", color: "#64748b", isTerminal: false, order: 0 },
         { _key: "s1", name: "Qualificando", color: "#f59e0b", isTerminal: false, order: 1 },
@@ -285,7 +279,6 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
             entryKeywords,
             agentName: agentName.trim() || undefined,
             agentPersonality: agentPersonality.trim() || null,
-            voiceId: voiceId || null,
           },
         })
 
@@ -442,24 +435,6 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                     placeholder="Ex: Você é cordial e acolhedor. Use linguagem clara e evite termos técnicos."
                     className="min-h-[100px]"
                   />
-                </div>
-                <div>
-                  <label className="text-[11px] text-muted-foreground/85">Voz do assistente</label>
-                  <p className="text-[10px] text-muted-foreground/70 mb-1.5">
-                    Se configurada, a IA responde com áudio no WhatsApp em vez de texto.
-                  </p>
-                  <select
-                    value={voiceId ?? ""}
-                    onChange={(e) => setVoiceId(e.target.value || null)}
-                    className="w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all cursor-pointer"
-                  >
-                    <option value="">Sem voz (responde por texto)</option>
-                    {voices.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.name} ({v.provider})
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </div>
 

@@ -13,6 +13,9 @@ import {
   CheckCircle,
   ArrowsClockwise,
   Trash,
+  Play,
+  Pause,
+  DownloadSimple,
 } from "@phosphor-icons/react"
 import { PixChargeBlock } from "@/components/app/pix-charge-block"
 import {
@@ -27,6 +30,101 @@ import type { FirestoreMessage } from "@/lib/types/firestore"
 import type { AgentAuditEntry, AuditDetail, ToolExecution } from "@/lib/api/agent"
 
 const ease = [0.33, 1, 0.68, 1] as const
+
+// ─── Audio player (WhatsApp-style) ───────────────────────────────────────────
+
+function AudioPlayer({ url, text }: { url: string; text?: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [playing, setPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [duration, setDuration] = useState(0)
+
+  useEffect(() => {
+    const a = audioRef.current
+    if (!a) return
+    const onTime = () => setProgress(a.duration > 0 ? a.currentTime / a.duration : 0)
+    const onMeta = () => setDuration(a.duration)
+    const onEnd = () => { setPlaying(false); setProgress(0) }
+    a.addEventListener("timeupdate", onTime)
+    a.addEventListener("loadedmetadata", onMeta)
+    a.addEventListener("ended", onEnd)
+    return () => {
+      a.removeEventListener("timeupdate", onTime)
+      a.removeEventListener("loadedmetadata", onMeta)
+      a.removeEventListener("ended", onEnd)
+    }
+  }, [])
+
+  const toggle = () => {
+    const a = audioRef.current
+    if (!a) return
+    if (playing) { a.pause(); setPlaying(false) }
+    else { a.play(); setPlaying(true) }
+  }
+
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const a = audioRef.current
+    if (!a || !a.duration) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    a.currentTime = pct * a.duration
+    setProgress(pct)
+  }
+
+  const fmt = (s: number) => {
+    if (!s || !isFinite(s)) return "0:00"
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, "0")}`
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <audio ref={audioRef} src={url} preload="metadata" />
+      <div className="flex items-center gap-2.5">
+        <button
+          onClick={toggle}
+          className="cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 hover:bg-accent/30 transition-colors"
+        >
+          {playing ? (
+            <Pause className="h-3.5 w-3.5 text-accent" weight="fill" />
+          ) : (
+            <Play className="h-3.5 w-3.5 text-accent ml-0.5" weight="fill" />
+          )}
+        </button>
+        <div className="flex-1 space-y-1">
+          <div
+            className="h-1.5 rounded-full bg-muted/40 cursor-pointer relative overflow-hidden"
+            onClick={seek}
+          >
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded-full bg-accent/60"
+              style={{ width: `${progress * 100}%` }}
+              transition={{ duration: 0.1 }}
+            />
+          </div>
+          <div className="flex justify-between text-[9px] text-muted-foreground/60">
+            <span>{fmt(duration * progress)}</span>
+            <span>{fmt(duration)}</span>
+          </div>
+        </div>
+        <a
+          href={url}
+          download="audio.mp3"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-muted/40 transition-colors"
+          title="Baixar áudio"
+        >
+          <DownloadSimple className="h-3 w-3 text-muted-foreground/50 hover:text-foreground transition-colors" weight="bold" />
+        </a>
+      </div>
+      {text && (
+        <p className="text-[11px] text-muted-foreground/60 leading-relaxed italic">{text}</p>
+      )}
+    </div>
+  )
+}
 
 const TOOL_LABELS: Record<string, string> = {
   create_appointment: "Agendar consulta",
@@ -259,7 +357,9 @@ function MessageBubble({
     : ""
 
   const isPixCharge = "type" in msg && msg.type === "PIX_CHARGE"
+  const isAudio = "type" in msg && msg.type === "AUDIO"
   const pixMeta = "metadata" in msg ? msg.metadata : undefined
+  const audioUrl = pixMeta?.audioUrl as string | undefined
 
   return (
     <motion.div
@@ -285,6 +385,8 @@ function MessageBubble({
             content={msg.content}
             metadata={pixMeta ? { qrCodeUrl: pixMeta.qrCodeUrl, pixCopyPaste: pixMeta.pixCopyPaste, amount: pixMeta.amount, description: pixMeta.description } : undefined}
           />
+        ) : isAudio && audioUrl ? (
+          <AudioPlayer url={audioUrl} text={msg.content} />
         ) : (
           <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words text-foreground">
             {msg.content}
