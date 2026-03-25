@@ -410,7 +410,7 @@ export function AppHeader() {
                   ))}
                 </div>
 
-                <div className="max-h-[380px] overflow-y-auto p-1.5">
+                <div className="max-h-[380px] overflow-y-auto p-1.5 space-y-1">
                   {!notificationsEnabled && (
                     <p className="px-2.5 py-3 text-[12px] text-muted-foreground/90 text-center">
                       Notificações desativadas nas configurações do tenant.
@@ -429,7 +429,7 @@ export function AppHeader() {
                         key={n.id}
                         onClick={() => void handleNotificationClick(n)}
                         disabled={readPendingIds.has(n.id)}
-                        className={`w-full rounded-lg px-2.5 py-2 text-left transition-colors cursor-pointer ${
+                        className={`w-full rounded-lg px-2.5 py-2.5 text-left transition-colors cursor-pointer ${
                           n.read
                             ? "hover:bg-muted/30"
                             : "bg-accent/5 hover:bg-accent/10"
@@ -448,11 +448,7 @@ export function AppHeader() {
                               )}
                             </div>
                             <p className="text-[11px] text-muted-foreground/90 line-clamp-2 mt-0.5">{n.body}</p>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <span className="text-[10px] font-mono text-muted-foreground/90">{n.type}</span>
-                              <span className="text-[10px] text-muted-foreground/85">·</span>
-                              <span className="text-[10px] text-muted-foreground/90">{formatRelative(n.createdAt)}</span>
-                            </div>
+                            <span className="text-[10px] text-muted-foreground/60 mt-1 block">{formatRelative(n.createdAt)}</span>
                           </div>
                         </div>
                       </button>
