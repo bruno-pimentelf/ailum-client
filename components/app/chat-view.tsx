@@ -1075,7 +1075,10 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
   const displayPhone = contact.contactPhone ?? contact.phone ?? ""
   const { data: tenant } = useTenant()
-  const globalAiEnabled = tenant?.isAgentEnabledForWhatsApp !== false
+  // AI settings are per-instance now
+  const routedInstance = zapiInstances.find((i) => i.instanceId === routedInstanceId)
+  const globalAiEnabled = routedInstance?.isAiEnabled === true
+  const testModeActive = !globalAiEnabled && routedInstance?.isAiTestMode === true
   const [isAiEnabled, setIsAiEnabled] = useState(contact.isAiEnabled !== false)
   const aiToggle = useMutation({
     mutationFn: (enabled: boolean) => contactsApi.toggleAi(contact.id!, enabled),
@@ -1090,7 +1093,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     [integrations]
   )
   const fallbackInstance = useMemo(
-    () => zapiInstances.find((i) => i.isDefault) ?? zapiInstances[0] ?? null,
+    () => zapiInstances[0] ?? null,
     [zapiInstances]
   )
   const routedInstanceId = preferredInstanceId || fallbackInstance?.instanceId || ""
@@ -1466,32 +1469,39 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
               onClick={() => aiToggle.mutate(!isAiEnabled)}
               disabled={aiToggle.isPending}
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all duration-200 cursor-pointer border ${
-                !globalAiEnabled
+                testModeActive
                   ? "border-amber-500/30 bg-amber-500/10 text-amber-500/80 hover:bg-amber-500/15"
-                  : isAiEnabled
-                    ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
-                    : "border-border/50 bg-muted/20 text-muted-foreground/60 hover:bg-muted/40 hover:text-muted-foreground"
+                  : !globalAiEnabled
+                    ? "border-rose-500/30 bg-rose-500/10 text-rose-400/80 hover:bg-rose-500/15"
+                    : isAiEnabled
+                      ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
+                      : "border-border/50 bg-muted/20 text-muted-foreground/60 hover:bg-muted/40 hover:text-muted-foreground"
               } disabled:opacity-50`}
               title={
-                !globalAiEnabled
-                  ? "IA desabilitada nas configurações gerais"
-                  : isAiEnabled
-                    ? "IA ativa neste contato — clique para desativar"
-                    : "IA desativada neste contato — clique para ativar"
+                testModeActive
+                  ? "Modo teste ativo — IA responde apenas para números autorizados"
+                  : !globalAiEnabled
+                    ? "IA desabilitada nas configurações gerais"
+                    : isAiEnabled
+                      ? "IA ativa neste contato — clique para desativar"
+                      : "IA desativada neste contato — clique para ativar"
               }
             >
               <Robot className="h-3.5 w-3.5" weight={isAiEnabled && globalAiEnabled ? "fill" : "regular"} />
-              <span>{!globalAiEnabled ? "IA desativada" : isAiEnabled ? "IA ativa" : "IA pausada"}</span>
+              <span>{testModeActive ? "Modo teste" : !globalAiEnabled ? "IA desativada" : isAiEnabled ? "IA ativa" : "IA pausada"}</span>
               {!globalAiEnabled && isAiEnabled && (
                 <Warning className="h-3 w-3 text-amber-500/80" weight="fill" />
               )}
             </button>
-            {/* Tooltip when global AI is off but contact AI is on */}
+            {/* Tooltip when AI is not fully active */}
             {!globalAiEnabled && isAiEnabled && (
               <div className="absolute right-0 top-full mt-1.5 z-50 hidden group-hover:block">
-                <div className="rounded-lg border border-amber-500/20 bg-background/95 backdrop-blur-sm px-3 py-2 shadow-lg max-w-[220px]">
-                  <p className="text-[10px] text-amber-400 leading-relaxed">
-                    A IA está ativada neste contato, mas está <span className="font-semibold">desabilitada nas configurações gerais</span>. Ative em Configurações para que a IA responda.
+                <div className="rounded-lg border border-border/30 bg-background/95 backdrop-blur-sm px-3 py-2 shadow-lg max-w-[240px]">
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    {testModeActive
+                      ? <>A IA está em <span className="font-semibold text-amber-400">modo teste</span> — responde apenas para números autorizados nas configurações.</>
+                      : <>A IA está ativada neste contato, mas está <span className="font-semibold text-rose-400">desabilitada nas configurações gerais</span>. Ative em Configurações → IA para que responda.</>
+                    }
                   </p>
                 </div>
               </div>

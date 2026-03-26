@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Robot, Check, ArrowsClockwise, Warning, Bell, CurrencyDollar } from "@phosphor-icons/react"
+import { Robot, Check, ArrowsClockwise, Warning, Bell, CurrencyDollar, Flask, Plus, X, WhatsappLogo } from "@phosphor-icons/react"
+import { AnimatePresence } from "framer-motion"
 import { useTenant, useUpdateTenant } from "@/hooks/use-tenant"
+import { useIntegrations } from "@/hooks/use-integrations"
+import { integrationsApi } from "@/lib/api/integrations"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useMe } from "@/hooks/use-me"
 import { InstructionTextarea } from "@/components/app/instruction-textarea"
 
@@ -91,14 +95,32 @@ export function IATab() {
     )
   }
 
+  const queryClient = useQueryClient()
+  const { data: integrations } = useIntegrations()
+  const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId && i.isActive)
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null)
+
+  // Auto-select first instance
+  useEffect(() => {
+    if (!selectedInstanceId && zapiInstances.length > 0) {
+      setSelectedInstanceId(zapiInstances[0]!.instanceId)
+    }
+  }, [zapiInstances, selectedInstanceId])
+
+  const selectedInstance = zapiInstances.find((i) => i.instanceId === selectedInstanceId)
+  const [testPhoneInput, setTestPhoneInput] = useState("")
+
+  const aiMutation = useMutation({
+    mutationFn: (body: { instanceId: string; isAiEnabled?: boolean; isAiTestMode?: boolean; aiTestPhones?: string[] }) =>
+      integrationsApi.updateZapiAi(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["integrations"] }),
+  })
+
   async function handleSlotRecallToggle() {
     if (!tenant) return
-    const next = !tenant.isSlotRecallEnabled
     try {
-      await update.mutateAsync({ isSlotRecallEnabled: next })
-    } catch {
-      // Error handled by mutation
-    }
+      await update.mutateAsync({ isSlotRecallEnabled: !tenant.isSlotRecallEnabled })
+    } catch {}
   }
 
   return (
@@ -108,6 +130,179 @@ export function IATab() {
       transition={{ duration: 0.2 }}
       className="space-y-6 w-full"
     >
+      {/* IA por instância WhatsApp */}
+      <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/10">
+            <WhatsappLogo className="h-4 w-4 text-accent" weight="duotone" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-[13px] font-semibold text-foreground">IA no WhatsApp</h3>
+            <p className="text-[11px] text-muted-foreground">Configuração de IA por instância conectada</p>
+          </div>
+        </div>
+
+        {zapiInstances.length === 0 ? (
+          <p className="text-[12px] text-muted-foreground/70 pl-12">
+            Nenhuma instância WhatsApp conectada. Configure em Conexões primeiro.
+          </p>
+        ) : (
+          <>
+            {/* Instance selector */}
+            {zapiInstances.length > 1 && (
+              <div className="flex gap-1.5 pl-12">
+                {zapiInstances.map((inst) => (
+                  <button
+                    key={inst.instanceId}
+                    type="button"
+                    onClick={() => setSelectedInstanceId(inst.instanceId)}
+                    className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-all ${
+                      selectedInstanceId === inst.instanceId
+                        ? "border-accent/40 bg-accent/15 text-accent"
+                        : "border-border/50 bg-muted/20 text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
+                    }`}
+                  >
+                    {inst.label || inst.instanceId?.slice(0, 10)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {selectedInstance && (
+              <div className="space-y-4 pl-12">
+                {/* AI enabled toggle */}
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[12px] font-medium text-foreground">Ativar IA</p>
+                    <p className="text-[11px] text-muted-foreground">Responde automaticamente todas as mensagens desta instância</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={selectedInstance.isAiEnabled ?? false}
+                    onClick={() => aiMutation.mutate({ instanceId: selectedInstance.instanceId!, isAiEnabled: !selectedInstance.isAiEnabled })}
+                    disabled={aiMutation.isPending}
+                    className={`cursor-pointer relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors duration-200 disabled:opacity-50 ${
+                      selectedInstance.isAiEnabled ? "border-accent bg-accent/20" : "border-border bg-muted/30"
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 h-4 w-4 rounded-full transition-all duration-200 ${
+                      selectedInstance.isAiEnabled ? "left-[calc(100%-20px)] bg-accent" : "left-1 bg-muted-foreground/40"
+                    }`} />
+                  </button>
+                </div>
+
+                {/* Test mode — only when AI is off */}
+                {!selectedInstance.isAiEnabled && (
+                  <div className="border-t border-border/30 pt-3 space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2">
+                        <Flask className="h-3.5 w-3.5 text-amber-400" weight="duotone" />
+                        <div>
+                          <p className="text-[12px] font-medium text-foreground">Modo teste</p>
+                          <p className="text-[11px] text-muted-foreground">IA responde apenas para números autorizados</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={selectedInstance.isAiTestMode ?? false}
+                        onClick={() => aiMutation.mutate({ instanceId: selectedInstance.instanceId!, isAiTestMode: !selectedInstance.isAiTestMode })}
+                        disabled={aiMutation.isPending}
+                        className={`cursor-pointer relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors duration-200 disabled:opacity-50 ${
+                          selectedInstance.isAiTestMode ? "border-amber-500 bg-amber-500/20" : "border-border bg-muted/30"
+                        }`}
+                      >
+                        <span className={`absolute top-0.5 h-4 w-4 rounded-full transition-all duration-200 ${
+                          selectedInstance.isAiTestMode ? "left-[calc(100%-20px)] bg-amber-500" : "left-1 bg-muted-foreground/40"
+                        }`} />
+                      </button>
+                    </div>
+
+                    <AnimatePresence>
+                      {selectedInstance.isAiTestMode && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-2">
+                            <p className="text-[11px] text-muted-foreground/80">
+                              Números que receberão respostas da IA nesta instância (DDD + número)
+                            </p>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={testPhoneInput}
+                                onChange={(e) => setTestPhoneInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault()
+                                    const phone = testPhoneInput.trim().replace(/\D/g, "")
+                                    if (!phone) return
+                                    const current = selectedInstance.aiTestPhones ?? []
+                                    if (!current.includes(phone)) {
+                                      aiMutation.mutate({ instanceId: selectedInstance.instanceId!, aiTestPhones: [...current, phone] })
+                                    }
+                                    setTestPhoneInput("")
+                                  }
+                                }}
+                                placeholder="Ex: 31991421882"
+                                className="flex-1 rounded-lg border border-border/50 bg-muted/20 px-3 py-1.5 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const phone = testPhoneInput.trim().replace(/\D/g, "")
+                                  if (!phone) return
+                                  const current = selectedInstance.aiTestPhones ?? []
+                                  if (!current.includes(phone)) {
+                                    aiMutation.mutate({ instanceId: selectedInstance.instanceId!, aiTestPhones: [...current, phone] })
+                                  }
+                                  setTestPhoneInput("")
+                                }}
+                                disabled={!testPhoneInput.trim()}
+                                className="cursor-pointer flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-40 disabled:cursor-default"
+                              >
+                                <Plus className="h-3 w-3" />
+                                Adicionar
+                              </button>
+                            </div>
+                            {(selectedInstance.aiTestPhones ?? []).length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {(selectedInstance.aiTestPhones ?? []).map((phone) => (
+                                  <span
+                                    key={phone}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-mono text-amber-400"
+                                  >
+                                    {phone}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const current = selectedInstance.aiTestPhones ?? []
+                                        aiMutation.mutate({ instanceId: selectedInstance.instanceId!, aiTestPhones: current.filter((p) => p !== phone) })
+                                      }}
+                                      className="cursor-pointer text-amber-400/60 hover:text-amber-400 transition-colors"
+                                    >
+                                      <X className="h-2.5 w-2.5" />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Recall de vagas */}
       <div className="rounded-xl border border-border/50 bg-card/30 p-5">
         <div className="flex items-start justify-between gap-4">

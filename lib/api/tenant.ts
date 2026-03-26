@@ -21,6 +21,8 @@ export interface Tenant {
   guardrailRules: string | null
   pixTerms: string | null
   isAgentEnabledForWhatsApp?: boolean
+  isAgentTestMode?: boolean
+  agentTestPhones?: string[]
   isSlotRecallEnabled?: boolean
   customMemoryKeys?: Array<{ key: string; description: string }> | null
   notificationsEnabled?: boolean
@@ -50,6 +52,8 @@ export type TenantUpdateInput = Partial<
     | "guardrailRules"
     | "pixTerms"
     | "isAgentEnabledForWhatsApp"
+    | "isAgentTestMode"
+    | "agentTestPhones"
     | "isSlotRecallEnabled"
     | "customMemoryKeys"
     | "notificationsEnabled"

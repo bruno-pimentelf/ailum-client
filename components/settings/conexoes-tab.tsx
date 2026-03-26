@@ -20,7 +20,6 @@ import {
 import {
   useIntegrations,
   useSaveZapi,
-  useSetZapiDefault,
   useSyncZapiContactRouting,
   useZapiStatus,
   useZapiQrCode,
@@ -28,7 +27,9 @@ import {
   useZapiRestart,
   useSaveAsaas,
   useRemoveIntegration,
+  useDeleteZapiInstance,
 } from "@/hooks/use-integrations"
+import { integrationsApi } from "@/lib/api/integrations"
 import { useMe } from "@/hooks/use-me"
 import type { Integration } from "@/lib/api/integrations"
 
@@ -69,13 +70,31 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // ── Z-API Card ─────────────────────────────────────────────────────────────────
 
 function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[]; open: boolean; onToggle: () => void }) {
-  const defaultIntegration = integrations.find((i) => i.isDefault) ?? integrations[0] ?? null
+  const defaultIntegration = integrations[0] ?? null
   const integration = defaultIntegration
   const isConfigured = integrations.some((i) => i.isActive && i.hasApiKey && i.instanceId)
   const [view, setView] = useState<ZapiView>(isConfigured ? "status" : "credentials")
   const [instanceId, setInstanceId] = useState(integration?.instanceId ?? "")
   const [instanceToken, setInstanceToken] = useState("")
   const [label, setLabel] = useState(integration?.label ?? "")
+  const [instanceCheck, setInstanceCheck] = useState<{ inUse: boolean; sameAccount?: boolean } | null>(null)
+
+  // Check if instanceId is already used by another account
+  useEffect(() => {
+    const id = instanceId.trim()
+    if (!id || id.length < 10) { setInstanceCheck(null); return }
+    // Don't check if it's the current integration's instanceId
+    if (integration?.instanceId === id) { setInstanceCheck(null); return }
+    const timer = setTimeout(async () => {
+      try {
+        const result = await integrationsApi.checkZapiInstance(id)
+        setInstanceCheck(result)
+      } catch {
+        setInstanceCheck(null)
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [instanceId, integration?.instanceId])
   const [syncOnlyUnknown, setSyncOnlyUnknown] = useState(true)
   const [syncPageSize, setSyncPageSize] = useState(100)
   const [syncMaxPages, setSyncMaxPages] = useState(3)
@@ -108,7 +127,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
   }, [whatsappConnected, view])
 
   const saveZapi = useSaveZapi()
-  const setDefault = useSetZapiDefault()
+  const deleteInstance = useDeleteZapiInstance()
   const syncRouting = useSyncZapiContactRouting()
   const disconnect = useZapiDisconnect()
   const restart = useZapiRestart()
@@ -197,19 +216,20 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                             <p className="truncate text-[11px] font-semibold text-white/88">{inst.label || inst.instanceId}</p>
                             <p className="truncate text-[10px] font-mono text-white/85">{inst.instanceId}</p>
                           </div>
-                          {inst.isDefault && (
-                            <span className="rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
-                              Padrão
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setDefault.mutate({ instanceId: inst.instanceId ?? "" })}
-                            disabled={!inst.instanceId || inst.isDefault || setDefault.isPending}
-                            className="cursor-pointer rounded-md border border-white/[0.09] bg-white/[0.03] px-2 py-1 text-[10px] font-bold text-white/88 hover:text-white/90 disabled:cursor-default disabled:opacity-40"
-                          >
-                            Tornar padrão
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm("Excluir esta instância? Contatos associados não serão apagados.")) {
+                                  deleteInstance.mutate(inst.instanceId ?? "")
+                                }
+                              }}
+                              disabled={deleteInstance.isPending}
+                              className="cursor-pointer rounded-md border border-rose-500/20 bg-rose-500/[0.06] px-2 py-1 text-[10px] font-bold text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 disabled:opacity-40 transition-colors"
+                            >
+                              <Trash className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -383,6 +403,18 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Field label="Instance ID">
                         <input value={instanceId} onChange={(e) => setInstanceId(e.target.value)} placeholder="3EE8E4989B..." className={inputCls} />
+                        {instanceCheck?.inUse && !instanceCheck.sameAccount && (
+                          <p className="mt-1 flex items-center gap-1.5 text-[10px] text-rose-400">
+                            <Warning className="h-3 w-3 shrink-0" weight="fill" />
+                            Esta instância já está vinculada a outra conta. Exclua-a da outra conta primeiro.
+                          </p>
+                        )}
+                        {instanceCheck?.inUse && instanceCheck.sameAccount && (
+                          <p className="mt-1 flex items-center gap-1.5 text-[10px] text-amber-400">
+                            <Warning className="h-3 w-3 shrink-0" weight="fill" />
+                            Esta instância já está cadastrada nesta conta.
+                          </p>
+                        )}
                       </Field>
                       <Field label="Rótulo">
                         <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Recepção Principal" className={inputCls} />
@@ -394,7 +426,7 @@ function ZapiCard({ integrations, open, onToggle }: { integrations: Integration[
                       </Field>
                     </div>
                     <div className="flex items-center gap-2 pt-1 flex-wrap">
-                      <button type="submit" disabled={saveZapi.isPending || !instanceId.trim() || !instanceToken.trim()}
+                      <button type="submit" disabled={saveZapi.isPending || !instanceId.trim() || !instanceToken.trim() || (instanceCheck?.inUse && !instanceCheck.sameAccount)}
                         className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-[11px] font-bold text-accent-foreground hover:bg-accent/90 transition-all disabled:opacity-40">
                         {saveZapi.isPending ? <Spinner /> : <Check className="h-3 w-3" weight="bold" />}
                         {isConfigured ? "Atualizar credenciais" : "Salvar e ativar"}

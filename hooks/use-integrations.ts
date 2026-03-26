@@ -4,7 +4,6 @@ import {
   type ZapiSaveInput,
   type AsaasSaveInput,
   type Provider,
-  type ZapiSetDefaultInput,
   type ZapiSyncRoutingInput,
   type ZapiContactRoutingInput,
 } from "@/lib/api/integrations"
@@ -72,17 +71,6 @@ export function useSaveZapi() {
   })
 }
 
-export function useSetZapiDefault() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (input: ZapiSetDefaultInput) => integrationsApi.setZapiDefault(input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY })
-      qc.invalidateQueries({ queryKey: ZAPI_STATUS_KEY })
-    },
-  })
-}
-
 export function useSyncZapiContactRouting() {
   const qc = useQueryClient()
   return useMutation({
@@ -140,5 +128,16 @@ export function useRemoveIntegration() {
   return useMutation({
     mutationFn: (provider: Provider) => integrationsApi.remove(provider),
     onSuccess: () => qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY }),
+  })
+}
+
+export function useDeleteZapiInstance() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (instanceId: string) => integrationsApi.deleteZapiInstance(instanceId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY })
+      qc.invalidateQueries({ queryKey: ZAPI_STATUS_KEY })
+    },
   })
 }

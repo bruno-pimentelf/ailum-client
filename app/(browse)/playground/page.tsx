@@ -26,6 +26,8 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import { usePlaygroundContact, usePlaygroundMessages, usePlaygroundTyping, useAgentAudit } from "@/hooks/use-playground"
 import { sendPlaygroundMessage, confirmPlayground, resetPlayground } from "@/lib/api/agent"
+import { useIntegrations } from "@/hooks/use-integrations"
+import { useInstanceStore } from "@/lib/instance-store"
 import type { FirestoreMessage } from "@/lib/types/firestore"
 import type { AgentAuditEntry, AuditDetail, ToolExecution } from "@/lib/api/agent"
 
@@ -419,6 +421,10 @@ export default function PlaygroundPage() {
   }
   const sessionId = sessionIdRef.current ?? undefined
 
+  const { data: integrations } = useIntegrations()
+  const zapiInstances = (integrations ?? []).filter((i: { provider: string; instanceId: string | null; isActive: boolean }) => i.provider === "zapi" && i.instanceId && i.isActive)
+  const { selectedInstanceId, setSelectedInstanceId } = useInstanceStore()
+
   const { data: contact, isLoading: contactLoading, error: contactError, refetch } = usePlaygroundContact()
   const contactId = contact?.id ?? null
   const { messages } = usePlaygroundMessages(contactId)
@@ -554,7 +560,19 @@ export default function PlaygroundPage() {
         <div className="flex items-center gap-2.5">
           <Robot className="h-4 w-4 text-accent" weight="fill" />
           <span className="text-[13px] font-semibold text-foreground">Playground</span>
-          <span className="text-[11px] text-muted-foreground/85 hidden sm:inline">— teste a IA sem WhatsApp</span>
+          {zapiInstances.length > 1 && (
+            <select
+              value={selectedInstanceId ?? ""}
+              onChange={(e) => setSelectedInstanceId(e.target.value || null)}
+              className="rounded-md border border-border/50 bg-muted/20 px-2 py-0.5 text-[10px] text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent/30 cursor-pointer"
+            >
+              {zapiInstances.map((inst) => (
+                <option key={inst.instanceId} value={inst.instanceId!}>
+                  {inst.label || inst.instanceId?.slice(0, 10)}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <button
           type="button"

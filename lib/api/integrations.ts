@@ -9,10 +9,13 @@ export type Integration = {
   provider: Provider
   instanceId: string | null
   label?: string | null
-  isDefault?: boolean
   webhookToken: string | null
   isActive: boolean
   hasApiKey: boolean
+  // AI settings (ZAPI only)
+  isAiEnabled?: boolean
+  isAiTestMode?: boolean
+  aiTestPhones?: string[]
 }
 
 export type ZapiSaveInput = {
@@ -30,15 +33,6 @@ export type ZapiStatus = {
   connected: boolean
   smartphoneConnected: boolean
   error: string | null
-}
-
-export type ZapiSetDefaultInput = {
-  instanceId: string
-}
-
-export type ZapiSetDefaultResult = {
-  instanceId: string
-  isDefault: true
 }
 
 export type ZapiSyncRoutingInput = {
@@ -192,8 +186,14 @@ export const integrationsApi = {
   saveZapi: (body: ZapiSaveInput) =>
     apiFetch<ZapiSaveResult>("/integrations/zapi", { method: "PUT", body }),
 
-  setZapiDefault: (body: ZapiSetDefaultInput) =>
-    apiFetch<ZapiSetDefaultResult>("/integrations/zapi/default", { method: "PATCH", body }),
+  updateZapiAi: (body: { instanceId: string; isAiEnabled?: boolean; isAiTestMode?: boolean; aiTestPhones?: string[] }) =>
+    apiFetch<{ success: boolean }>("/integrations/zapi/ai", { method: "PATCH", body }),
+
+  deleteZapiInstance: (instanceId: string) =>
+    apiFetch<void>(`/integrations/zapi/${instanceId}`, { method: "DELETE" }),
+
+  checkZapiInstance: (instanceId: string) =>
+    apiFetch<{ inUse: boolean; sameAccount?: boolean; isActive?: boolean }>(`/integrations/zapi/check-instance?instanceId=${instanceId}`),
 
   zapiStatus: (params?: { instanceId?: string }) => {
     const qs = new URLSearchParams()

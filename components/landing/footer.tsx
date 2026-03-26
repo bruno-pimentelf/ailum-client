@@ -6,11 +6,30 @@ import { useLanguage } from "@/components/providers/language-provider"
 export function Footer() {
   const { t } = useLanguage()
   const footerSections = [
-    { title: t.footer.produto, links: t.footer.produtoLinks },
-    { title: t.footer.empresa, links: t.footer.empresaLinks },
-    { title: t.footer.suporte, links: t.footer.suporteLinks },
-    { title: t.footer.legal, links: t.footer.legalLinks },
-  ] as const
+    {
+      title: t.footer.produto,
+      links: t.footer.produtoLinks.map((label: string, i: number) => ({
+        label,
+        href: ["/#features", "/#how-it-works", "/#integrations", "/auth/sign-in"][i] ?? "#",
+      })),
+    },
+    {
+      title: t.footer.empresa,
+      links: t.footer.empresaLinks.map((label: string) => ({ label, href: "#" })),
+    },
+    {
+      title: t.footer.suporte,
+      links: t.footer.suporteLinks.map((label: string) => ({ label, href: "#" })),
+    },
+    {
+      title: t.footer.legal,
+      links: t.footer.legalLinks.map((label: string, i: number) => ({
+        label,
+        href: ["/politicas-de-privacidade", "/termos-de-uso"][i] ?? "#",
+        external: true,
+      })),
+    },
+  ]
 
   return (
     <footer className="border-t border-white/[0.04]">
@@ -35,13 +54,14 @@ export function Footer() {
                 {title}
               </h4>
               <ul className="mt-5 flex flex-col gap-3">
-                {links.map((link) => (
-                  <li key={link}>
+                {links.map((link: { label: string; href: string; external?: boolean }) => (
+                  <li key={link.label}>
                     <Link
-                      href="#"
+                      href={link.href}
+                      {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                       className="text-[13px] text-white/85 transition-colors duration-300 hover:text-white/90"
                     >
-                      {link}
+                      {link.label}
                     </Link>
                   </li>
                 ))}
@@ -55,10 +75,10 @@ export function Footer() {
             &copy; {new Date().getFullYear()} Ailum. {t.footer.direitos}
           </p>
           <div className="flex items-center gap-6">
-            <Link href="#" className="text-[11px] text-white/90 transition-colors duration-300 hover:text-white/85">
+            <Link href="/politicas-de-privacidade" target="_blank" rel="noopener noreferrer" className="text-[11px] text-white/90 transition-colors duration-300 hover:text-white/85">
               {t.footer.politica}
             </Link>
-            <Link href="#" className="text-[11px] text-white/90 transition-colors duration-300 hover:text-white/85">
+            <Link href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-[11px] text-white/90 transition-colors duration-300 hover:text-white/85">
               {t.footer.termos}
             </Link>
           </div>
