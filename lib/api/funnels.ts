@@ -186,6 +186,7 @@ export interface TriggerInput {
   conditionConfig?: ConditionConfig | null
   delayMinutes?: number
   cooldownSeconds?: number
+  maxRepetitions?: number
 }
 
 // ─── API functions ────────────────────────────────────────────────────────────

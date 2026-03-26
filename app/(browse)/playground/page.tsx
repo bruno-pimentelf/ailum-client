@@ -359,7 +359,7 @@ function MessageBubble({
   const isPixCharge = "type" in msg && msg.type === "PIX_CHARGE"
   const isAudio = "type" in msg && msg.type === "AUDIO"
   const pixMeta = "metadata" in msg ? msg.metadata : undefined
-  const audioUrl = pixMeta?.audioUrl as string | undefined
+  const audioUrl = (pixMeta as Record<string, unknown> | undefined)?.audioUrl as string | undefined
 
   return (
     <motion.div
