@@ -28,6 +28,7 @@ import { ContactInfoPanel } from "@/components/app/contact-info-panel"
 import { ContactImportModal } from "@/components/app/contact-import-modal"
 import { useContactsList } from "@/hooks/use-contacts-list"
 import { useAuthStore } from "@/lib/auth-store"
+import { useInstanceStore } from "@/lib/instance-store"
 import type { ApiContact } from "@/lib/api/contacts"
 import type { FirestoreContact } from "@/lib/types/firestore"
 
@@ -435,7 +436,10 @@ export default function ContactsPage() {
     limit: PAGE_SIZE,
   })
 
-  const contacts = data?.data ?? []
+  const selectedInstanceId = useInstanceStore((s) => s.selectedInstanceId)
+  const contacts = (data?.data ?? []).filter(
+    (c) => !selectedInstanceId || !c.zapiInstanceId || c.zapiInstanceId === selectedInstanceId,
+  )
   const pages    = data?.pages ?? 1
   const total    = data?.total ?? 0
 

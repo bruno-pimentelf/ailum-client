@@ -19,7 +19,11 @@ import {
   Robot,
   ChartLineUp,
   CurrencyCircleDollar,
+  WhatsappLogo,
+  Globe,
 } from "@phosphor-icons/react"
+import { useIntegrations } from "@/hooks/use-integrations"
+import { useInstanceStore } from "@/lib/instance-store"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -57,6 +61,71 @@ const baseNavigation: NavEntry[] = [
 
 function isGroup(entry: NavEntry): entry is NavGroup & { type: "group" } {
   return "type" in entry && entry.type === "group"
+}
+
+// ─── Instance selector ───────────────────────────────────────────────────────
+
+function InstanceSelector({ collapsed }: { collapsed: boolean }) {
+  const { data: integrations } = useIntegrations()
+  const { selectedInstanceId, setSelectedInstanceId } = useInstanceStore()
+
+  const zapiInstances = (integrations ?? []).filter(
+    (i) => i.provider === "zapi" && i.instanceId && i.isActive,
+  )
+
+  // Não exibir se só tem 0-1 instância
+  if (zapiInstances.length <= 1) return null
+
+  const selected = zapiInstances.find((i) => i.instanceId === selectedInstanceId)
+  const label = selected?.label || selected?.instanceId?.slice(0, 8) || "Todas"
+
+  return (
+    <AnimatePresence>
+      {!collapsed && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="shrink-0 mx-2 mb-1.5"
+        >
+          <div className="flex items-center gap-1.5 mb-1 px-1">
+            <WhatsappLogo className="h-3 w-3 text-muted-foreground/60" weight="fill" />
+            <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+              Instância
+            </span>
+          </div>
+          <select
+            value={selectedInstanceId ?? ""}
+            onChange={(e) => setSelectedInstanceId(e.target.value || null)}
+            className="w-full rounded-lg border border-border/50 bg-muted/20 px-2.5 py-1.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30 cursor-pointer appearance-none"
+            title={`Instância: ${label}`}
+          >
+            <option value="">Todas as instâncias</option>
+            {zapiInstances.map((inst) => (
+              <option key={inst.instanceId} value={inst.instanceId!}>
+                {inst.label || inst.instanceId?.slice(0, 12)}
+              </option>
+            ))}
+          </select>
+        </motion.div>
+      )}
+      {collapsed && zapiInstances.length > 1 && (
+        <div className="shrink-0 flex justify-center mb-1.5">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+            title={`Instância: ${label}`}
+          >
+            {selectedInstanceId ? (
+              <WhatsappLogo className="h-3.5 w-3.5 text-accent" weight="fill" />
+            ) : (
+              <Globe className="h-3.5 w-3.5" weight="regular" />
+            )}
+          </div>
+        </div>
+      )}
+    </AnimatePresence>
+  )
 }
 
 // ─── Gerente de Conta ────────────────────────────────────────────────────────
@@ -279,6 +348,9 @@ export function AppSidebar({
           })}
         </ul>
       </nav>
+
+      {/* Instance selector */}
+      <InstanceSelector collapsed={collapsed} />
 
       {/* Gerente de Conta */}
       <AccountManagerCard

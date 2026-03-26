@@ -32,6 +32,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import { useFunnels, useBoard, useFunnelMutations } from "@/hooks/use-board"
 import { useMe } from "@/hooks/use-me"
+import { useInstanceStore } from "@/lib/instance-store"
 import { FunnelModal } from "@/components/app/funnel-modal"
 import { SelectContactModal } from "@/components/app/select-contact-modal"
 import { StageConfigModal } from "@/components/app/stage-config-modal"
@@ -645,9 +646,18 @@ export default function BoardsPage() {
   } | null>(null)
   const dndId = useId()
 
-  const { data: funnels, isLoading: funnelsLoading } = useFunnels()
+  const { data: allFunnels, isLoading: funnelsLoading } = useFunnels()
   const { data: me } = useMe()
   const canEditFunnels = me?.role === "ADMIN" || me?.role === "SECRETARY"
+
+  const selectedInstanceId = useInstanceStore((s) => s.selectedInstanceId)
+  const funnels = useMemo(
+    () =>
+      allFunnels?.filter(
+        (f) => !selectedInstanceId || !f.zapiInstanceId || f.zapiInstanceId === selectedInstanceId,
+      ),
+    [allFunnels, selectedInstanceId],
+  )
 
   const defaultFunnelId = funnels?.find((f) => f.isDefault)?.id ?? null
   const selectedFunnelId = activeFunnelId ?? defaultFunnelId ?? funnels?.[0]?.id ?? null

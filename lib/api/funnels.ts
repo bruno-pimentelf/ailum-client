@@ -58,6 +58,7 @@ export interface FunnelListItem {
   entryKeywords?: string[]
   agentName?: string
   agentPersonality?: string | null
+  zapiInstanceId?: string | null
   stages: Array<{
     id: string
     name: string
@@ -75,6 +76,7 @@ export interface FunnelInput {
   entryKeywords?: string[]
   agentName?: string
   agentPersonality?: string | null
+  zapiInstanceId?: string | null
 }
 
 export interface StageInput {

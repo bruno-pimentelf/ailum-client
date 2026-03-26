@@ -15,6 +15,7 @@ import { formatMessagePreview } from "@/components/app/message-preview"
 import { ChatView } from "@/components/app/chat-view"
 import { useContacts, useWhatsappStatus } from "@/hooks/use-chats"
 import { useAuthStore } from "@/lib/auth-store"
+import { useInstanceStore } from "@/lib/instance-store"
 import type { FirestoreContact } from "@/lib/types/firestore"
 import Link from "next/link"
 
@@ -215,10 +216,13 @@ export default function ChatsPage() {
   const tenantId = useAuthStore((s) => s.tenantId)
   const { contacts, loading } = useContacts(tenantId)
   const { whatsappConnected, whatsappError } = useWhatsappStatus(tenantId)
+  const selectedInstanceId = useInstanceStore((s) => s.selectedInstanceId)
 
   const filtered = contacts.filter((c) => {
     const ph = c.contactPhone ?? c.phone ?? ""
     if (ph === "__playground__") return false
+    // Filter by instance if selected
+    if (selectedInstanceId && c.zapiInstanceId && c.zapiInstanceId !== selectedInstanceId) return false
     if (!search) return true
     const q = search.toLowerCase()
     return (

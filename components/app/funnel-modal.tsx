@@ -12,11 +12,13 @@ import {
   Spinner,
   FlowArrow,
   Tag,
+  WhatsappLogo,
 } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
 import { useFunnelMutations } from "@/hooks/use-board"
 import type { FunnelListItem } from "@/lib/api/funnels"
 import { InstructionTextarea } from "@/components/app/instruction-textarea"
+import { useIntegrations } from "@/hooks/use-integrations"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -174,7 +176,10 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
   const [keywordInput, setKeywordInput] = useState("")
   const [agentName, setAgentName] = useState("")
   const [agentPersonality, setAgentPersonality] = useState("")
+  const [zapiInstanceId, setZapiInstanceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { data: integrations } = useIntegrations()
+  const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId && i.isActive)
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
@@ -198,12 +203,14 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
       )
       setAgentName(funnel.agentName ?? "")
       setAgentPersonality(funnel.agentPersonality ?? "")
+      setZapiInstanceId(funnel.zapiInstanceId ?? null)
     } else {
       setName("")
       setDescription("")
       setEntryKeywords([])
       setAgentName("")
       setAgentPersonality("")
+      setZapiInstanceId(null)
       setStages([
         { _key: "s0", name: "Novo contato", color: "#64748b", isTerminal: false, order: 0 },
         { _key: "s1", name: "Qualificando", color: "#f59e0b", isTerminal: false, order: 1 },
@@ -279,6 +286,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
             entryKeywords,
             agentName: agentName.trim() || undefined,
             agentPersonality: agentPersonality.trim() || null,
+            zapiInstanceId: zapiInstanceId || null,
           },
         })
 
@@ -307,7 +315,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
           entryKeywords,
           agentName: agentName.trim() || undefined,
           agentPersonality: agentPersonality.trim() || null,
-          voiceId: voiceId || null,
+          zapiInstanceId: zapiInstanceId || null,
         })
         for (const [i, stage] of stages.entries()) {
           await createStage.mutateAsync({
@@ -437,6 +445,33 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
                   />
                 </div>
               </div>
+
+              {/* Instance selector */}
+              {zapiInstances.length > 1 && (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <WhatsappLogo className="h-3.5 w-3.5 text-muted-foreground/90" weight="duotone" />
+                    <label className="text-[11px] font-semibold text-muted-foreground/90 uppercase tracking-wider">
+                      Instância WhatsApp
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/85 mb-2">
+                    Associe este funil a uma instância específica. Mensagens recebidas nessa instância serão roteadas preferencialmente para este funil.
+                  </p>
+                  <select
+                    value={zapiInstanceId ?? ""}
+                    onChange={(e) => setZapiInstanceId(e.target.value || null)}
+                    className="w-full rounded-xl border border-border/60 bg-muted/20 px-3.5 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all cursor-pointer"
+                  >
+                    <option value="">Todas as instâncias</option>
+                    {zapiInstances.map((inst) => (
+                      <option key={inst.instanceId} value={inst.instanceId!}>
+                        {inst.label || inst.instanceId?.slice(0, 12)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Entry Keywords */}
               <div>
