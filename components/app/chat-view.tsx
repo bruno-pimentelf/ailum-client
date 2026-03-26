@@ -1075,10 +1075,6 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
   const displayPhone = contact.contactPhone ?? contact.phone ?? ""
   const { data: tenant } = useTenant()
-  // AI settings are per-instance now
-  const routedInstance = zapiInstances.find((i) => i.instanceId === routedInstanceId)
-  const globalAiEnabled = routedInstance?.isAiEnabled === true
-  const testModeActive = !globalAiEnabled && routedInstance?.isAiTestMode === true
   const [isAiEnabled, setIsAiEnabled] = useState(contact.isAiEnabled !== false)
   const aiToggle = useMutation({
     mutationFn: (enabled: boolean) => contactsApi.toggleAi(contact.id!, enabled),
@@ -1102,6 +1098,10 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     const exact = zapiInstances.find((i) => i.instanceId === routedInstanceId)
     return exact?.label || exact?.instanceId || routedInstanceId
   }, [routedInstanceId, zapiInstances])
+  // AI settings are per-instance now
+  const routedInstance = zapiInstances.find((i) => i.instanceId === routedInstanceId)
+  const globalAiEnabled = routedInstance?.isAiEnabled === true
+  const testModeActive = !globalAiEnabled && routedInstance?.isAiTestMode === true
 
   // Remove optimistic messages that have been confirmed by Firestore
   // (matched by content to avoid keeping ghosts)
