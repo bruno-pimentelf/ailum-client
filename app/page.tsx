@@ -10,6 +10,7 @@ import { Testimonials } from "@/components/landing/testimonials"
 import { CalendarShowcase } from "@/components/landing/calendar-showcase"
 import { AppTeaser } from "@/components/landing/app-teaser"
 import { Bento } from "@/components/landing/bento"
+import { NfseShowcase } from "@/components/landing/nfse-showcase"
 import { CTA } from "@/components/landing/cta"
 import { Footer } from "@/components/landing/footer"
 import { LandingShell } from "@/components/landing/landing-shell"
@@ -29,6 +30,7 @@ export default function Home() {
         <CalendarShowcase />
         <Testimonials />
         <Bento />
+        <NfseShowcase />
         <AppTeaser />
         <CTA />
         <Footer />
