@@ -42,6 +42,88 @@ const ACTIONS: { value: TriggerAction; label: string }[] = [
   { value: "WAIT_AND_REPEAT", label: "Aguardar e repetir" },
 ]
 
+// ─── Time picker ──────────────────────────────────────────────────────────────
+
+const TIME_PRESETS = [
+  { label: "30 min", minutes: 30 },
+  { label: "1 hora", minutes: 60 },
+  { label: "2 horas", minutes: 120 },
+  { label: "6 horas", minutes: 360 },
+  { label: "12 horas", minutes: 720 },
+  { label: "24 horas", minutes: 1440 },
+]
+
+function TimePicker({
+  valueMinutes,
+  onChange,
+  minMinutes = 0,
+}: {
+  valueMinutes: number
+  onChange: (minutes: number) => void
+  minMinutes?: number
+}) {
+  const [showCustom, setShowCustom] = useState(false)
+  const availablePresets = TIME_PRESETS.filter((p) => p.minutes >= minMinutes)
+  const isCustom = !TIME_PRESETS.some((p) => p.minutes === valueMinutes)
+
+  const formatValue = (mins: number) => {
+    if (mins < 60) return `${mins} min`
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return m > 0 ? `${h}h ${m}min` : `${h}h`
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1.5">
+        {availablePresets.map((preset) => (
+          <button
+            key={preset.minutes}
+            type="button"
+            onClick={() => { onChange(preset.minutes); setShowCustom(false) }}
+            className={`cursor-pointer rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-all ${
+              valueMinutes === preset.minutes && !showCustom
+                ? "border-accent/40 bg-accent/15 text-accent"
+                : "border-border/50 bg-muted/20 text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
+            }`}
+          >
+            {preset.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setShowCustom(true)}
+          className={`cursor-pointer rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-all ${
+            isCustom || showCustom
+              ? "border-accent/40 bg-accent/15 text-accent"
+              : "border-border/50 bg-muted/20 text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
+          }`}
+        >
+          Personalizado
+        </button>
+      </div>
+      {(isCustom || showCustom) && (
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={minMinutes}
+            value={valueMinutes}
+            onChange={(e) => onChange(Math.max(minMinutes, Number(e.target.value) || 0))}
+            className="w-20 rounded-lg border border-border/50 bg-muted/20 px-2.5 py-1.5 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30"
+          />
+          <span className="text-[11px] text-muted-foreground/70">minutos</span>
+          {valueMinutes > 0 && (
+            <span className="text-[10px] text-muted-foreground/50">= {formatValue(valueMinutes)}</span>
+          )}
+        </div>
+      )}
+      {!isCustom && !showCustom && valueMinutes > 0 && (
+        <p className="text-[10px] text-muted-foreground/50">{formatValue(valueMinutes)}</p>
+      )}
+    </div>
+  )
+}
+
 interface TriggerEditorModalProps {
   open: boolean
   onClose: () => void
@@ -86,6 +168,7 @@ export function TriggerEditorModal({
   const [description, setDescription] = useState("")
   const [delayMinutes, setDelayMinutes] = useState(0)
   const [cooldownSeconds, setCooldownSeconds] = useState(MIN_COOLDOWN_SECONDS)
+  const [maxRepetitions, setMaxRepetitions] = useState(1)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -95,6 +178,7 @@ export function TriggerEditorModal({
       setAction(trigger.action)
       setDelayMinutes(trigger.delayMinutes ?? 0)
       setCooldownSeconds(trigger.cooldownSeconds ?? 86400)
+      setMaxRepetitions((trigger as unknown as { maxRepetitions?: number }).maxRepetitions ?? 1)
       const ac = trigger.actionConfig as Record<string, unknown>
       const tid = getTemplateIdFromConfig(ac)
       if (tid) {
@@ -172,6 +256,7 @@ export function TriggerEditorModal({
         actionConfig: buildActionConfig(),
         delayMinutes,
         cooldownSeconds,
+        maxRepetitions,
       })
       onClose()
     } catch (err) {
@@ -369,61 +454,86 @@ export function TriggerEditorModal({
                 </div>
               )}
 
-              {/* Aviso anti-ban para eventos/ações de risco */}
+              {/* Aviso anti-ban */}
               {(event === "STALE_IN_STAGE" || action === "WAIT_AND_REPEAT") && (
                 <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/8 px-3 py-2.5">
                   <ShieldWarning className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" weight="fill" />
                   <div className="space-y-0.5">
-                    <p className="text-[12px] font-semibold text-amber-400">Risco de ban no WhatsApp</p>
+                    <p className="text-[12px] font-semibold text-amber-400">Atenção ao WhatsApp</p>
                     <p className="text-[11px] text-amber-400/80 leading-relaxed">
-                      {action === "WAIT_AND_REPEAT"
-                        ? "Repetições muito frequentes são detectadas como spam pela Meta. Use no mínimo 1h de intervalo e 1h de cooldown."
-                        : "Mensagens automáticas para contatos parados podem ser marcadas como spam. Use no mínimo 30min de atraso e 1h de cooldown."}
+                      Mensagens automáticas muito frequentes podem ser marcadas como spam. Recomendamos pelo menos 30 minutos de espera e 1 hora de intervalo entre envios.
                     </p>
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Timing config */}
+              <div className="space-y-3">
+                {/* Tempo de espera */}
                 <div>
-                  <label className={labelCls}>
-                    Atraso (min)
-                    {event === "STALE_IN_STAGE" && (
-                      <span className="ml-1 text-[10px] text-amber-400 font-normal normal-case tracking-normal">mín. 30</span>
-                    )}
-                    {action === "WAIT_AND_REPEAT" && (
-                      <span className="ml-1 text-[10px] text-amber-400 font-normal normal-case tracking-normal">mín. 60</span>
-                    )}
-                  </label>
-                  <input
-                    type="number"
-                    min={
+                  <label className={labelCls}>Tempo de espera</label>
+                  <p className="text-[10px] text-muted-foreground/70 mb-1.5">
+                    Quanto tempo o contato fica parado antes do primeiro envio
+                  </p>
+                  <TimePicker
+                    valueMinutes={delayMinutes}
+                    onChange={setDelayMinutes}
+                    minMinutes={
                       action === "WAIT_AND_REPEAT"
                         ? MIN_WAIT_REPEAT_MINUTES
                         : event === "STALE_IN_STAGE"
                           ? MIN_STALE_DELAY_MINUTES
                           : 0
                     }
-                    value={delayMinutes}
-                    onChange={(e) => setDelayMinutes(Number(e.target.value) || 0)}
-                    className={inputCls}
                   />
                 </div>
+
+                {/* Intervalo entre envios */}
                 <div>
-                  <label className={labelCls}>
-                    Cooldown (seg)
-                    <span className="ml-1 text-[10px] text-amber-400 font-normal normal-case tracking-normal">mín. 3600</span>
-                  </label>
-                  <input
-                    type="number"
-                    min={MIN_COOLDOWN_SECONDS}
-                    value={cooldownSeconds}
-                    onChange={(e) => setCooldownSeconds(Number(e.target.value) || MIN_COOLDOWN_SECONDS)}
-                    className={inputCls}
-                  />
-                  <p className="mt-1 text-[10px] text-muted-foreground/90">
-                    Tempo mínimo entre disparos para o mesmo contato (1h = 3600)
+                  <label className={labelCls}>Intervalo entre envios</label>
+                  <p className="text-[10px] text-muted-foreground/70 mb-1.5">
+                    Tempo mínimo entre cada disparo para o mesmo contato
                   </p>
+                  <TimePicker
+                    valueMinutes={Math.round(cooldownSeconds / 60)}
+                    onChange={(mins) => setCooldownSeconds(mins * 60)}
+                    minMinutes={Math.ceil(MIN_COOLDOWN_SECONDS / 60)}
+                  />
+                </div>
+
+                {/* Máximo de envios */}
+                <div>
+                  <label className={labelCls}>Máximo de envios por contato</label>
+                  <p className="text-[10px] text-muted-foreground/70 mb-1.5">
+                    Quantas vezes essa automação dispara para o mesmo contato
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setMaxRepetitions(n)}
+                        className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-all ${
+                          maxRepetitions === n
+                            ? "border-accent/40 bg-accent/15 text-accent"
+                            : "border-border/50 bg-muted/20 text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
+                        }`}
+                      >
+                        {n}x
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setMaxRepetitions(0)}
+                      className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-all ${
+                        maxRepetitions === 0
+                          ? "border-amber-500/40 bg-amber-500/15 text-amber-400"
+                          : "border-border/50 bg-muted/20 text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
+                      }`}
+                    >
+                      Sem limite
+                    </button>
+                  </div>
                 </div>
               </div>
               </div>

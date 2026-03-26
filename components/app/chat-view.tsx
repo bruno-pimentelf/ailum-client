@@ -17,15 +17,9 @@ import {
   UserCircle,
   SpeakerHigh,
   ChatCircleText,
-  Phone,
-  ArrowCounterClockwise,
   ArrowBendUpLeft,
-  BookmarkSimple,
-  Archive,
-  DotsThree,
   Smiley,
   Quotes,
-  Star,
   Warning,
   Clock,
   Play,
@@ -40,6 +34,9 @@ import { useMessages, useTypingStatus } from "@/hooks/use-chats"
 import { useIntegrations } from "@/hooks/use-integrations"
 import type { Integration } from "@/lib/api/integrations"
 import { sendMessage, markAsRead } from "@/lib/api/conversations"
+import { contactsApi } from "@/lib/api/contacts"
+import { useMutation } from "@tanstack/react-query"
+import { useTenant } from "@/hooks/use-tenant"
 import type { FirestoreContact, FirestoreMessage, MessageReaction } from "@/lib/types/firestore"
 
 // ─── Optimistic message ───────────────────────────────────────────────────────
@@ -1077,6 +1074,16 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
 
   const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
   const displayPhone = contact.contactPhone ?? contact.phone ?? ""
+  const { data: tenant } = useTenant()
+  const globalAiEnabled = tenant?.isAgentEnabledForWhatsApp !== false
+  const [isAiEnabled, setIsAiEnabled] = useState(contact.isAiEnabled !== false)
+  const aiToggle = useMutation({
+    mutationFn: (enabled: boolean) => contactsApi.toggleAi(contact.id!, enabled),
+    onMutate: (enabled) => setIsAiEnabled(enabled),
+  })
+
+  // Sync from Firestore when contact changes
+  useEffect(() => { setIsAiEnabled(contact.isAiEnabled !== false) }, [contact.isAiEnabled])
   const preferredInstanceId = contact.zapiInstanceId ?? ""
   const zapiInstances: Integration[] = useMemo(
     () => (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId),
@@ -1452,15 +1459,45 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-0.5">
-          {[Phone, ArrowCounterClockwise, ChatCircleText, Smiley, Star, BookmarkSimple, Archive, DotsThree].map((Icon, i) => (
+        <div className="flex items-center gap-1">
+          {/* AI toggle */}
+          <div className="relative group">
             <button
-              key={i}
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/85 hover:text-foreground hover:bg-muted/40 transition-colors duration-150"
+              onClick={() => aiToggle.mutate(!isAiEnabled)}
+              disabled={aiToggle.isPending}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all duration-200 cursor-pointer border ${
+                !globalAiEnabled
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-500/80 hover:bg-amber-500/15"
+                  : isAiEnabled
+                    ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
+                    : "border-border/50 bg-muted/20 text-muted-foreground/60 hover:bg-muted/40 hover:text-muted-foreground"
+              } disabled:opacity-50`}
+              title={
+                !globalAiEnabled
+                  ? "IA desabilitada nas configurações gerais"
+                  : isAiEnabled
+                    ? "IA ativa neste contato — clique para desativar"
+                    : "IA desativada neste contato — clique para ativar"
+              }
             >
-              <Icon className="h-4 w-4" />
+              <Robot className="h-3.5 w-3.5" weight={isAiEnabled && globalAiEnabled ? "fill" : "regular"} />
+              <span>{!globalAiEnabled ? "IA desativada" : isAiEnabled ? "IA ativa" : "IA pausada"}</span>
+              {!globalAiEnabled && isAiEnabled && (
+                <Warning className="h-3 w-3 text-amber-500/80" weight="fill" />
+              )}
             </button>
-          ))}
+            {/* Tooltip when global AI is off but contact AI is on */}
+            {!globalAiEnabled && isAiEnabled && (
+              <div className="absolute right-0 top-full mt-1.5 z-50 hidden group-hover:block">
+                <div className="rounded-lg border border-amber-500/20 bg-background/95 backdrop-blur-sm px-3 py-2 shadow-lg max-w-[220px]">
+                  <p className="text-[10px] text-amber-400 leading-relaxed">
+                    A IA está ativada neste contato, mas está <span className="font-semibold">desabilitada nas configurações gerais</span>. Ative em Configurações para que a IA responda.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
 

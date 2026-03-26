@@ -143,6 +143,12 @@ export const contactsApi = {
   importCommit: (body: ContactImportCommitInput) =>
     apiFetch<ContactImportCommitResponse>("/contacts/imports/commit", { method: "POST", body }),
 
+  toggleAi: (contactId: string, enabled: boolean) =>
+    apiFetch<{ id: string; isAiEnabled: boolean }>(`/contacts/${contactId}/ai`, {
+      method: "PATCH",
+      body: { enabled },
+    }),
+
   downloadImportTemplate: async () => {
     const res = await fetch(`${API_BASE}/contacts/import-template.csv`, {
       credentials: "include",

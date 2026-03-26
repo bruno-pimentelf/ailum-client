@@ -51,6 +51,8 @@ export interface FirestoreContact {
   agentTyping?: boolean
   // Sticky routing for multi-instance WhatsApp/Z-API
   zapiInstanceId?: string | null
+  // Per-contact AI toggle
+  isAiEnabled?: boolean
 
   // AI-collected memories (synced from agentMemory table)
   memories?: Record<string, string>
