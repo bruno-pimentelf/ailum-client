@@ -25,6 +25,8 @@ import {
   Bell,
   Gear,
   Checks,
+  Play,
+  Pause,
 } from "@phosphor-icons/react"
 import {
   Tooltip,
@@ -92,6 +94,64 @@ function previewBody(body: string) {
     result = result.replace(new RegExp(`\\{\\{${v.key}\\}\\}`, "g"), v.example)
   }
   return result
+}
+
+// ─── Audio preview player ────────────────────────────────────────────────────
+
+function AudioPreviewPlayer({ url }: { url: string }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+
+  useEffect(() => {
+    const el = audioRef.current
+    if (!el) return
+    const onMeta = () => setDuration(el.duration || 0)
+    const onTime = () => setCurrentTime(el.currentTime || 0)
+    const onEnd = () => setPlaying(false)
+    const onPlay = () => setPlaying(true)
+    const onPause = () => setPlaying(false)
+    el.addEventListener("loadedmetadata", onMeta)
+    el.addEventListener("timeupdate", onTime)
+    el.addEventListener("ended", onEnd)
+    el.addEventListener("play", onPlay)
+    el.addEventListener("pause", onPause)
+    return () => {
+      el.removeEventListener("loadedmetadata", onMeta)
+      el.removeEventListener("timeupdate", onTime)
+      el.removeEventListener("ended", onEnd)
+      el.removeEventListener("play", onPlay)
+      el.removeEventListener("pause", onPause)
+    }
+  }, [url])
+
+  const toggle = async () => {
+    const el = audioRef.current
+    if (!el) return
+    if (el.paused) { try { await el.play() } catch {} } else el.pause()
+  }
+
+  const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
+
+  return (
+    <div className="mt-2 flex items-center gap-2.5 rounded-xl border border-border/40 bg-muted/10 px-3 py-2">
+      <audio ref={audioRef} src={url} preload="metadata" />
+      <button type="button" onClick={toggle}
+        className="cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 bg-card/80 text-foreground/80 hover:bg-accent/15 hover:text-accent transition-colors">
+        {playing ? <Pause className="h-3.5 w-3.5" weight="fill" /> : <Play className="h-3.5 w-3.5 ml-0.5" weight="fill" />}
+      </button>
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="h-1.5 w-full rounded-full bg-border/40 overflow-hidden">
+          <div className="h-full rounded-full bg-accent/60 transition-all duration-150" style={{ width: `${progress}%` }} />
+        </div>
+        <p className="text-[10px] font-mono text-muted-foreground/50 whitespace-nowrap">
+          {fmt(currentTime)} / {fmt(duration)}
+        </p>
+      </div>
+    </div>
+  )
 }
 
 // ─── Mention-style variable system ──────────────────────────────────────────────
@@ -583,7 +643,7 @@ function MediaUploadZone({
           <img src={mediaUrl} alt="Preview" className="mt-2 rounded-lg max-h-32 object-contain" />
         )}
         {type === "AUDIO" && (
-          <audio src={mediaUrl} controls className="mt-2 w-full h-8" />
+          <AudioPreviewPlayer url={mediaUrl} />
         )}
         {type === "VIDEO" && (
           <video src={mediaUrl} controls className="mt-2 rounded-lg max-h-32 w-full" />
@@ -1053,12 +1113,8 @@ function TemplateFormModal({
                             <video src={mediaUrl} className="w-full max-h-48 object-cover" />
                           )}
                           {type === "AUDIO" && (
-                            <div className="px-3.5 pt-2.5 pb-1.5 flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-                                <MusicNote className="h-4 w-4 text-accent" weight="fill" />
-                              </div>
-                              <div className="flex-1 h-1 rounded-full bg-accent/20" />
-                              <span className="text-[11px] text-muted-foreground">0:00</span>
+                            <div className="px-3.5 pt-2.5 pb-1.5">
+                              <AudioPreviewPlayer url={mediaUrl} />
                             </div>
                           )}
                           {type === "DOCUMENT" && (

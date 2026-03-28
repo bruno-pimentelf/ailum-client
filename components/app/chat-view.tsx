@@ -41,6 +41,8 @@ import { sendMessage, markAsRead, createNote } from "@/lib/api/conversations"
 import { ContactInfoPanel } from "@/components/app/contact-info-panel"
 import { contactsApi } from "@/lib/api/contacts"
 import { useMutation } from "@tanstack/react-query"
+import { useTemplates } from "@/hooks/use-templates"
+import type { MessageTemplate } from "@/lib/api/templates"
 import { useTenant } from "@/hooks/use-tenant"
 import type { FirestoreContact, FirestoreMessage, MessageReaction } from "@/lib/types/firestore"
 
@@ -1091,6 +1093,111 @@ function TypingIndicator({ label }: { label: string }) {
   )
 }
 
+// ─── Template Picker ──────────────────────────────────────────────────────────
+
+const TEMPLATE_TYPE_META: Record<string, { icon: React.ElementType; label: string; color: string }> = {
+  TEXT:     { icon: TextAa,       label: "Texto",     color: "text-sky-400" },
+  IMAGE:    { icon: ImageIcon,    label: "Imagem",    color: "text-violet-400" },
+  AUDIO:    { icon: SpeakerHigh,  label: "Áudio",     color: "text-emerald-400" },
+  VIDEO:    { icon: FilmStrip,    label: "Vídeo",     color: "text-orange-400" },
+  DOCUMENT: { icon: FileDoc,      label: "Documento", color: "text-rose-400" },
+}
+
+function TemplatePicker({
+  query,
+  templates,
+  selectedIndex,
+  onSelect,
+}: {
+  query: string
+  templates: MessageTemplate[]
+  selectedIndex: number
+  onSelect: (template: MessageTemplate) => void
+}) {
+  const filtered = templates.filter((t) => {
+    const q = query.toLowerCase()
+    return t.name.toLowerCase().includes(q) || t.key.toLowerCase().includes(q) || (t.description ?? "").toLowerCase().includes(q)
+  })
+
+  if (filtered.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 8 }}
+        transition={{ duration: 0.15 }}
+        className="absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-xl border border-border/60 bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+      >
+        <div className="px-4 py-6 text-center">
+          <p className="text-[12px] text-muted-foreground/50">Nenhum template encontrado</p>
+        </div>
+      </motion.div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.15 }}
+      className="absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-xl border border-border/60 bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+    >
+      <div className="px-3 py-2 border-b border-border/40">
+        <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">Templates</p>
+      </div>
+      <div className="max-h-[280px] overflow-y-auto py-1">
+        {filtered.map((t, i) => {
+          const meta = TEMPLATE_TYPE_META[t.type] ?? TEMPLATE_TYPE_META.TEXT!
+          const TypeIcon = meta.icon
+          const isActive = i === selectedIndex
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => onSelect(t)}
+              onMouseDown={(e) => e.preventDefault()}
+              className={`cursor-pointer w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors ${
+                isActive ? "bg-accent/10" : "hover:bg-muted/30"
+              }`}
+            >
+              <div className={`shrink-0 mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg border border-border/40 bg-card/30 ${meta.color}`}>
+                <TypeIcon className="h-4 w-4" weight="duotone" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-[12px] font-semibold text-foreground/90 truncate">{t.name}</p>
+                  <span className="shrink-0 text-[9px] font-mono text-muted-foreground/40">/{t.key}</span>
+                </div>
+                {t.type === "TEXT" ? (
+                  <p className="text-[11px] text-muted-foreground/60 line-clamp-2 mt-0.5 leading-relaxed">{t.body}</p>
+                ) : (
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-[10px] font-medium ${meta.color}`}>{meta.label}</span>
+                    {t.caption && <span className="text-[10px] text-muted-foreground/40 truncate">— {t.caption}</span>}
+                  </div>
+                )}
+                {t.variables.length > 0 && (
+                  <div className="flex items-center gap-1 mt-1 flex-wrap">
+                    {t.variables.map((v) => (
+                      <span key={v} className="rounded bg-accent/10 border border-accent/15 px-1 py-px text-[9px] font-mono text-accent/70">{`{{${v}}}`}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+      <div className="px-3 py-1.5 border-t border-border/40 flex items-center gap-3">
+        <span className="text-[9px] text-muted-foreground/40">↑↓ navegar</span>
+        <span className="text-[9px] text-muted-foreground/40">Enter selecionar</span>
+        <span className="text-[9px] text-muted-foreground/40">Esc fechar</span>
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── ChatView ─────────────────────────────────────────────────────────────────
 
 export interface ChatViewProps {
@@ -1116,6 +1223,11 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const [noteMode, setNoteMode] = useState(false)
   // Profile panel
   const [showProfile, setShowProfile] = useState(false)
+  // Template picker
+  const { data: allTemplates } = useTemplates()
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
+  const [templateQuery, setTemplateQuery] = useState("")
+  const [templateSelectedIdx, setTemplateSelectedIdx] = useState(0)
 
   // Audio recording
   const [recording, setRecording] = useState(false)
@@ -1182,11 +1294,25 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const aiEffectivelyActive = isAiEnabled && (globalAiEnabled || isWhitelistedForTest)
 
   // Remove optimistic messages that have been confirmed by Firestore
-  // (matched by content to avoid keeping ghosts)
+  // Match by: same content (TEXT/NOTE) OR same type within 30s (media)
   useEffect(() => {
     if (optimisticMsgs.length === 0) return
     setOptimisticMsgs((prev) =>
-      prev.filter((opt) => !messages.some((m) => m.content === opt.content && m.role === "OPERATOR"))
+      prev.filter((opt) => {
+        const optTime = opt.createdAt.toDate().getTime()
+        return !messages.some((m) => {
+          if (m.role !== "OPERATOR" && m.role !== "NOTE") return false
+          // Text/Note: match by content
+          if (opt.type === "TEXT" && m.content === opt.content) return true
+          if (opt.role === "NOTE" && m.role === "NOTE" && m.content === opt.content) return true
+          // Media: match by type + close timing (within 30s)
+          if (opt.type !== "TEXT" && m.type === opt.type) {
+            const mTime = m.createdAt?.toDate?.()?.getTime?.() ?? 0
+            if (Math.abs(mTime - optTime) < 30_000) return true
+          }
+          return false
+        })
+      })
     )
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages])
@@ -1206,11 +1332,22 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages])
 
-  // Merged list: real messages first, then any still-pending optimistic ones
-  // Apply optimistic reactions overlay
+  // Merged list: real messages first, then any still-pending optimistic ones (re-dedup inline)
   const allMessages: AnyMessage[] = [
     ...messages,
-    ...optimisticMsgs.filter((opt) => !messages.some((m) => m.content === opt.content && (m.role === "OPERATOR" || m.role === "NOTE"))),
+    ...optimisticMsgs.filter((opt) => {
+      const optTime = opt.createdAt.toDate().getTime()
+      return !messages.some((m) => {
+        if (m.role !== "OPERATOR" && m.role !== "NOTE") return false
+        if (opt.type === "TEXT" && m.content === opt.content) return true
+        if (opt.role === "NOTE" && m.role === "NOTE" && m.content === opt.content) return true
+        if (opt.type !== "TEXT" && m.type === opt.type) {
+          const mTime = m.createdAt?.toDate?.()?.getTime?.() ?? 0
+          if (Math.abs(mTime - optTime) < 30_000) return true
+        }
+        return false
+      })
+    }),
   ].map((m) =>
     optimisticReactions[m.id] !== undefined
       ? { ...m, reactions: optimisticReactions[m.id] }
@@ -1291,6 +1428,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     setOptimisticReactions({})
     setNoteMode(false)
     setShowProfile(false)
+    setTemplatePickerOpen(false)
     stopRecording(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1460,10 +1598,98 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     if (ok) setReplyTo(null)
   }, [attachment, inputValue, doSend, replyTo?.zapiMessageId, noteMode, contact.id])
 
+  // ── Template picker logic ──────────────────────────────────────────────────
+
+  const templateList = allTemplates ?? []
+  const filteredTemplates = templateList.filter((t) => {
+    const q = templateQuery.toLowerCase()
+    return t.name.toLowerCase().includes(q) || t.key.toLowerCase().includes(q) || (t.description ?? "").toLowerCase().includes(q)
+  })
+
+  function substituteVariables(text: string): string {
+    return text
+      .replace(/\{\{name\}\}/gi, contact.contactName ?? contact.name ?? "")
+      .replace(/\{\{phone\}\}/gi, contact.contactPhone ?? contact.phone ?? "")
+      .replace(/\{\{email\}\}/gi, contact.email ?? "")
+  }
+
+  function handleTemplateSelect(template: MessageTemplate) {
+    setTemplatePickerOpen(false)
+    setTemplateQuery("")
+    setTemplateSelectedIdx(0)
+
+    if (template.type === "TEXT") {
+      // Fill the input with substituted text — user can review before sending
+      const text = substituteVariables(template.body)
+      setInputValue(text)
+      requestAnimationFrame(() => inputRef.current?.focus())
+    } else {
+      // Media templates — send directly
+      const caption = template.caption ? substituteVariables(template.caption) : undefined
+      if (template.type === "IMAGE" && template.mediaUrl) {
+        doSend({ type: "IMAGE", mediaUrl: template.mediaUrl, caption }, caption || `📷 ${template.name}`)
+      } else if (template.type === "AUDIO" && template.mediaUrl) {
+        doSend({ type: "AUDIO", mediaUrl: template.mediaUrl }, `🎤 ${template.name}`)
+      } else if (template.type === "VIDEO" && template.mediaUrl) {
+        doSend({ type: "VIDEO", mediaUrl: template.mediaUrl, caption }, caption || `🎬 ${template.name}`)
+      } else if (template.type === "DOCUMENT" && template.mediaUrl) {
+        doSend({ type: "DOCUMENT", mediaUrl: template.mediaUrl, fileName: template.fileName ?? template.name }, `📄 ${template.fileName ?? template.name}`)
+      }
+    }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    setInputValue(val)
+
+    // Detect / at start → open template picker
+    if (val.startsWith("/")) {
+      setTemplatePickerOpen(true)
+      setTemplateQuery(val.slice(1))
+      setTemplateSelectedIdx(0)
+    } else {
+      setTemplatePickerOpen(false)
+    }
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Template picker navigation
+    if (templatePickerOpen) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setTemplateSelectedIdx((i) => Math.min(i + 1, filteredTemplates.length - 1))
+        return
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setTemplateSelectedIdx((i) => Math.max(i - 1, 0))
+        return
+      }
+      if (e.key === "Enter") {
+        e.preventDefault()
+        if (filteredTemplates[templateSelectedIdx]) {
+          handleTemplateSelect(filteredTemplates[templateSelectedIdx])
+        }
+        return
+      }
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setTemplatePickerOpen(false)
+        setInputValue("")
+        return
+      }
+      if (e.key === "Tab") {
+        e.preventDefault()
+        if (filteredTemplates[templateSelectedIdx]) {
+          handleTemplateSelect(filteredTemplates[templateSelectedIdx])
+        }
+        return
+      }
+      return
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      // Prevent browser from blurring the input on Enter
       e.currentTarget.focus()
       handleSendText(e as unknown as React.FormEvent)
     }
@@ -1845,19 +2071,34 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
             {recording ? (
               <RecordingIndicator key="rec" seconds={recordSeconds} />
             ) : (
-              <input
-                key="input"
-                ref={inputRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={attachment ? "Adicionar legenda (opcional)..." : noteMode ? "Escrever nota interna..." : "Digite uma mensagem..."}
-                className={`flex-1 h-9 rounded-xl border px-4 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none transition-all duration-300 ${
-                  noteMode
-                    ? "border-amber-500/25 bg-amber-500/[0.04] focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/30"
-                    : "border-border bg-card/50 focus:ring-2 focus:ring-accent/30 focus:border-accent/40"
-                }`}
-              />
+              <div key="input-wrap" className="relative flex-1">
+                {/* Template picker popup */}
+                <AnimatePresence>
+                  {templatePickerOpen && (
+                    <TemplatePicker
+                      query={templateQuery}
+                      templates={templateList}
+                      selectedIndex={templateSelectedIdx}
+                      onSelect={handleTemplateSelect}
+                    />
+                  )}
+                </AnimatePresence>
+                <input
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  onBlur={() => { setTimeout(() => setTemplatePickerOpen(false), 150) }}
+                  placeholder={attachment ? "Adicionar legenda (opcional)..." : noteMode ? "Escrever nota interna..." : "/ para templates — ou digite uma mensagem..."}
+                  className={`w-full h-9 rounded-xl border px-4 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none transition-all duration-300 ${
+                    templatePickerOpen
+                      ? "border-accent/40 bg-accent/[0.03] focus:ring-2 focus:ring-accent/30"
+                      : noteMode
+                        ? "border-amber-500/25 bg-amber-500/[0.04] focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/30"
+                        : "border-border bg-card/50 focus:ring-2 focus:ring-accent/30 focus:border-accent/40"
+                  }`}
+                />
+              </div>
             )}
           </AnimatePresence>
 

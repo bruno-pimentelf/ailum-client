@@ -14,10 +14,20 @@ import {
   Stop,
   Waveform,
   Play,
+  Plus,
+  Lightning,
 } from "@phosphor-icons/react"
 import { voicesApi, type Voice } from "@/lib/api/voices"
 
 const ease = [0.33, 1, 0.68, 1] as const
+
+// ─── Preset voices ───────────────────────────────────────────────────────────
+
+const PRESET_VOICES = [
+  { name: "Dani", voiceId: "PznTnBc8X6pvixs9UkQm", description: "Feminina, natural" },
+  { name: "Lucas", voiceId: "7lu3ze7orhWaNeSPowWx", description: "Masculina, jovem" },
+  { name: "Roberta", voiceId: "ohZOfA9iwlZ5nOsoY7LB", description: "Feminina, profissional" },
+] as const
 
 // ─── Recording bars animation ─────────────────────────────────────────────────
 
@@ -71,20 +81,17 @@ function VoiceCard({
           : "border-border/50 bg-card/30 hover:border-border/70"
       }`}
     >
-      {/* Icon */}
       <div className="flex items-center justify-center w-9 h-9 rounded-lg border border-border/50 bg-muted/20 shrink-0 overflow-hidden px-1">
         <RecordingBars active={voice.isDefault} compact />
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-[12px] font-semibold text-foreground truncate">{voice.name}</p>
-        <p className="text-[10px] text-muted-foreground/70">
-          {voice.provider} · {voice.providerVoiceId.slice(0, 12)}...
+        <p className="text-[10px] text-muted-foreground/70 font-mono">
+          {voice.providerVoiceId.slice(0, 16)}...
         </p>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
         {voice.isDefault ? (
           <span className="flex items-center gap-1 rounded-md border border-accent/25 bg-accent/10 px-2 py-0.5">
@@ -126,6 +133,134 @@ function VoiceCard({
         )}
       </div>
     </motion.div>
+  )
+}
+
+// ─── Add voice by ID section ─────────────────────────────────────────────────
+
+function AddByVoiceIdSection() {
+  const queryClient = useQueryClient()
+  const [name, setName] = useState("")
+  const [voiceId, setVoiceId] = useState("")
+
+  const createMutation = useMutation({
+    mutationFn: (body: { name: string; provider: "ELEVENLABS"; providerVoiceId: string }) =>
+      voicesApi.create(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["voices"] })
+      setName("")
+      setVoiceId("")
+    },
+  })
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!name.trim() || !voiceId.trim()) return
+    createMutation.mutate({ name: name.trim(), provider: "ELEVENLABS", providerVoiceId: voiceId.trim() })
+  }
+
+  function handleAddPreset(preset: typeof PRESET_VOICES[number]) {
+    createMutation.mutate({ name: preset.name, provider: "ELEVENLABS", providerVoiceId: preset.voiceId })
+  }
+
+  // Check which presets are already added
+  const { data: voices = [] } = useQuery({ queryKey: ["voices"], queryFn: voicesApi.list })
+  const addedVoiceIds = new Set(voices.map((v) => v.providerVoiceId))
+
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <Plus className="h-4 w-4 text-accent" weight="bold" />
+        <span className="text-[12px] font-semibold text-foreground">Adicionar por Voice ID</span>
+      </div>
+
+      {/* Preset voices */}
+      <div>
+        <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider mb-2">Vozes prontas</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {PRESET_VOICES.map((preset) => {
+            const alreadyAdded = addedVoiceIds.has(preset.voiceId)
+            return (
+              <button
+                key={preset.voiceId}
+                type="button"
+                onClick={() => !alreadyAdded && handleAddPreset(preset)}
+                disabled={createMutation.isPending || alreadyAdded}
+                className={`cursor-pointer flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                  alreadyAdded
+                    ? "border-emerald-500/20 bg-emerald-500/[0.04] cursor-default"
+                    : "border-border/50 bg-card/20 hover:border-accent/30 hover:bg-accent/[0.04]"
+                } disabled:opacity-60`}
+              >
+                <div className={`h-8 w-8 shrink-0 rounded-lg border flex items-center justify-center ${
+                  alreadyAdded
+                    ? "border-emerald-500/25 bg-emerald-500/10"
+                    : "border-border/40 bg-muted/20"
+                }`}>
+                  {alreadyAdded
+                    ? <Check className="h-3.5 w-3.5 text-emerald-400" weight="bold" />
+                    : <SpeakerHigh className="h-3.5 w-3.5 text-muted-foreground/60" weight="duotone" />
+                  }
+                </div>
+                <div className="min-w-0">
+                  <p className={`text-[12px] font-semibold ${alreadyAdded ? "text-emerald-400" : "text-foreground/90"}`}>{preset.name}</p>
+                  <p className="text-[10px] text-muted-foreground/50">{preset.description}</p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Custom voice ID form */}
+      <div className="border-t border-border/30 pt-4">
+        <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider mb-2">Voice ID customizado</p>
+        <form onSubmit={handleSubmit} className="space-y-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.5fr] gap-2">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nome da voz"
+              className="h-9 rounded-lg border border-border/50 bg-muted/20 px-3 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30"
+            />
+            <input
+              value={voiceId}
+              onChange={(e) => setVoiceId(e.target.value)}
+              placeholder="ElevenLabs Voice ID"
+              className="h-9 rounded-lg border border-border/50 bg-muted/20 px-3 text-[12px] font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={!name.trim() || !voiceId.trim() || createMutation.isPending}
+            className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent/15 border border-accent/25 px-3.5 py-2 text-[11px] font-bold text-accent hover:bg-accent/25 transition-all disabled:opacity-40"
+          >
+            {createMutation.isPending
+              ? <Spinner className="h-3 w-3 animate-spin" />
+              : <Plus className="h-3 w-3" weight="bold" />
+            }
+            Adicionar voz
+          </button>
+        </form>
+
+        <AnimatePresence>
+          {createMutation.error && (
+            <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2 mt-2">
+              <Warning className="h-3.5 w-3.5 text-rose-400 shrink-0" weight="fill" />
+              <p className="text-[11px] text-rose-400">{(createMutation.error as Error).message}</p>
+            </motion.div>
+          )}
+          {createMutation.isSuccess && (
+            <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2 mt-2">
+              <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" weight="bold" />
+              <p className="text-[11px] text-emerald-400">Voz adicionada! Selecione-a no funil.</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   )
 }
 
@@ -194,14 +329,13 @@ function RecordAndCloneSection() {
     <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
       <div className="flex items-center gap-2">
         <Microphone className="h-4 w-4 text-accent" weight="duotone" />
-        <span className="text-[12px] font-semibold text-foreground">Clonar voz</span>
+        <span className="text-[12px] font-semibold text-foreground">Clonar voz por gravação</span>
       </div>
 
-      <p className="text-[12px] text-muted-foreground/70 leading-relaxed">
-        Grave um áudio falando naturalmente. A IA vai aprender essa voz e usar nos atendimentos.
+      <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+        Grave pelo menos 30 segundos falando naturalmente. A IA vai aprender essa voz.
       </p>
 
-      {/* Recording UI */}
       <div className="flex items-center gap-4">
         <motion.button
           onClick={recording ? stopRecording : audioBlob ? resetRecording : startRecording}
@@ -243,20 +377,11 @@ function RecordAndCloneSection() {
         </div>
       </div>
 
-      {/* Playback */}
       {audioUrl && !recording && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 rounded-lg bg-muted/10 border border-border/30 px-3 py-2.5"
-        >
-          <button
-            onClick={() => {
-              const a = new Audio(audioUrl)
-              a.play()
-            }}
-            className="cursor-pointer flex items-center justify-center h-7 w-7 rounded-full bg-accent/15 text-accent hover:bg-accent/25 transition-colors shrink-0"
-          >
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 rounded-lg bg-muted/10 border border-border/30 px-3 py-2.5">
+          <button onClick={() => new Audio(audioUrl).play()}
+            className="cursor-pointer flex items-center justify-center h-7 w-7 rounded-full bg-accent/15 text-accent hover:bg-accent/25 transition-colors shrink-0">
             <Play className="h-3 w-3 ml-0.5" weight="fill" />
           </button>
           <Waveform className="h-4 w-4 text-muted-foreground/40 shrink-0" />
@@ -265,66 +390,38 @@ function RecordAndCloneSection() {
         </motion.div>
       )}
 
-      {/* Name + submit */}
       {audioBlob && !recording && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="space-y-3"
-        >
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-3">
           <div>
-            <label className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider">
-              Nome da voz
-            </label>
-            <input
-              value={voiceName}
-              onChange={(e) => setVoiceName(e.target.value)}
-              placeholder="Ex: Recepção, Dra. Marina"
-              className="mt-1 w-full rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30"
-            />
+            <label className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider">Nome da voz</label>
+            <input value={voiceName} onChange={(e) => setVoiceName(e.target.value)} placeholder="Ex: Recepção, Dra. Marina"
+              className="mt-1 w-full rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-accent/30" />
           </div>
-
           <motion.button
-            onClick={() => {
-              if (audioBlob && voiceName.trim().length >= 2) {
-                cloneMutation.mutate({ name: voiceName.trim(), blob: audioBlob })
-              }
-            }}
+            onClick={() => { if (audioBlob && voiceName.trim().length >= 2) cloneMutation.mutate({ name: voiceName.trim(), blob: audioBlob }) }}
             disabled={voiceName.trim().length < 2 || cloneMutation.isPending}
-            className="cursor-pointer w-full flex items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/15 px-4 py-2.5 text-[12px] font-semibold text-accent hover:bg-accent/25 transition-all disabled:opacity-40 disabled:cursor-default"
+            className="cursor-pointer w-full flex items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/15 px-4 py-2.5 text-[12px] font-semibold text-accent hover:bg-accent/25 transition-all disabled:opacity-40"
             whileTap={{ scale: 0.98 }}
           >
-            {cloneMutation.isPending ? (
-              <>
-                <Spinner className="h-3.5 w-3.5 animate-spin" />
-                Clonando voz...
-              </>
-            ) : (
-              <>
-                <Waveform className="h-3.5 w-3.5" weight="fill" />
-                Clonar esta voz
-              </>
-            )}
+            {cloneMutation.isPending ? <><Spinner className="h-3.5 w-3.5 animate-spin" />Clonando voz...</> : <><Waveform className="h-3.5 w-3.5" weight="fill" />Clonar esta voz</>}
           </motion.button>
 
-          {cloneMutation.error && (
-            <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2">
-              <Warning className="h-3.5 w-3.5 text-rose-400 shrink-0" weight="fill" />
-              <p className="text-[11px] text-rose-400">{(cloneMutation.error as Error).message}</p>
-            </div>
-          )}
-
-          {cloneMutation.isSuccess && (
-            <motion.div
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2"
-            >
-              <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" weight="bold" />
-              <p className="text-[11px] text-emerald-400">Voz clonada com sucesso! Selecione-a no funil.</p>
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {cloneMutation.error && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2">
+                <Warning className="h-3.5 w-3.5 text-rose-400 shrink-0" weight="fill" />
+                <p className="text-[11px] text-rose-400">{(cloneMutation.error as Error).message}</p>
+              </motion.div>
+            )}
+            {cloneMutation.isSuccess && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2">
+                <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" weight="bold" />
+                <p className="text-[11px] text-emerald-400">Voz clonada com sucesso!</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>
@@ -359,38 +456,16 @@ export function VozTab() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6 xl:gap-8 items-start w-full"
+      className="space-y-6 w-full"
     >
-      {/* Left — Record + clone */}
-      <div className="space-y-5">
-        <RecordAndCloneSection />
-
-        {/* How it works */}
-        <div className="rounded-xl border border-border/50 bg-card/30 p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <SpeakerHigh className="h-4 w-4 text-accent" weight="duotone" />
-            <span className="text-[12px] font-semibold text-foreground">Como funciona</span>
-          </div>
-          <div className="space-y-2 text-[12px] text-muted-foreground/80 leading-relaxed">
-            <p>
-              Grave um áudio de pelo menos <span className="text-foreground font-medium">30 segundos</span> falando naturalmente.
-              A IA vai clonar essa voz e usar pra responder no WhatsApp.
-            </p>
-            <p className="text-[11px] text-muted-foreground/50">
-              Após clonar, vá no <span className="text-foreground/70 font-medium">funil</span> e selecione a voz no campo "Voz do assistente".
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Right — Voices list */}
-      <div className="min-w-0">
+      {/* Voices list */}
+      <div>
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="h-1 w-1 rounded-full bg-accent" />
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Vozes configuradas
-            </span>
+          <div>
+            <p className="text-[13px] font-bold text-foreground/85">Vozes</p>
+            <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+              {isLoading ? "Carregando..." : `${voices.length} voz${voices.length !== 1 ? "es" : ""} configurada${voices.length !== 1 ? "s" : ""}`}
+            </p>
           </div>
         </div>
 
@@ -400,39 +475,34 @@ export function VozTab() {
               <Spinner className="h-5 w-5 text-accent animate-spin" />
             </div>
           ) : voices.length === 0 ? (
-            <div className="flex flex-col items-center text-center py-8 px-4">
-              <SpeakerHigh className="h-8 w-8 text-muted-foreground/20 mb-3" />
-              <p className="text-[12px] text-muted-foreground/50">Nenhuma voz clonada</p>
-              <p className="text-[10px] text-muted-foreground/35 mt-1">Grave um áudio ao lado pra criar sua primeira voz</p>
+            <div className="flex flex-col items-center text-center py-8 px-4 rounded-xl border border-dashed border-border/40">
+              <SpeakerHigh className="h-8 w-8 text-muted-foreground/20 mb-3" weight="duotone" />
+              <p className="text-[12px] text-muted-foreground/50">Nenhuma voz configurada</p>
+              <p className="text-[10px] text-muted-foreground/35 mt-1">Adicione uma voz abaixo pra ativar respostas por áudio</p>
             </div>
           ) : (
-            <AnimatePresence mode="popLayout">
-              {voices.map((v, i) => (
-                <VoiceCard
-                  key={v.id}
-                  voice={v}
-                  index={i}
-                  deleting={deletingId === v.id}
-                  onDelete={() => deleteMutation.mutate(v.id)}
-                  onSetDefault={() => setDefaultMutation.mutate(v.id)}
-                />
-              ))}
-            </AnimatePresence>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+              <AnimatePresence mode="popLayout">
+                {voices.map((v, i) => (
+                  <VoiceCard
+                    key={v.id}
+                    voice={v}
+                    index={i}
+                    deleting={deletingId === v.id}
+                    onDelete={() => deleteMutation.mutate(v.id)}
+                    onSetDefault={() => setDefaultMutation.mutate(v.id)}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
           )}
 
-          {/* Error */}
           <AnimatePresence>
             {deleteMutation.error && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2"
-              >
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.06] px-3 py-2">
                 <Warning className="h-3.5 w-3.5 text-rose-400 shrink-0" weight="fill" />
-                <p className="text-[11px] text-rose-400">
-                  {(deleteMutation.error as Error)?.message}
-                </p>
+                <p className="text-[11px] text-rose-400">{(deleteMutation.error as Error)?.message}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -441,6 +511,29 @@ export function VozTab() {
         <p className="text-[10px] text-muted-foreground/40 mt-3">
           Após adicionar, selecione a voz no funil desejado para ativar respostas por áudio.
         </p>
+      </div>
+
+      {/* Add methods */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <AddByVoiceIdSection />
+        <RecordAndCloneSection />
+      </div>
+
+      {/* How it works */}
+      <div className="rounded-xl border border-border/50 bg-card/30 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Lightning className="h-4 w-4 text-accent" weight="fill" />
+          <span className="text-[12px] font-semibold text-foreground">Como funciona</span>
+        </div>
+        <div className="space-y-2 text-[12px] text-muted-foreground/70 leading-relaxed">
+          <p>
+            Você pode adicionar vozes de duas formas: usando um <span className="text-foreground font-medium">Voice ID do ElevenLabs</span> (rápido, usa vozes prontas)
+            ou <span className="text-foreground font-medium">clonando uma voz</span> a partir de uma gravação de áudio (mínimo 30 segundos).
+          </p>
+          <p className="text-[11px] text-muted-foreground/50">
+            Após adicionar, vá em <span className="text-foreground/70 font-medium">Boards &rarr; Configurações do stage &rarr; Voz</span> e selecione a voz que o assistente deve usar naquele estágio.
+          </p>
+        </div>
       </div>
     </motion.div>
   )
