@@ -25,7 +25,6 @@ import {
   useUpdateMemberRole,
   useRemoveMember,
 } from "@/hooks/use-members"
-import { useProfessionals } from "@/hooks/use-professionals"
 import { useMe } from "@/hooks/use-me"
 import type { Member as ApiMember, MemberRole } from "@/lib/api/members"
 
@@ -54,10 +53,9 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState<MemberRole>("SECRETARY")
-  const [professionalId, setProfessionalId] = useState("")
+  const [alsoIsProfessional, setAlsoIsProfessional] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const createAccount = useCreateMemberAccount()
-  const { data: professionals } = useProfessionals()
 
   useEffect(() => {
     if (open) {
@@ -65,7 +63,7 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
       setEmail("")
       setPassword("")
       setRole("SECRETARY")
-      setProfessionalId("")
+      setAlsoIsProfessional(false)
       setError(null)
     }
   }, [open])
@@ -83,7 +81,7 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
         email: email.trim(),
         password: password.trim(),
         role,
-        professionalId: role === "PROFESSIONAL" && professionalId ? professionalId : undefined,
+        alsoIsProfessional: alsoIsProfessional || undefined,
       })
       onClose()
     } catch (err) {
@@ -169,21 +167,25 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
                 </div>
               </div>
 
-              {role === "PROFESSIONAL" && (
-                <div>
-                  <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Profissional (opcional)</label>
-                  <select
-                    value={professionalId}
-                    onChange={(e) => setProfessionalId(e.target.value)}
-                    className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+              {role !== "PROFESSIONAL" && (
+                <div className="flex items-center justify-between rounded-xl border border-border/40 bg-muted/10 px-4 py-3">
+                  <div>
+                    <p className="text-[12px] font-medium text-foreground">Também é profissional</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Cria perfil de profissional automaticamente</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={alsoIsProfessional}
+                    onClick={() => setAlsoIsProfessional(!alsoIsProfessional)}
+                    className={`cursor-pointer relative h-6 w-10 shrink-0 rounded-full border-2 transition-colors duration-200 ${
+                      alsoIsProfessional ? "border-accent bg-accent/20" : "border-border bg-muted/30"
+                    }`}
                   >
-                    <option value="">Sem vínculo</option>
-                    {(professionals ?? []).map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.fullName} {p.specialty ? `· ${p.specialty}` : ""}
-                      </option>
-                    ))}
-                  </select>
+                    <span className={`absolute top-0.5 h-3.5 w-3.5 rounded-full transition-all duration-200 ${
+                      alsoIsProfessional ? "left-[calc(100%-18px)] bg-accent" : "left-0.5 bg-muted-foreground/40"
+                    }`} />
+                  </button>
                 </div>
               )}
 
@@ -221,15 +223,14 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
 
 function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; open: boolean; onClose: () => void }) {
   const [role, setRole] = useState<MemberRole>("SECRETARY")
-  const [professionalId, setProfessionalId] = useState("")
+  const [alsoIsProfessional, setAlsoIsProfessional] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const updateRole = useUpdateMemberRole()
-  const { data: professionals } = useProfessionals()
 
   useEffect(() => {
     if (member) {
       setRole(member.role)
-      setProfessionalId(member.professional?.id ?? "")
+      setAlsoIsProfessional(!!member.professional)
       setError(null)
     }
   }, [member])
@@ -242,7 +243,7 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
         memberId: member.id,
         body: {
           role,
-          professionalId: role === "PROFESSIONAL" ? (professionalId || null) : null,
+          alsoIsProfessional,
         },
       })
       onClose()
@@ -291,21 +292,25 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
                 })}
               </div>
 
-              {role === "PROFESSIONAL" && (
-                <div>
-                  <label className="block text-[10px] font-bold text-muted-foreground/90 uppercase tracking-wider mb-1.5">Profissional</label>
-                  <select
-                    value={professionalId}
-                    onChange={(e) => setProfessionalId(e.target.value)}
-                    className="w-full h-10 rounded-xl border border-border/60 bg-muted/20 px-3.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+              {role !== "PROFESSIONAL" && (
+                <div className="flex items-center justify-between rounded-xl border border-border/40 bg-muted/10 px-4 py-3">
+                  <div>
+                    <p className="text-[12px] font-medium text-foreground">Também é profissional</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Cria perfil de profissional automaticamente</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={alsoIsProfessional}
+                    onClick={() => setAlsoIsProfessional(!alsoIsProfessional)}
+                    className={`cursor-pointer relative h-6 w-10 shrink-0 rounded-full border-2 transition-colors duration-200 ${
+                      alsoIsProfessional ? "border-accent bg-accent/20" : "border-border bg-muted/30"
+                    }`}
                   >
-                    <option value="">Sem vínculo</option>
-                    {(professionals ?? []).map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.fullName} {p.specialty ? `· ${p.specialty}` : ""}
-                      </option>
-                    ))}
-                  </select>
+                    <span className={`absolute top-0.5 h-3.5 w-3.5 rounded-full transition-all duration-200 ${
+                      alsoIsProfessional ? "left-[calc(100%-18px)] bg-accent" : "left-0.5 bg-muted-foreground/40"
+                    }`} />
+                  </button>
                 </div>
               )}
 
@@ -327,7 +332,7 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
                   onClick={handleSave}
                   disabled={
                     updateRole.isPending ||
-                    (role === member.role && professionalId === (member.professional?.id ?? ""))
+                    (role === member.role && alsoIsProfessional === !!member.professional)
                   }
                   className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50">
                   {updateRole.isPending

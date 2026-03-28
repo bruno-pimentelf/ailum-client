@@ -28,12 +28,17 @@ import {
   DownloadSimple,
   FilmStrip,
   Copy,
+  TextAa,
+  NoteBlank,
+  NotePencil,
+  Flask,
 } from "@phosphor-icons/react"
 import { PixChargeBlock } from "./pix-charge-block"
 import { useMessages, useTypingStatus } from "@/hooks/use-chats"
 import { useIntegrations } from "@/hooks/use-integrations"
 import type { Integration } from "@/lib/api/integrations"
-import { sendMessage, markAsRead } from "@/lib/api/conversations"
+import { sendMessage, markAsRead, createNote } from "@/lib/api/conversations"
+import { ContactInfoPanel } from "@/components/app/contact-info-panel"
 import { contactsApi } from "@/lib/api/contacts"
 import { useMutation } from "@tanstack/react-query"
 import { useTenant } from "@/hooks/use-tenant"
@@ -499,6 +504,32 @@ function AudioMessagePlayer({
   )
 }
 
+function AudioTranscription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const isLong = text.length > 120
+
+  return (
+    <div className="rounded-lg border border-border/40 bg-muted/10 px-3 py-2 max-w-[230px]">
+      <div className="flex items-center gap-1.5 mb-1">
+        <TextAa className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50">Transcrição</span>
+      </div>
+      <p className={`text-[11px] text-foreground/70 leading-relaxed ${!expanded && isLong ? "line-clamp-3" : ""}`}>
+        {text}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="cursor-pointer mt-1 text-[10px] font-semibold text-accent/70 hover:text-accent transition-colors"
+        >
+          {expanded ? "Ver menos" : "Ver mais"}
+        </button>
+      )}
+    </div>
+  )
+}
+
 function MediaViewerModal({
   media,
   onClose,
@@ -601,10 +632,34 @@ function MessageBubble({
   onOpenMedia?: (media: MediaViewerPayload) => void
 }) {
   const isPending = "_optimistic" in msg && msg._optimistic
+  const isNote = msg.role === "NOTE"
   const isMe = msg.role === "OPERATOR" || msg.role === "AGENT"
   const isAgent = msg.role === "AGENT"
   const time = formatTime(msg.createdAt)
-  const canReplyOrReact = !isPending && !!msg.zapiMessageId
+  const canReplyOrReact = !isPending && !isNote && !!msg.zapiMessageId
+
+  // ── NOTE (internal note — aligned right like operator messages) ──
+  if (isNote) {
+    return (
+      <motion.div
+        initial={animate ? { opacity: 0, y: 6 } : false}
+        animate={{ opacity: isPending ? 0.6 : 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="flex items-end gap-2 justify-end"
+      >
+        <div className="max-w-[75%] rounded-2xl rounded-br-sm border border-amber-500/20 bg-amber-500/[0.06] px-3.5 py-2.5">
+          <div className="flex items-center gap-1.5 mb-1">
+            <NoteBlank className="h-3 w-3 text-amber-400/70" weight="fill" />
+            <span className="text-[9px] font-bold uppercase tracking-wider text-amber-400/60">Nota interna</span>
+          </div>
+          <p className="text-[12px] text-foreground/80 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+          <div className="flex items-center justify-end mt-1 gap-1.5">
+            <span className="text-[10px] text-amber-400/40">{time}</span>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
   const QUICK_REACTIONS = ["❤️", "👍", "🙏", "😂"] as const
   const [copied, setCopied] = useState(false)
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
@@ -696,13 +751,19 @@ function MessageBubble({
 
     // ── AUDIO ──────────────────────────────────────────────────────────────────
     if (msg.type === "AUDIO") {
+      const transcription = (m?.transcription as string) || null
+      const hasTranscription = !!transcription && transcription !== "[Mensagem de voz]" && transcription !== "[Áudio]"
+
       if (m?.audioUrl) {
         return (
-          <AudioMessagePlayer
-            url={m.audioUrl}
-            compact
-            onOpenFull={() => onOpenMedia?.({ type: "audio", url: m.audioUrl as string })}
-          />
+          <div className="space-y-1.5">
+            <AudioMessagePlayer
+              url={m.audioUrl}
+              compact
+              onOpenFull={() => onOpenMedia?.({ type: "audio", url: m.audioUrl as string })}
+            />
+            {hasTranscription && <AudioTranscription text={transcription!} />}
+          </div>
         )
       }
       // Sent by operator — audioUrl not yet populated
@@ -1051,6 +1112,11 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   // Optimistic reactions — keyed by messageId, overrides msg.reactions until onSnapshot confirms
   const [optimisticReactions, setOptimisticReactions] = useState<Record<string, MessageReaction[]>>({})
 
+  // Note mode
+  const [noteMode, setNoteMode] = useState(false)
+  // Profile panel
+  const [showProfile, setShowProfile] = useState(false)
+
   // Audio recording
   const [recording, setRecording] = useState(false)
   const [recordSeconds, setRecordSeconds] = useState(0)
@@ -1103,6 +1169,18 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const globalAiEnabled = routedInstance?.isAiEnabled === true
   const testModeActive = !globalAiEnabled && routedInstance?.isAiTestMode === true
 
+  // In test mode, check if this contact's phone is whitelisted
+  const isWhitelistedForTest = useMemo(() => {
+    if (!testModeActive) return false
+    const testPhones = routedInstance?.aiTestPhones ?? []
+    if (testPhones.length === 0) return false
+    const contactPhone = (contact.contactPhone ?? contact.phone ?? "").replace(/\D/g, "")
+    return testPhones.some((tp: string) => contactPhone.endsWith(tp.replace(/\D/g, "")))
+  }, [testModeActive, routedInstance?.aiTestPhones, contact.contactPhone, contact.phone])
+
+  // Effective AI state: is the AI actually going to respond to this contact?
+  const aiEffectivelyActive = isAiEnabled && (globalAiEnabled || isWhitelistedForTest)
+
   // Remove optimistic messages that have been confirmed by Firestore
   // (matched by content to avoid keeping ghosts)
   useEffect(() => {
@@ -1132,7 +1210,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   // Apply optimistic reactions overlay
   const allMessages: AnyMessage[] = [
     ...messages,
-    ...optimisticMsgs.filter((opt) => !messages.some((m) => m.content === opt.content && m.role === "OPERATOR")),
+    ...optimisticMsgs.filter((opt) => !messages.some((m) => m.content === opt.content && (m.role === "OPERATOR" || m.role === "NOTE"))),
   ].map((m) =>
     optimisticReactions[m.id] !== undefined
       ? { ...m, reactions: optimisticReactions[m.id] }
@@ -1211,6 +1289,8 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     setErrorMsg(null)
     setOptimisticMsgs([])
     setOptimisticReactions({})
+    setNoteMode(false)
+    setShowProfile(false)
     stopRecording(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1342,8 +1422,32 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     const text = inputValue.trim()
     if (!text) return
     setInputValue("")
-    // Keep focus on the input so the user can type the next message immediately
     requestAnimationFrame(() => inputRef.current?.focus())
+
+    // Note mode — save as internal note (not sent to WhatsApp)
+    if (noteMode) {
+      const tempId = `opt_${Date.now()}_${Math.random().toString(36).slice(2)}`
+      setOptimisticMsgs((prev) => [...prev, {
+        _optimistic: true,
+        id: tempId,
+        role: "NOTE",
+        type: "TEXT",
+        content: text,
+        status: "SENT",
+        createdAt: { toDate: () => new Date() },
+      } as OptimisticMessage])
+
+      try {
+        await createNote(contact.id, text)
+      } catch {
+        setOptimisticMsgs((prev) => prev.filter((m) => m.id !== tempId))
+        showError("Falha ao salvar nota")
+        setInputValue(text)
+      }
+      return
+    }
+
+    // Normal send
     const ok = await doSend(
       {
         type: "TEXT",
@@ -1354,7 +1458,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       text,
     )
     if (ok) setReplyTo(null)
-  }, [attachment, inputValue, doSend, replyTo?.zapiMessageId])
+  }, [attachment, inputValue, doSend, replyTo?.zapiMessageId, noteMode, contact.id])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1428,6 +1532,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const showMicSend = !inputValue.trim() && !attachment && !recording
 
   return (
+    <div className="flex flex-1 min-h-0 overflow-hidden">
     <motion.div
       key={contact.id}
       initial={{ opacity: 0 }}
@@ -1448,66 +1553,90 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       {/* ── Header ── */}
       <div className="flex min-h-16 shrink-0 items-center justify-between border-b border-border px-5 py-2">
         <div className="flex items-center gap-3">
-          <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowProfile((v) => !v)}
+            className="relative cursor-pointer group"
+            title="Ver perfil do contato"
+          >
             <Avatar name={displayName} photoUrl={contact.photoUrl} size="sm" />
             {contactTyping && (
               <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-400 border-2 border-background animate-pulse" />
             )}
-          </div>
+            <span className="absolute inset-0 rounded-full ring-2 ring-transparent group-hover:ring-accent/30 transition-all" />
+          </button>
           <div>
-            <p className="text-[13px] font-semibold text-foreground leading-tight">{displayName}</p>
+            <button
+              type="button"
+              onClick={() => setShowProfile((v) => !v)}
+              className="cursor-pointer text-[13px] font-semibold text-foreground leading-tight hover:text-accent transition-colors text-left"
+            >
+              {displayName}
+            </button>
             <p className="text-[11px] text-muted-foreground/85 leading-tight font-mono">
               {contactTyping ? "digitando..." : agentTyping ? "agente escrevendo..." : displayPhone}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {/* AI toggle */}
           <div className="relative group">
             <button
               onClick={() => aiToggle.mutate(!isAiEnabled)}
-              disabled={aiToggle.isPending}
+              disabled={aiToggle.isPending || (!globalAiEnabled && !testModeActive)}
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all duration-200 cursor-pointer border ${
-                testModeActive
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-500/80 hover:bg-amber-500/15"
-                  : !globalAiEnabled
-                    ? "border-rose-500/30 bg-rose-500/10 text-rose-400/80 hover:bg-rose-500/15"
-                    : isAiEnabled
-                      ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
-                      : "border-border/50 bg-muted/20 text-muted-foreground/60 hover:bg-muted/40 hover:text-muted-foreground"
+                !globalAiEnabled && !testModeActive
+                  ? "border-rose-500/20 bg-rose-500/[0.06] text-rose-400/60 cursor-not-allowed"
+                  : aiEffectivelyActive
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
+                    : testModeActive && isAiEnabled && !isWhitelistedForTest
+                      ? "border-amber-500/20 bg-amber-500/[0.06] text-amber-400/70 hover:bg-amber-500/10"
+                      : isAiEnabled
+                        ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
+                        : "border-border/50 bg-muted/20 text-muted-foreground/50 hover:bg-muted/40 hover:text-muted-foreground/70"
               } disabled:opacity-50`}
-              title={
-                testModeActive
-                  ? "Modo teste ativo — IA responde apenas para números autorizados"
-                  : !globalAiEnabled
-                    ? "IA desabilitada nas configurações gerais"
-                    : isAiEnabled
-                      ? "IA ativa neste contato — clique para desativar"
-                      : "IA desativada neste contato — clique para ativar"
-              }
             >
-              <Robot className="h-3.5 w-3.5" weight={isAiEnabled && globalAiEnabled ? "fill" : "regular"} />
-              <span>{testModeActive ? "Modo teste" : !globalAiEnabled ? "IA desativada" : isAiEnabled ? "IA ativa" : "IA pausada"}</span>
-              {!globalAiEnabled && isAiEnabled && (
-                <Warning className="h-3 w-3 text-amber-500/80" weight="fill" />
+              <Robot className="h-3.5 w-3.5" weight={aiEffectivelyActive ? "fill" : "regular"} />
+              <span>
+                {!globalAiEnabled && !testModeActive
+                  ? "IA desativada"
+                  : aiEffectivelyActive
+                    ? "IA respondendo"
+                    : testModeActive && isAiEnabled && !isWhitelistedForTest
+                      ? "Fora do teste"
+                      : isAiEnabled ? "IA ativa" : "IA pausada"
+                }
+              </span>
+              {testModeActive && (
+                <span className="flex h-4 items-center rounded px-1 bg-amber-500/15 text-[8px] font-bold uppercase tracking-wider text-amber-400/80">
+                  <Flask className="h-2.5 w-2.5 mr-0.5" weight="fill" />
+                  Teste
+                </span>
               )}
             </button>
-            {/* Tooltip when AI is not fully active */}
-            {!globalAiEnabled && isAiEnabled && (
-              <div className="absolute right-0 top-full mt-1.5 z-50 hidden group-hover:block">
-                <div className="rounded-lg border border-border/30 bg-background/95 backdrop-blur-sm px-3 py-2 shadow-lg max-w-[240px]">
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    {testModeActive
-                      ? <>A IA está em <span className="font-semibold text-amber-400">modo teste</span> — responde apenas para números autorizados nas configurações.</>
-                      : <>A IA está ativada neste contato, mas está <span className="font-semibold text-rose-400">desabilitada nas configurações gerais</span>. Ative em Configurações → IA para que responda.</>
-                    }
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
 
+            {/* Tooltip */}
+            <div className="absolute right-0 top-full mt-1.5 z-50 hidden group-hover:block">
+              <div className="rounded-lg border border-border/30 bg-background/95 backdrop-blur-sm px-3 py-2 shadow-lg max-w-[250px]">
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  {!globalAiEnabled && !testModeActive ? (
+                    <>A IA está <span className="font-semibold text-rose-400">desabilitada nas configurações gerais</span>. Ative em Configurações &rarr; IA.</>
+                  ) : testModeActive && isAiEnabled && !isWhitelistedForTest ? (
+                    <>A IA está em <span className="font-semibold text-amber-400">modo teste</span> e este número <span className="font-semibold text-amber-400">não está na lista autorizada</span>. A IA não vai responder este contato.</>
+                  ) : testModeActive && isAiEnabled && isWhitelistedForTest ? (
+                    <>A IA está em <span className="font-semibold text-amber-400">modo teste</span> e este número <span className="font-semibold text-emerald-400">está autorizado</span>. A IA vai responder normalmente.</>
+                  ) : testModeActive && !isAiEnabled ? (
+                    <>A IA está <span className="font-semibold text-muted-foreground">pausada</span> neste contato. Clique para ativar.</>
+                  ) : isAiEnabled ? (
+                    <>A IA está <span className="font-semibold text-emerald-400">respondendo</span> este contato. Clique para pausar.</>
+                  ) : (
+                    <>A IA está <span className="font-semibold text-muted-foreground">pausada</span> neste contato. Clique para ativar.</>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1694,6 +1823,23 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
             </motion.button>
           )}
 
+          {/* Note toggle */}
+          {!recording && (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setNoteMode((v) => !v)}
+              title={noteMode ? "Voltar para mensagem normal" : "Escrever nota interna"}
+              className={`cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 ${
+                noteMode
+                  ? "bg-amber-500/15 text-amber-400 border border-amber-500/25"
+                  : "text-muted-foreground/85 hover:text-amber-400 hover:bg-amber-500/10"
+              }`}
+            >
+              <NotePencil className="h-4 w-4" weight={noteMode ? "fill" : "regular"} />
+            </motion.button>
+          )}
+
           {/* Recording indicator or text input */}
           <AnimatePresence mode="wait">
             {recording ? (
@@ -1705,8 +1851,12 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={attachment ? "Adicionar legenda (opcional)..." : "Digite uma mensagem..."}
-                className="flex-1 h-9 rounded-xl border border-border bg-card/50 px-4 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+                placeholder={attachment ? "Adicionar legenda (opcional)..." : noteMode ? "Escrever nota interna..." : "Digite uma mensagem..."}
+                className={`flex-1 h-9 rounded-xl border px-4 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none transition-all duration-300 ${
+                  noteMode
+                    ? "border-amber-500/25 bg-amber-500/[0.04] focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/30"
+                    : "border-border bg-card/50 focus:ring-2 focus:ring-accent/30 focus:border-accent/40"
+                }`}
               />
             )}
           </AnimatePresence>
@@ -1768,6 +1918,28 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
         </form>
       </div>
     </motion.div>
+
+    {/* ── Profile side panel ── */}
+    <AnimatePresence>
+      {showProfile && contact.id && (
+        <motion.div
+          key="profile-panel"
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: 320, opacity: 1 }}
+          exit={{ width: 0, opacity: 0 }}
+          transition={{ duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
+          className="shrink-0 border-l border-border overflow-hidden"
+        >
+          <div className="w-[320px] h-full">
+            <ContactInfoPanel
+              contactId={contact.id}
+              initialContact={contact}
+            />
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </div>
   )
 }
 

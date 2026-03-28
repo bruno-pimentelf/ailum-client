@@ -31,3 +31,33 @@ export function markAsRead(contactId: string) {
     method: "PATCH",
   })
 }
+
+// ─── Internal Notes ───────────────────────────────────────────────────────────
+
+export function createNote(contactId: string, text: string) {
+  return apiFetch<{ id: string }>(`/conversations/${contactId}/notes`, {
+    method: "POST",
+    body: { text },
+  })
+}
+
+// ─── Reminders ────────────────────────────────────────────────────────────────
+
+export function createReminder(contactId: string, content: string, dueAt?: string) {
+  return apiFetch<unknown>(`/conversations/${contactId}/reminders`, {
+    method: "POST",
+    body: { content, dueAt },
+  })
+}
+
+export function toggleReminder(contactId: string, reminderId: string) {
+  return apiFetch<unknown>(`/conversations/${contactId}/reminders/${reminderId}/toggle`, {
+    method: "PATCH",
+  })
+}
+
+export function deleteReminder(contactId: string, reminderId: string) {
+  return apiFetch<void>(`/conversations/${contactId}/reminders/${reminderId}`, {
+    method: "DELETE",
+  })
+}

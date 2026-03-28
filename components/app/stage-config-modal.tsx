@@ -91,6 +91,8 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const { data: professionals = [] } = useProfessionals()
   const {
     upsertAgentConfig,
+    updateStage,
+    deleteStage,
     createTrigger,
     updateTrigger,
     deleteTrigger,
@@ -119,6 +121,8 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [model, setModel] = useState<"HAIKU" | "SONNET">("SONNET")
   const [temperature, setTemperature] = useState(0.4)
   const [voiceId, setVoiceId] = useState<string | null>(null)
+  const [isTerminal, setIsTerminal] = useState(false)
+  const [confirmDeleteStage, setConfirmDeleteStage] = useState(false)
   const [saving, setSaving] = useState(false)
   const voicesQuery = useQuery({ queryKey: ["voices"], queryFn: voicesApi.list, staleTime: 60_000 })
   const voices = voicesQuery.data ?? []
@@ -140,6 +144,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setModel(config.model ?? "SONNET")
       setTemperature(config.temperature ?? 0.4)
       setVoiceId(config.voiceId ?? null)
+      setIsTerminal(stage?.isTerminal ?? false)
     } else if (open && !isLoading) {
       setStageContext("")
       setAllowedTools(["search_availability", "create_appointment", "move_stage", "send_message", "notify_operator"])
@@ -149,9 +154,10 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setModel("SONNET")
       setTemperature(0.4)
       setVoiceId(null)
+      setIsTerminal(stage?.isTerminal ?? false)
     }
     setError(null)
-  }, [config, isLoading, open, stage?.name])
+  }, [config, isLoading, open, stage?.name, stage?.isTerminal])
 
   function toggleTool(tool: AllowedTool) {
     setAllowedTools((prev) =>
@@ -436,6 +442,36 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                       </select>
                       <p className="text-[10px] text-muted-foreground/90">Responde com áudio no WhatsApp</p>
                     </div>
+                    <div className="space-y-1.5">
+                      <label className={labelCls}>Etapa final</label>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isTerminal}
+                        onClick={() => {
+                          if (!stage || !currentFunnel) return
+                          const next = !isTerminal
+                          setIsTerminal(next)
+                          updateStage.mutate({
+                            stageId: stage.id,
+                            funnelId: currentFunnel.id,
+                            body: { isTerminal: next },
+                          })
+                        }}
+                        className={`cursor-pointer relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors duration-200 ${
+                          isTerminal
+                            ? "border-accent bg-accent/20"
+                            : "border-border bg-muted/30"
+                        }`}
+                      >
+                        <span className={`absolute top-0.5 h-4 w-4 rounded-full transition-all duration-200 ${
+                          isTerminal
+                            ? "left-[calc(100%-20px)] bg-accent"
+                            : "left-1 bg-muted-foreground/40"
+                        }`} />
+                      </button>
+                      <p className="text-[10px] text-muted-foreground/90">Encerra o fluxo</p>
+                    </div>
                   </div>
 
                   {/* Row 2: Prompts (left) + Tools (right) */}
@@ -663,7 +699,43 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
 
             {/* Footer — only for Agente tab */}
             {activeTab === "agente" && (
-              <div key="footer" className="flex items-center justify-end gap-3 border-t border-border/50 px-6 sm:px-8 py-4 shrink-0 bg-background/95">
+              <div key="footer" className="flex items-center gap-3 border-t border-border/50 px-6 sm:px-8 py-4 shrink-0 bg-background/95">
+                {/* Delete stage */}
+                {confirmDeleteStage ? (
+                  <div className="flex items-center gap-2 mr-auto">
+                    <span className="text-[11px] text-rose-400">Contatos serao movidos pro primeiro estagio.</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!stage || !currentFunnel) return
+                        await deleteStage.mutateAsync({ stageId: stage.id, funnelId: currentFunnel.id })
+                        setConfirmDeleteStage(false)
+                        onClose()
+                      }}
+                      disabled={deleteStage.isPending}
+                      className="text-[11px] font-bold text-rose-400 hover:text-rose-300 px-2 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {deleteStage.isPending ? "Excluindo..." : "Confirmar"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteStage(false)}
+                      className="text-[11px] text-muted-foreground hover:text-foreground px-1 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteStage(true)}
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-rose-400/60 hover:text-rose-400 transition-colors cursor-pointer mr-auto"
+                  >
+                    <Trash className="h-3.5 w-3.5" />
+                    Excluir etapa
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={onClose}

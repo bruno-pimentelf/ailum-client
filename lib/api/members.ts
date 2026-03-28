@@ -51,6 +51,7 @@ export interface InviteResponse {
 export interface UpdateRoleInput {
   role?: MemberRole
   professionalId?: string | null
+  alsoIsProfessional?: boolean
 }
 
 export interface CreateAccountInput {
@@ -59,6 +60,7 @@ export interface CreateAccountInput {
   password: string
   role: MemberRole
   professionalId?: string
+  alsoIsProfessional?: boolean
 }
 
 export interface CreateAccountResponse {

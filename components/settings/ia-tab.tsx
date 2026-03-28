@@ -17,6 +17,8 @@ export function IATab() {
   const { data: tenant, isLoading, error } = useTenant()
   const { data: me } = useMe()
   const update = useUpdateTenant()
+  const queryClient = useQueryClient()
+  const { data: integrations } = useIntegrations()
 
   const canEdit = me?.role === "ADMIN" || me?.role === "SECRETARY"
 
@@ -27,6 +29,11 @@ export function IATab() {
   })
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null)
+  const [testPhoneInput, setTestPhoneInput] = useState("")
+
+  const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId && i.isActive)
+  const selectedInstance = zapiInstances.find((i) => i.instanceId === selectedInstanceId)
 
   useEffect(() => {
     if (!tenant) return
@@ -36,6 +43,18 @@ export function IATab() {
       pixTerms: tenant.pixTerms ?? "",
     })
   }, [tenant])
+
+  useEffect(() => {
+    if (!selectedInstanceId && zapiInstances.length > 0) {
+      setSelectedInstanceId(zapiInstances[0]!.instanceId)
+    }
+  }, [zapiInstances, selectedInstanceId])
+
+  const aiMutation = useMutation({
+    mutationFn: (body: { instanceId: string; isAiEnabled?: boolean; isAiTestMode?: boolean; aiTestPhones?: string[] }) =>
+      integrationsApi.updateZapiAi(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["integrations"] }),
+  })
 
   const set = (k: keyof typeof form) => (val: string) =>
     setForm((prev) => ({ ...prev, [k]: val }))
@@ -94,27 +113,6 @@ export function IATab() {
       </motion.div>
     )
   }
-
-  const queryClient = useQueryClient()
-  const { data: integrations } = useIntegrations()
-  const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId && i.isActive)
-  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null)
-
-  // Auto-select first instance
-  useEffect(() => {
-    if (!selectedInstanceId && zapiInstances.length > 0) {
-      setSelectedInstanceId(zapiInstances[0]!.instanceId)
-    }
-  }, [zapiInstances, selectedInstanceId])
-
-  const selectedInstance = zapiInstances.find((i) => i.instanceId === selectedInstanceId)
-  const [testPhoneInput, setTestPhoneInput] = useState("")
-
-  const aiMutation = useMutation({
-    mutationFn: (body: { instanceId: string; isAiEnabled?: boolean; isAiTestMode?: boolean; aiTestPhones?: string[] }) =>
-      integrationsApi.updateZapiAi(body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["integrations"] }),
-  })
 
   async function handleSlotRecallToggle() {
     if (!tenant) return

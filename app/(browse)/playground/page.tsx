@@ -11,6 +11,7 @@ import {
   CaretDown,
   CaretRight,
   CheckCircle,
+  ChatCircleText,
   ArrowsClockwise,
   Trash,
   Play,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/resizable"
 import { useQueryClient } from "@tanstack/react-query"
 import { usePlaygroundContact, usePlaygroundMessages, usePlaygroundTyping, useAgentAudit } from "@/hooks/use-playground"
-import { sendPlaygroundMessage, confirmPlayground, resetPlayground } from "@/lib/api/agent"
+import { sendPlaygroundMessage, confirmPlayground, resetPlayground, type PlaygroundResetScope } from "@/lib/api/agent"
 import { useIntegrations } from "@/hooks/use-integrations"
 import { useInstanceStore } from "@/lib/instance-store"
 import type { FirestoreMessage } from "@/lib/types/firestore"
@@ -496,12 +497,15 @@ export default function PlaygroundPage() {
     }
   }, [contactId, refetchAudit, queryClient])
 
-  const handleReset = useCallback(async () => {
+  const [resetMenuOpen, setResetMenuOpen] = useState(false)
+
+  const handleReset = useCallback(async (scope: PlaygroundResetScope) => {
     setResetting(true)
     setError(null)
+    setResetMenuOpen(false)
     try {
-      await resetPlayground()
-      setOptimisticMsgs([])
+      await resetPlayground(scope)
+      if (scope === 'chat' || scope === 'all') setOptimisticMsgs([])
       refetchAudit()
     } catch {
       setError("Falha ao resetar.")
@@ -574,20 +578,78 @@ export default function PlaygroundPage() {
             </select>
           )}
         </div>
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={!isReady || resetting}
-          className="flex items-center gap-1.5 rounded-lg border border-border/50 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Apagar mensagens e memórias. Começar do zero."
-        >
-          {resetting ? (
-            <ArrowsClockwise className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Trash className="h-3.5 w-3.5" />
-          )}
-          Resetar
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setResetMenuOpen(!resetMenuOpen)}
+            disabled={!isReady || resetting}
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {resetting ? (
+              <ArrowsClockwise className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Trash className="h-3.5 w-3.5" />
+            )}
+            Limpar
+          </button>
+          <AnimatePresence>
+            {resetMenuOpen && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-40"
+                  onClick={() => setResetMenuOpen(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full mt-1.5 z-50 w-52 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl overflow-hidden"
+                >
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => handleReset("chat")}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[12px] text-foreground/90 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+                    >
+                      <ChatCircleText className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+                      <div>
+                        <p className="font-medium">Limpar conversa</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Mensagens e memorias da IA</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReset("appointments")}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[12px] text-foreground/90 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+                    >
+                      <CheckCircle className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+                      <div>
+                        <p className="font-medium">Limpar agendamentos</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Consultas e cobranças</p>
+                      </div>
+                    </button>
+                    <div className="border-t border-border/30 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => handleReset("all")}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[12px] text-rose-400/90 hover:bg-rose-500/10 transition-colors text-left cursor-pointer"
+                    >
+                      <Trash className="h-3.5 w-3.5 shrink-0" />
+                      <div>
+                        <p className="font-medium">Limpar tudo</p>
+                        <p className="text-[10px] text-rose-400/60 mt-0.5">Conversa, agendamentos e cobranças</p>
+                      </div>
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {!mounted ? (

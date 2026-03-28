@@ -28,6 +28,10 @@ import {
   ArrowsClockwise,
   Warning,
   PencilSimple,
+  CodeBlock,
+  Check,
+  Copy,
+  FloppyDisk,
 } from "@phosphor-icons/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useFunnels, useBoard, useFunnelMutations } from "@/hooks/use-board"
@@ -44,6 +48,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
+import Editor from "react-simple-code-editor"
+import Prism from "prismjs"
+import "prismjs/components/prism-json"
+import "prismjs/themes/prism-tomorrow.css"
+import { funnelsApi } from "@/lib/api/funnels"
 import type { BoardContact, BoardStage, FunnelListItem } from "@/lib/api/funnels"
 import { formatMessagePreview } from "@/components/app/message-preview"
 
@@ -644,6 +653,13 @@ export default function BoardsPage() {
     currentFunnelId: string
     currentStageId: string
   } | null>(null)
+  const [devMode, setDevMode] = useState(false)
+  const [devJson, setDevJson] = useState("")
+  const [devLoading, setDevLoading] = useState(false)
+  const [devSaving, setDevSaving] = useState(false)
+  const [devError, setDevError] = useState<string | null>(null)
+  const [devSuccess, setDevSuccess] = useState(false)
+  const [devLoadedFunnelId, setDevLoadedFunnelId] = useState<string | null>(null)
   const dndId = useId()
 
   const { data: allFunnels, isLoading: funnelsLoading } = useFunnels()
@@ -671,6 +687,17 @@ export default function BoardsPage() {
   const boardKey = ["board", selectedFunnelId, debouncedSearch || undefined] as const
 
   const { createStage, updateStage, createDefaultFunnel, updateFunnel } = useFunnelMutations()
+
+  // Reload dev JSON when funnel changes
+  useEffect(() => {
+    if (!devMode || !selectedFunnelId || selectedFunnelId === devLoadedFunnelId) return
+    setDevLoading(true)
+    setDevError(null)
+    funnelsApi.exportFunnel(selectedFunnelId)
+      .then((data) => { setDevJson(JSON.stringify(data, null, 2)); setDevLoadedFunnelId(selectedFunnelId) })
+      .catch((err) => setDevError(err instanceof Error ? err.message : "Erro"))
+      .finally(() => setDevLoading(false))
+  }, [devMode, selectedFunnelId, devLoadedFunnelId])
 
   async function handleUpdateStageName(s: BoardStage, name: string) {
     if (!selectedFunnelId) return
@@ -927,6 +954,38 @@ export default function BoardsPage() {
             <ArrowsClockwise className="h-3.5 w-3.5" />
           </button>
 
+          {/* Dev mode toggle */}
+          {canEditFunnels && (
+            <button
+              onClick={async () => {
+                const next = !devMode
+                setDevMode(next)
+                if (next && selectedFunnelId) {
+                  setDevLoading(true)
+                  setDevError(null)
+                  setDevSuccess(false)
+                  try {
+                    const data = await funnelsApi.exportFunnel(selectedFunnelId)
+                    setDevJson(JSON.stringify(data, null, 2))
+                  } catch (err) {
+                    setDevError(err instanceof Error ? err.message : "Erro ao carregar")
+                  } finally {
+                    setDevLoading(false)
+                  }
+                }
+              }}
+              className={`flex h-7 items-center gap-1.5 rounded-lg border px-2 text-[10px] font-medium transition-all cursor-pointer ${
+                devMode
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                  : "border-border/50 text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
+              }`}
+              title="Modo desenvolvedor"
+            >
+              <CodeBlock className="h-3.5 w-3.5" weight={devMode ? "fill" : "regular"} />
+              {devMode ? "Dev" : "Dev"}
+            </button>
+          )}
+
           {/* Funil padrão — badge ou botão para definir como padrão */}
           {selectedFunnelId && (defaultFunnelId === selectedFunnelId ? (
             <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.08] px-2.5 h-7">
@@ -945,7 +1004,92 @@ export default function BoardsPage() {
         </div>
       </div>
 
+      {/* ── Dev mode editor ── */}
+      {devMode && (
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Toolbar */}
+          <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-amber-500/20 bg-amber-500/[0.03]">
+            <CodeBlock className="h-3.5 w-3.5 text-amber-400" weight="fill" />
+            <span className="text-[11px] font-semibold text-amber-400">Modo desenvolvedor</span>
+            <span className="text-[10px] text-muted-foreground/60">— edite o JSON e salve</span>
+            <div className="flex-1" />
+            {devError && (
+              <span className="text-[10px] text-rose-400 mr-2">{devError}</span>
+            )}
+            {devSuccess && (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 mr-2">
+                <Check className="h-3 w-3" weight="bold" /> Salvo
+              </span>
+            )}
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(devJson)
+              }}
+              className="flex items-center gap-1 rounded-md border border-border/50 px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+              title="Copiar JSON"
+            >
+              <Copy className="h-3 w-3" /> Copiar
+            </button>
+            <button
+              onClick={async () => {
+                if (!selectedFunnelId) return
+                setDevSaving(true)
+                setDevError(null)
+                setDevSuccess(false)
+                try {
+                  const parsed = JSON.parse(devJson)
+                  const result = await funnelsApi.importFunnel(selectedFunnelId, parsed)
+                  setDevJson(JSON.stringify(result, null, 2))
+                  setDevSuccess(true)
+                  queryClient.invalidateQueries({ queryKey: ["funnels"] })
+                  queryClient.invalidateQueries({ queryKey: ["board"] })
+                  setTimeout(() => setDevSuccess(false), 3000)
+                } catch (err) {
+                  setDevError(err instanceof Error ? err.message : "JSON invalido ou erro ao salvar")
+                } finally {
+                  setDevSaving(false)
+                }
+              }}
+              disabled={devSaving || devLoading}
+              className="flex items-center gap-1 rounded-md border border-accent/30 bg-accent/10 px-2.5 py-1 text-[10px] font-semibold text-accent hover:bg-accent/20 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {devSaving ? (
+                <ArrowsClockwise className="h-3 w-3 animate-spin" />
+              ) : (
+                <FloppyDisk className="h-3 w-3" />
+              )}
+              Salvar
+            </button>
+          </div>
+          {/* Editor */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {devLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <ArrowsClockwise className="h-6 w-6 text-accent animate-spin" />
+              </div>
+            ) : (
+              <div className="h-full overflow-auto">
+                <Editor
+                  value={devJson}
+                  onValueChange={(code) => { setDevJson(code); setDevError(null); setDevSuccess(false) }}
+                  highlight={(code) => Prism.highlight(code, Prism.languages.json, "json")}
+                  padding={16}
+                  style={{
+                    fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace",
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    minHeight: "100%",
+                  }}
+                  className="[&_textarea]:outline-none! [&_textarea]:bg-transparent!"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Board body ── */}
+      {!devMode && (
       <div className="flex-1 overflow-y-auto md:overflow-x-auto md:overflow-y-hidden">
 
         {/* Loading skeleton */}
@@ -1114,6 +1258,7 @@ export default function BoardsPage() {
           </DndContext>
         )}
       </div>
+      )}
     </div>
     </>
   )

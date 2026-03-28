@@ -219,6 +219,14 @@ export const funnelsApi = {
     return apiFetch<BoardResponse>(`/funnels/${funnelId}/board${query ? `?${query}` : ""}`)
   },
 
+  // ── Developer export/import ──────────────────────────────────────────────
+
+  exportFunnel: (funnelId: string) =>
+    apiFetch<Record<string, unknown>>(`/funnels/${funnelId}/export`),
+
+  importFunnel: (funnelId: string, body: Record<string, unknown>) =>
+    apiFetch<Record<string, unknown>>(`/funnels/${funnelId}/import`, { method: "PUT", body }),
+
   // ── Stages ───────────────────────────────────────────────────────────────
 
   listStages: (funnelId: string) =>

@@ -14,6 +14,7 @@ import {
   Robot,
   TextAa,
   Brain,
+  Books,
 } from "@phosphor-icons/react"
 import { AilumLoader } from "@/components/ui/ailum-loader"
 
@@ -27,10 +28,11 @@ import { DisponibilidadeTab } from "@/components/settings/disponibilidade-tab"
 import { IATab } from "@/components/settings/ia-tab"
 import { TemplatesTab } from "@/components/settings/templates-tab"
 import { CaptacaoTab } from "@/components/settings/captacao-tab"
+import { KnowledgeTab } from "@/components/settings/knowledge-tab"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "meus-servicos" | "templates" | "ia" | "captacao" | "voz"
+type TabId = "geral" | "perfil" | "conexoes" | "servicos" | "membros" | "meus-servicos" | "templates" | "ia" | "knowledge" | "captacao" | "voz"
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "geral",         label: "Geral",          icon: Gear          },
@@ -41,6 +43,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "meus-servicos", label: "Meus Serviços",  icon: Storefront    },
   { id: "templates",     label: "Templates",      icon: TextAa        },
   { id: "ia",            label: "IA",             icon: Robot         },
+  { id: "knowledge",     label: "Conhecimento",   icon: Books         },
   { id: "captacao",      label: "Captação",       icon: Brain         },
   { id: "voz",           label: "Voz",            icon: Microphone    },
 ]
@@ -103,6 +106,7 @@ function SettingsContent() {
             {activeTab === "meus-servicos"   && <DisponibilidadeTab key="meus-servicos"   />}
             {activeTab === "templates"       && <TemplatesTab       key="templates"       />}
             {activeTab === "ia"              && <IATab              key="ia"              />}
+            {activeTab === "knowledge"       && <KnowledgeTab       key="knowledge"       />}
             {activeTab === "captacao"        && <CaptacaoTab        key="captacao"        />}
             {activeTab === "voz"             && <VozTab             key="voz"             />}
           </AnimatePresence>

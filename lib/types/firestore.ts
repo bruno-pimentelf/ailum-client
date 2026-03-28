@@ -57,8 +57,20 @@ export interface FirestoreContact {
   // AI-collected memories (synced from agentMemory table)
   memories?: Record<string, string>
 
+  // Reminders (synced from contact_reminders table)
+  reminders?: FirestoreReminder[]
+
   // Metadata
   updatedAt: Timestamp
+}
+
+export interface FirestoreReminder {
+  id: string
+  content: string
+  dueAt: Timestamp | null
+  isDone: boolean
+  createdBy: string
+  createdAt: Timestamp
 }
 
 // ─── Message ──────────────────────────────────────────────────────────────────
@@ -71,7 +83,7 @@ export interface MessageReaction {
 
 export interface FirestoreMessage {
   id: string
-  role: "CONTACT" | "OPERATOR" | "AGENT"
+  role: "CONTACT" | "OPERATOR" | "AGENT" | "NOTE"
   type: "TEXT" | "IMAGE" | "AUDIO" | "DOCUMENT" | "PIX_CHARGE"
   content: string
   createdAt: Timestamp

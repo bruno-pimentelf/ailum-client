@@ -36,9 +36,10 @@ export function getPlaygroundContact() {
   return apiFetch<PlaygroundContact>("/agent/playground-contact")
 }
 
-/** Apaga mensagens e memórias do contato de playground. Zera o contexto para testar de novo. */
-export function resetPlayground() {
-  return apiFetch<void>("/agent/playground-reset", { method: "POST" })
+export type PlaygroundResetScope = "chat" | "appointments" | "all"
+
+export function resetPlayground(scope: PlaygroundResetScope = "all") {
+  return apiFetch<void>("/agent/playground-reset", { method: "POST", body: { scope } })
 }
 
 // ─── Send message (test mode — no WhatsApp) ────────────────────────────────────
