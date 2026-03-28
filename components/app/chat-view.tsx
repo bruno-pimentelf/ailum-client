@@ -751,7 +751,7 @@ function MessageBubble({
 
     // ── AUDIO ──────────────────────────────────────────────────────────────────
     if (msg.type === "AUDIO") {
-      const transcription = (m?.transcription as string) || null
+      const transcription = ((m as Record<string, unknown>)?.transcription as string) || null
       const hasTranscription = !!transcription && transcription !== "[Mensagem de voz]" && transcription !== "[Áudio]"
 
       if (m?.audioUrl) {
@@ -1438,7 +1438,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       } as OptimisticMessage])
 
       try {
-        await createNote(contact.id, text)
+        await createNote(contact.id!, text)
       } catch {
         setOptimisticMsgs((prev) => prev.filter((m) => m.id !== tempId))
         showError("Falha ao salvar nota")
