@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   PaperPlaneTilt,
@@ -17,6 +17,8 @@ import {
   Play,
   Pause,
   DownloadSimple,
+  Copy,
+  Check,
 } from "@phosphor-icons/react"
 import { PixChargeBlock } from "@/components/app/pix-charge-block"
 import {
@@ -36,96 +38,138 @@ const ease = [0.33, 1, 0.68, 1] as const
 
 // ─── Audio player (WhatsApp-style) ───────────────────────────────────────────
 
+// Generate deterministic waveform bars from URL hash
+function generateWaveformBars(url: string, count: number): number[] {
+  let hash = 0
+  for (let i = 0; i < url.length; i++) hash = ((hash << 5) - hash + url.charCodeAt(i)) | 0
+  return Array.from({ length: count }, (_, i) => Math.abs(Math.sin(hash * (i + 1) * 0.1)) * 0.7 + 0.3)
+}
+
+const SPEEDS = [1, 1.5, 2] as const
+
 function AudioPlayer({ url, text }: { url: string; text?: string }) {
   const audioRef = useRef<HTMLAudioElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
-  const [progress, setProgress] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [speedIdx, setSpeedIdx] = useState(0)
+  const [seeking, setSeeking] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+
+  const bars = useMemo(() => generateWaveformBars(url, 32), [url])
 
   useEffect(() => {
     const a = audioRef.current
     if (!a) return
-    const onTime = () => setProgress(a.duration > 0 ? a.currentTime / a.duration : 0)
-    const onMeta = () => setDuration(a.duration)
-    const onEnd = () => { setPlaying(false); setProgress(0) }
-    a.addEventListener("timeupdate", onTime)
+    const onMeta = () => setDuration(a.duration || 0)
+    const onTime = () => { if (!seeking) setCurrentTime(a.currentTime || 0) }
+    const onEnd = () => setPlaying(false)
+    const onPlay = () => setPlaying(true)
+    const onPause = () => setPlaying(false)
     a.addEventListener("loadedmetadata", onMeta)
+    a.addEventListener("timeupdate", onTime)
     a.addEventListener("ended", onEnd)
-    return () => {
-      a.removeEventListener("timeupdate", onTime)
-      a.removeEventListener("loadedmetadata", onMeta)
-      a.removeEventListener("ended", onEnd)
-    }
-  }, [])
+    a.addEventListener("play", onPlay)
+    a.addEventListener("pause", onPause)
+    return () => { a.removeEventListener("loadedmetadata", onMeta); a.removeEventListener("timeupdate", onTime); a.removeEventListener("ended", onEnd); a.removeEventListener("play", onPlay); a.removeEventListener("pause", onPause) }
+  }, [seeking])
 
-  const toggle = () => {
+  const toggle = async () => {
     const a = audioRef.current
     if (!a) return
-    if (playing) { a.pause(); setPlaying(false) }
-    else { a.play(); setPlaying(true) }
+    if (a.paused) { try { await a.play() } catch {} } else a.pause()
   }
 
-  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const a = audioRef.current
-    if (!a || !a.duration) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    a.currentTime = pct * a.duration
-    setProgress(pct)
+  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
+    const a = audioRef.current; const b = barRef.current
+    if (!a || !b || !duration) return
+    const ratio = Math.max(0, Math.min(1, (e.clientX - b.getBoundingClientRect().left) / b.getBoundingClientRect().width))
+    a.currentTime = ratio * duration; setCurrentTime(ratio * duration)
   }
 
-  const fmt = (s: number) => {
-    if (!s || !isFinite(s)) return "0:00"
-    const m = Math.floor(s / 60)
-    const sec = Math.floor(s % 60)
-    return `${m}:${sec.toString().padStart(2, "0")}`
+  const cycleSpeed = () => {
+    const next = (speedIdx + 1) % SPEEDS.length
+    setSpeedIdx(next)
+    if (audioRef.current) audioRef.current.playbackRate = SPEEDS[next]
+  }
+
+  const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0
+  const speed = SPEEDS[speedIdx]
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
+  const isLong = (text?.length ?? 0) > 100
+
+  return (
+    <div className="space-y-1.5 min-w-[220px]">
+      <audio ref={audioRef} src={url} preload="metadata" />
+      <div className="flex items-center gap-2">
+        <button onClick={toggle}
+          className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 hover:bg-accent/30 transition-colors">
+          {playing ? <Pause className="h-4 w-4 text-accent" weight="fill" /> : <Play className="h-4 w-4 text-accent ml-0.5" weight="fill" />}
+        </button>
+        <div className="flex-1 min-w-0">
+          <div ref={barRef} className="flex items-end gap-px h-6 cursor-pointer"
+            onClick={seekTo}
+            onMouseDown={(e) => { setSeeking(true); seekTo(e) }}
+            onMouseMove={(e) => { if (seeking) seekTo(e) }}
+            onMouseUp={() => setSeeking(false)}
+            onMouseLeave={() => setSeeking(false)}>
+            {bars.map((h, i) => (
+              <div key={i} className={`flex-1 rounded-full transition-colors duration-100 ${i / bars.length < progress ? "bg-accent" : "bg-muted-foreground/25"}`} style={{ height: `${h * 100}%`, minHeight: 3 }} />
+            ))}
+          </div>
+          <div className="mt-0.5 flex items-center justify-between">
+            <span className="text-[10px] font-mono text-muted-foreground/70">{fmt(currentTime)}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/50">{fmt(duration)}</span>
+          </div>
+        </div>
+        <button onClick={cycleSpeed}
+          className={`cursor-pointer flex h-6 items-center justify-center rounded-md px-1.5 text-[9px] font-bold transition-colors ${speed !== 1 ? "bg-accent/15 text-accent border border-accent/25" : "text-muted-foreground/50 hover:text-muted-foreground/80"}`}>
+          {speed}x
+        </button>
+      </div>
+      {text && (
+        <div className="rounded-lg border border-border/30 bg-muted/10 px-2.5 py-1.5">
+          <div className="flex items-center gap-1 mb-0.5">
+            <span className="text-[8px] font-bold text-muted-foreground/40 uppercase tracking-wider">Transcrição</span>
+          </div>
+          <p className={`text-[11px] text-muted-foreground/60 leading-relaxed ${!expanded && isLong ? "line-clamp-2" : ""}`}>{text}</p>
+          {isLong && (
+            <button onClick={() => setExpanded((v) => !v)} className="cursor-pointer text-[10px] font-semibold text-accent/60 hover:text-accent mt-0.5">
+              {expanded ? "Ver menos" : "Ver mais"}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── PIX Copy Button (WhatsApp-style) ────────────────────────────────────────
+
+function PixCopyButton({ pixCopyPaste, merchantName }: { pixCopyPaste: string; merchantName?: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(pixCopyPaste).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
   }
 
   return (
-    <div className="space-y-1.5">
-      <audio ref={audioRef} src={url} preload="metadata" />
-      <div className="flex items-center gap-2.5">
-        <button
-          onClick={toggle}
-          className="cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 hover:bg-accent/30 transition-colors"
-        >
-          {playing ? (
-            <Pause className="h-3.5 w-3.5 text-accent" weight="fill" />
-          ) : (
-            <Play className="h-3.5 w-3.5 text-accent ml-0.5" weight="fill" />
-          )}
-        </button>
-        <div className="flex-1 space-y-1">
-          <div
-            className="h-1.5 rounded-full bg-muted/40 cursor-pointer relative overflow-hidden"
-            onClick={seek}
-          >
-            <motion.div
-              className="absolute inset-y-0 left-0 rounded-full bg-accent/60"
-              style={{ width: `${progress * 100}%` }}
-              transition={{ duration: 0.1 }}
-            />
-          </div>
-          <div className="flex justify-between text-[9px] text-muted-foreground/60">
-            <span>{fmt(duration * progress)}</span>
-            <span>{fmt(duration)}</span>
-          </div>
-        </div>
-        <a
-          href={url}
-          download="audio.mp3"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-muted/40 transition-colors"
-          title="Baixar áudio"
-        >
-          <DownloadSimple className="h-3 w-3 text-muted-foreground/50 hover:text-foreground transition-colors" weight="bold" />
-        </a>
+    <button
+      onClick={handleCopy}
+      className="cursor-pointer w-full flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-3.5 py-2.5 hover:bg-emerald-500/12 transition-colors mt-2"
+    >
+      <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+        {copied ? <Check className="h-4 w-4 text-emerald-400" weight="bold" /> : <Copy className="h-4 w-4 text-emerald-400" />}
       </div>
-      {text && (
-        <p className="text-[11px] text-muted-foreground/60 leading-relaxed italic">{text}</p>
-      )}
-    </div>
+      <div className="text-left min-w-0">
+        <p className="text-[11px] font-bold text-emerald-400">{copied ? "Copiado!" : "Copiar código PIX"}</p>
+        <p className="text-[10px] text-muted-foreground/50 truncate">{merchantName ?? "Pix"}</p>
+      </div>
+    </button>
   )
 }
 
@@ -384,10 +428,15 @@ function MessageBubble({
         }`}
       >
         {isPixCharge ? (
-          <PixChargeBlock
-            content={msg.content}
-            metadata={pixMeta ? { qrCodeUrl: pixMeta.qrCodeUrl, pixCopyPaste: pixMeta.pixCopyPaste, amount: pixMeta.amount, description: pixMeta.description } : undefined}
-          />
+          <div>
+            <PixChargeBlock
+              content={msg.content}
+              metadata={pixMeta ? { qrCodeUrl: pixMeta.qrCodeUrl, pixCopyPaste: pixMeta.pixCopyPaste, amount: pixMeta.amount, description: pixMeta.description } : undefined}
+            />
+            {(pixMeta as Record<string, unknown> | undefined)?.pixCopyPaste && (
+              <PixCopyButton pixCopyPaste={(pixMeta as Record<string, unknown>).pixCopyPaste as string} />
+            )}
+          </div>
         ) : isAudio && audioUrl ? (
           <AudioPlayer url={audioUrl} text={msg.content} />
         ) : (
