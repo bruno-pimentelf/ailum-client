@@ -42,3 +42,10 @@ export function useStatsAgent(params?: StatsAgentParams) {
     queryFn: () => statsApi.agent(params),
   })
 }
+
+export function useStatsBehavior(params?: { from?: string; to?: string }) {
+  return useQuery({
+    queryKey: ["stats", "behavior", params],
+    queryFn: () => statsApi.behavior(params),
+  })
+}

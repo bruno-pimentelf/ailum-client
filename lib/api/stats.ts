@@ -120,4 +120,33 @@ export const statsApi = {
 
   agent: (params?: StatsAgentParams) =>
     apiFetch<StatsAgent>(`/stats/agent${buildQuery(params as Record<string, string | undefined>)}`),
+
+  behavior: (params?: { from?: string; to?: string }) =>
+    apiFetch<StatsBehavior>(`/stats/behavior${buildQuery(params as Record<string, string | undefined>)}`),
+}
+
+export interface StatsBehavior {
+  responseTime: {
+    avgSeconds: number
+    sampleCount: number
+  }
+  sentiment: {
+    positive: number
+    neutral: number
+    negative: number
+    frustrated: number
+    total: number
+  }
+  dropOff: Array<{
+    stageId: string
+    stageName: string
+    funnelName: string
+    staleCount: number
+  }>
+  sessions: {
+    total: number
+    uniqueContacts: number
+    avgPerContact: number
+    peakHours: Array<{ hour: number; count: number }>
+  }
 }

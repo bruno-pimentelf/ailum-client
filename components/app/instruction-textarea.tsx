@@ -125,7 +125,7 @@ function tokenize(text: string, knownSorted: string[]): Segment[] {
       let matched = false
       for (const m of knownSorted) {
         if (text.startsWith(m, i)) {
-          const catMatch = m.match(/^@(stage|professional|service|tool):/)
+          const catMatch = m.match(/^@(stage|professional|service|tool|template):/)
           segments.push({
             type: "mention",
             value: m,
@@ -139,7 +139,7 @@ function tokenize(text: string, knownSorted: string[]): Segment[] {
       }
       if (!matched) {
         const rest = text.slice(i)
-        const unresolvedMatch = rest.match(/^@(stage|professional|service|tool):\S+/)
+        const unresolvedMatch = rest.match(/^@(stage|professional|service|tool|template):[^\n@]+/)
         if (unresolvedMatch) {
           segments.push({
             type: "mention",

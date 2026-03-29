@@ -7,6 +7,7 @@ import { FunnelChart } from "@/components/dashboard/funnel-chart"
 import { AgendaChart } from "@/components/dashboard/agenda-chart"
 import { RevenueCard } from "@/components/dashboard/revenue-card"
 import { AgentMetrics } from "@/components/dashboard/agent-metrics"
+import { BehaviorAnalytics } from "@/components/dashboard/behavior-analytics"
 import {
   DateRangePicker,
   getPresetRange,
@@ -17,6 +18,7 @@ import {
   useStatsAgenda,
   useStatsRevenue,
   useStatsAgent,
+  useStatsBehavior,
 } from "@/hooks/use-stats"
 import { FadeIn } from "@/components/landing/motion"
 
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const agenda = useStatsAgenda(params)
   const revenue = useStatsRevenue(params)
   const agent = useStatsAgent(params)
+  const behavior = useStatsBehavior(params)
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
@@ -100,6 +103,14 @@ export default function DashboardPage() {
             transition={{ duration: 0.35, delay: 0.2 }}
           >
             <AgentMetrics data={agent.data} isLoading={agent.isLoading} />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.25 }}
+          >
+            <BehaviorAnalytics data={behavior.data} />
           </motion.div>
         </div>
       </div>
