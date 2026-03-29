@@ -120,6 +120,7 @@ export interface StageAgentConfigInput {
   model?: "HAIKU" | "SONNET"
   temperature?: number
   voiceId?: string | null
+  voiceChance?: number
 }
 
 // ─── Triggers ──────────────────────────────────────────────────────────────────
