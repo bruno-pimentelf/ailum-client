@@ -27,16 +27,7 @@ export function Pricing() {
       cta: t.pricing.cta,
       highlight: true,
     },
-    {
-      name: t.pricing.enterprise,
-      price: t.pricing.enterprisePrice,
-      period: t.pricing.essentialPeriod,
-      description: t.pricing.enterpriseDesc,
-      features: t.pricing.enterpriseFeatures,
-      cta: t.pricing.cta,
-      highlight: false,
-    },
-  ]
+  ].filter((p) => p.name)
 
   return (
     <section id="precos" className="border-t border-border py-24 md:py-32">
@@ -54,7 +45,7 @@ export function Pricing() {
           </p>
         </FadeIn>
 
-        <StaggerContainer className="mt-16 grid grid-cols-1 gap-4 md:grid-cols-3" staggerDelay={0.12}>
+        <StaggerContainer className="mt-16 grid grid-cols-1 gap-4 md:grid-cols-2 max-w-3xl mx-auto" staggerDelay={0.12}>
           {plans.map((plan) => (
             <motion.div
               key={plan.name}
