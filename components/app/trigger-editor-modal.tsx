@@ -40,6 +40,7 @@ const ACTIONS: { value: TriggerAction; label: string }[] = [
   { value: "GENERATE_PIX", label: "Gerar cobrança PIX" },
   { value: "NOTIFY_OPERATOR", label: "Notificar operador" },
   { value: "WAIT_AND_REPEAT", label: "Aguardar e repetir" },
+  { value: "GENERATE_SUMMARY", label: "Gerar resumo da conversa" },
 ]
 
 // ─── Time picker ──────────────────────────────────────────────────────────────

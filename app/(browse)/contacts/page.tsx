@@ -499,7 +499,7 @@ export default function ContactsPage() {
                     key={tab}
                     onClick={() => setRightTab(tab)}
                     className={`relative flex items-center gap-1.5 px-3 text-[11px] font-bold transition-colors duration-150 cursor-pointer ${
-                      active ? "text-white/90" : "text-white/50 hover:text-white/75"
+                      active ? "text-foreground" : "text-muted-foreground/70 hover:text-foreground/75"
                     }`}
                   >
                     {active && (

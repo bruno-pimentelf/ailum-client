@@ -235,7 +235,7 @@ export function AppHeader() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 6, scale: 0.97 }}
                 transition={{ duration: 0.2, ease }}
-                className="absolute left-0 top-full mt-2 w-64 rounded-xl border border-border bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+                className="absolute left-0 top-full mt-2 w-64 rounded-xl border border-border bg-popover shadow-xl shadow-foreground/8 overflow-hidden z-50"
               >
                 {/* Search inside dropdown */}
                 <div className="p-2 border-b border-border">
@@ -362,7 +362,7 @@ export function AppHeader() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 6, scale: 0.97 }}
                 transition={{ duration: 0.2, ease }}
-                className="absolute right-0 top-full mt-2 w-[380px] max-w-[calc(100vw-24px)] rounded-xl border border-border bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+                className="absolute right-0 top-full mt-2 w-[380px] max-w-[calc(100vw-24px)] rounded-xl border border-border bg-popover shadow-xl shadow-foreground/8 overflow-hidden z-50"
               >
                 <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
                   <div>
@@ -491,7 +491,7 @@ export function AppHeader() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 6, scale: 0.97 }}
                 transition={{ duration: 0.2, ease }}
-                className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+                className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-popover shadow-xl shadow-foreground/8 overflow-hidden z-50"
               >
                 <div className="p-2 border-b border-border">
                   <p className="text-[12px] font-semibold text-foreground truncate">{user?.name ?? "—"}</p>

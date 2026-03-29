@@ -23,7 +23,7 @@ function ProgressBar({ value, color, delay }: { value: number; color: string; de
   const isInView = useInView(ref, { once: true, margin: "-40px" })
 
   return (
-    <div ref={ref} className="h-1.5 w-full rounded-full bg-white/[0.04] overflow-hidden">
+    <div ref={ref} className="h-1.5 w-full rounded-full bg-foreground/[0.04] overflow-hidden">
       <motion.div
         initial={{ width: 0 }}
         animate={isInView ? { width: `${value}%` } : { width: 0 }}
@@ -58,45 +58,45 @@ function RevenueImpact() {
           </span>{" "}
           em faturamento
           <br />
-          <span className="text-white/35 text-[0.65em]">nos primeiros 2 meses</span>
+          <span className="text-muted-foreground/50 text-[0.65em]">nos primeiros 2 meses</span>
         </h3>
-        <p className="mt-3 text-[13px] leading-relaxed text-white/35 max-w-sm">
+        <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground/50 max-w-sm">
           Cobrança mais rápida via Pix + menos no-show = receita que antes escapava.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-3.5 py-1.5 text-[12px]">
             <ChartLineUp className="h-3.5 w-3.5 text-accent/60" />
             <span className="text-emerald-200/90 font-medium">+R$ 42k</span>
-            <span className="text-white/35">média</span>
+            <span className="text-muted-foreground/50">média</span>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-3.5 py-1.5 text-[12px]">
             <CalendarCheck className="h-3.5 w-3.5 text-accent/60" />
             <span className="text-cyan-200/90 font-medium">94%</span>
-            <span className="text-white/35">confirmação</span>
+            <span className="text-muted-foreground/50">confirmação</span>
           </div>
         </div>
       </FadeIn>
 
       <FadeIn direction="left" delay={0.15}>
-        <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-sm overflow-hidden">
+        <div className="relative rounded-2xl border border-foreground/[0.06] bg-foreground/[0.015] p-6 backdrop-blur-sm overflow-hidden">
           <div className="absolute -top-20 -right-20 h-40 w-40 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none" />
 
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60 mb-5">
             Crescimento de receita
           </p>
 
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[12px] text-white/50">Antes</span>
-                <span className="text-[12px] font-medium text-white/40">R$ 98k/mês</span>
+                <span className="text-[12px] text-muted-foreground/70">Antes</span>
+                <span className="text-[12px] font-medium text-muted-foreground/60">R$ 98k/mês</span>
               </div>
               <ProgressBar value={49} color="rgba(255,255,255,0.08)" delay={0.2} />
             </div>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[12px] text-white/70">Com a Ailum</span>
+                <span className="text-[12px] text-muted-foreground">Com a Ailum</span>
                 <span className="text-[12px] font-semibold text-emerald-200">R$ 142k/mês</span>
               </div>
               <ProgressBar value={71} color="rgba(0,181,212,0.5)" delay={0.5} />
@@ -111,7 +111,7 @@ function RevenueImpact() {
           >
             <TrendUp className="h-3.5 w-3.5 text-accent/70" weight="bold" />
             <span className="text-[12px] font-bold text-emerald-200">+40%</span>
-            <span className="text-[11px] text-white/40">em 2 meses</span>
+            <span className="text-[11px] text-muted-foreground/60">em 2 meses</span>
           </motion.div>
         </div>
       </FadeIn>
@@ -128,16 +128,16 @@ function ConversionImpact() {
   return (
     <div ref={ref} className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-20">
       <FadeIn direction="right" delay={0.15} className="order-2 lg:order-1">
-        <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-sm overflow-hidden">
+        <div className="relative rounded-2xl border border-foreground/[0.06] bg-foreground/[0.015] p-6 backdrop-blur-sm overflow-hidden">
           <div className="absolute -top-20 -left-20 h-40 w-40 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none" />
 
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60 mb-5">
             Funil de conversão
           </p>
 
           <div className="space-y-2.5">
             {[
-              { label: "Leads recebidos", value: 100, opacity: "bg-white/[0.06]" },
+              { label: "Leads recebidos", value: 100, opacity: "bg-foreground/[0.06]" },
               { label: "Respondidos", value: 97, opacity: "bg-accent/15" },
               { label: "Agendaram", value: 57, opacity: "bg-accent/30" },
               { label: "Confirmaram", value: 48, opacity: "bg-accent/50" },
@@ -149,10 +149,10 @@ function ConversionImpact() {
                 transition={{ duration: 0.6, delay: 0.3 + i * 0.15, ease }}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] text-white/50">{step.label}</span>
-                  <span className="text-[11px] font-medium text-white/60">{step.value}%</span>
+                  <span className="text-[11px] text-muted-foreground/70">{step.label}</span>
+                  <span className="text-[11px] font-medium text-muted-foreground/80">{step.value}%</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-white/[0.03] overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-foreground/[0.03] overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={isInView ? { width: `${step.value}%` } : { width: 0 }}
@@ -181,22 +181,22 @@ function ConversionImpact() {
           </span>{" "}
           agendamentos
           <br />
-          <span className="text-white/35 text-[0.65em]">com a mesma verba de marketing</span>
+          <span className="text-muted-foreground/50 text-[0.65em]">com a mesma verba de marketing</span>
         </h3>
-        <p className="mt-3 text-[13px] leading-relaxed text-white/35 max-w-sm">
+        <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground/50 max-w-sm">
           Resposta em 12s, 24h por dia. Nenhum lead fica sem atendimento.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-3.5 py-1.5 text-[12px]">
             <Lightning className="h-3.5 w-3.5 text-accent/60" />
             <span className="text-cyan-200/90 font-medium">12s</span>
-            <span className="text-white/35">resposta</span>
+            <span className="text-muted-foreground/50">resposta</span>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-3.5 py-1.5 text-[12px]">
             <WhatsappLogo className="h-3.5 w-3.5 text-accent/60" />
             <span className="text-emerald-200/90 font-medium">24/7</span>
-            <span className="text-white/35">ativo</span>
+            <span className="text-muted-foreground/50">ativo</span>
           </div>
         </div>
       </FadeIn>
@@ -224,26 +224,26 @@ function ProductivityImpact() {
         <h3 className="font-display text-[clamp(1.6rem,3vw,2.4rem)] font-bold leading-[1.1] tracking-tight text-foreground">
           <span className="text-cyan-200">3x</span> menos tempo
           <br />
-          <span className="text-white/35 text-[0.65em]">gasto pela recepção</span>
+          <span className="text-muted-foreground/50 text-[0.65em]">gasto pela recepção</span>
         </h3>
-        <p className="mt-3 text-[13px] leading-relaxed text-white/35 max-w-sm">
+        <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground/50 max-w-sm">
           Agendamento, cobrança e lembretes no automático. Recepção foca no presencial.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[12px]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-3.5 py-1.5 text-[12px]">
             <Clock className="h-3.5 w-3.5 text-accent/60" />
             <span className="text-cyan-200/90 font-medium">-67%</span>
-            <span className="text-white/35">tarefas repetitivas</span>
+            <span className="text-muted-foreground/50">tarefas repetitivas</span>
           </div>
         </div>
       </FadeIn>
 
       <FadeIn direction="left" delay={0.15}>
-        <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 backdrop-blur-sm overflow-hidden">
+        <div className="relative rounded-2xl border border-foreground/[0.06] bg-foreground/[0.015] p-6 backdrop-blur-sm overflow-hidden">
           <div className="absolute -bottom-20 -right-20 h-40 w-40 bg-accent/[0.04] rounded-full blur-3xl pointer-events-none" />
 
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40 mb-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60 mb-5">
             Tempo por tarefa
           </p>
 
@@ -262,9 +262,9 @@ function ProductivityImpact() {
                 className="flex items-center justify-between"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] text-white/60 truncate">{item.task}</p>
+                  <p className="text-[12px] text-muted-foreground/80 truncate">{item.task}</p>
                   <div className="mt-1 flex items-center gap-3">
-                    <span className="text-[11px] text-white/30 line-through">{item.before}</span>
+                    <span className="text-[11px] text-muted-foreground/50 line-through">{item.before}</span>
                     <span className="text-[11px] font-semibold text-emerald-200/80">{item.after}</span>
                   </div>
                 </div>
@@ -274,7 +274,7 @@ function ProductivityImpact() {
                   transition={{ duration: 0.4, delay: 0.8 + i * 0.1, ease }}
                   className="shrink-0 ml-4 rounded-md bg-accent/[0.06] border border-accent/10 px-2 py-0.5"
                 >
-                  <span className="text-[10px] font-bold text-white/60">-{item.savings}%</span>
+                  <span className="text-[10px] font-bold text-muted-foreground/80">-{item.savings}%</span>
                 </motion.div>
               </motion.div>
             ))}
@@ -297,7 +297,7 @@ export function ImpactStats() {
   const glowY = useTransform(scrollYProgress, [0, 1], [80, -80])
 
   return (
-    <section ref={sectionRef} className="relative border-t border-white/[0.04] py-24 md:py-36 overflow-hidden">
+    <section ref={sectionRef} className="relative border-t border-foreground/[0.04] py-24 md:py-36 overflow-hidden">
       {/* Ambient glow */}
       <motion.div
         style={{ y: glowY }}
@@ -312,7 +312,7 @@ export function ImpactStats() {
           </p>
           <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Números que{" "}
-            <span className="font-display italic text-white/50">falam sozinhos</span>
+            <span className="font-display italic text-muted-foreground/70">falam sozinhos</span>
           </h2>
         </FadeIn>
 
@@ -335,13 +335,13 @@ export function ImpactStats() {
               <FadeIn key={stat.label} delay={i * 0.1}>
                 <div
                   className={`flex flex-col items-center text-center px-4 py-6 lg:py-0 ${
-                    i < 3 ? "md:border-r md:border-white/[0.06]" : ""
+                    i < 3 ? "md:border-r md:border-foreground/[0.06]" : ""
                   }`}
                 >
                   <span className={`font-display text-4xl font-bold tracking-tight md:text-5xl ${stat.color}`}>
                     <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                   </span>
-                  <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white/50">
+                  <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground/70">
                     {stat.label}
                   </span>
                 </div>

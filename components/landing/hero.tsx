@@ -23,7 +23,7 @@ const ease = [0.32, 0.72, 0, 1] as const
 /* ── Step badge ─────────────────────────────────────────────────────────── */
 function StepBadge({ n }: { n: number }) {
   return (
-    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-[9px] font-bold tabular-nums text-white/85">
+    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-foreground/[0.04] text-[9px] font-bold tabular-nums text-foreground/85">
       {n}
     </div>
   )
@@ -102,27 +102,27 @@ function HeroCards({ parallaxX, parallaxY }: { parallaxX: any; parallaxY: any })
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
         >
-          <div className="rounded-[1.25rem] bg-white/[0.015] p-px ring-1 ring-white/[0.07] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
+          <div className="rounded-[1.25rem] bg-foreground/[0.015] p-px ring-1 ring-white/[0.07] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
             <div className="rounded-[calc(1.25rem-1px)] bg-zinc-950/90 backdrop-blur-2xl overflow-hidden">
-              <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2.5 border-b border-white/[0.04]">
+              <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2.5 border-b border-foreground/[0.04]">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/20">
                   <WhatsappLogo className="h-3 w-3 text-emerald-400" weight="fill" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-white/88 leading-none">Clínica Harmonia</p>
+                  <p className="text-[10px] font-semibold text-foreground/85 leading-none">Clínica Harmonia</p>
                   <p className="text-[8px] text-emerald-400/50 mt-0.5 leading-none">IA ativa</p>
                 </div>
                 <StepBadge n={1} />
               </div>
               <div className="px-3.5 py-2.5 space-y-1.5">
                 <div className="flex justify-start">
-                  <div className="bg-white/[0.05] rounded-2xl rounded-tl-sm px-3 py-2 max-w-[88%]">
-                    <p className="text-[10px] text-white/85 leading-relaxed">Quero marcar com a Dra. Marina</p>
+                  <div className="bg-foreground/[0.05] rounded-2xl rounded-tl-sm px-3 py-2 max-w-[88%]">
+                    <p className="text-[10px] text-foreground/85 leading-relaxed">Quero marcar com a Dra. Marina</p>
                   </div>
                 </div>
                 <div className="flex justify-end">
                   <div className="bg-accent/[0.08] rounded-2xl rounded-tr-sm px-3 py-2 max-w-[90%] ring-1 ring-accent/[0.06]">
-                    <p className="text-[10px] text-white/88 leading-relaxed">Quinta às 10h livre. Envio o Pix.</p>
+                    <p className="text-[10px] text-foreground/85 leading-relaxed">Quinta às 10h livre. Envio o Pix.</p>
                   </div>
                 </div>
               </div>
@@ -140,7 +140,7 @@ function HeroCards({ parallaxX, parallaxY }: { parallaxX: any; parallaxY: any })
           animate={{ y: [0, 6, 0] }}
           transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
         >
-          <div className="rounded-[1.25rem] bg-white/[0.015] p-px ring-1 ring-emerald-500/[0.10] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
+          <div className="rounded-[1.25rem] bg-foreground/[0.015] p-px ring-1 ring-emerald-500/[0.10] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
             <div className="rounded-[calc(1.25rem-1px)] bg-zinc-950/90 backdrop-blur-2xl px-4 py-3">
               <div className="flex items-center justify-between mb-2.5">
                 <div className="flex items-center gap-1.5">
@@ -151,12 +151,12 @@ function HeroCards({ parallaxX, parallaxY }: { parallaxX: any; parallaxY: any })
                 </div>
                 <StepBadge n={2} />
               </div>
-              <p className="font-display text-[1.5rem] font-bold tracking-[-0.04em] leading-none text-white/90">
+              <p className="font-display text-[1.5rem] font-bold tracking-[-0.04em] leading-none text-foreground">
                 R$&thinsp;150
-                <span className="text-[0.85rem] font-normal text-white/90">,00</span>
+                <span className="text-[0.85rem] font-normal text-foreground">,00</span>
               </p>
-              <div className="mt-2 h-px bg-white/[0.04]" />
-              <p className="mt-1.5 text-[8px] text-white/82 leading-snug">Horário bloqueado</p>
+              <div className="mt-2 h-px bg-foreground/[0.04]" />
+              <p className="mt-1.5 text-[8px] text-foreground/80 leading-snug">Horário bloqueado</p>
             </div>
           </div>
         </motion.div>
@@ -171,12 +171,12 @@ function HeroCards({ parallaxX, parallaxY }: { parallaxX: any; parallaxY: any })
           animate={{ y: [0, -5, 0] }}
           transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
         >
-          <div className="rounded-[1.25rem] bg-white/[0.015] p-px ring-1 ring-white/[0.07] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
+          <div className="rounded-[1.25rem] bg-foreground/[0.015] p-px ring-1 ring-white/[0.07] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.7)]">
             <div className="rounded-[calc(1.25rem-1px)] bg-zinc-950/90 backdrop-blur-2xl px-4 py-3">
               <div className="flex items-center justify-between mb-2.5">
                 <div className="flex items-center gap-2">
                   <CalendarCheck className="h-3 w-3 text-accent/45" weight="fill" />
-                  <span className="text-[9px] font-medium text-white/85 tracking-wide">Qui, 13 Mar · 10:00</span>
+                  <span className="text-[9px] font-medium text-foreground/85 tracking-wide">Qui, 13 Mar · 10:00</span>
                 </div>
                 <StepBadge n={3} />
               </div>
@@ -190,8 +190,8 @@ function HeroCards({ parallaxX, parallaxY }: { parallaxX: any; parallaxY: any })
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-semibold text-white/85 leading-none">Dra. Marina</p>
-                  <p className="text-[9px] text-white/85 mt-0.5 leading-none">Dermatologia</p>
+                  <p className="text-[12px] font-semibold text-foreground/85 leading-none">Dra. Marina</p>
+                  <p className="text-[9px] text-foreground/85 mt-0.5 leading-none">Dermatologia</p>
                 </div>
                 <div className="shrink-0 rounded-full bg-emerald-500/[0.06] px-2 py-0.5 ring-1 ring-emerald-500/12">
                   <span className="text-[8px] font-semibold text-emerald-400/70 tracking-wide">Confirmada</span>
@@ -287,12 +287,12 @@ export function Hero() {
               transition={{ duration: 0.8, delay: 0.1, ease }}
               className="mb-8 flex justify-center lg:justify-start"
             >
-              <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.06] bg-white/[0.03] px-4 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+              <div className="inline-flex items-center gap-2.5 rounded-full border border-foreground/[0.06] bg-foreground/[0.03] px-4 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
                 </span>
-                <span className="text-[11px] font-medium tracking-wide text-white/90">
+                <span className="text-[11px] font-medium tracking-wide text-foreground">
                   {t.hero.pill}
                 </span>
               </div>
@@ -315,7 +315,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 24, filter: "blur(6px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 0.9, delay: 0.45, ease }}
-              className="mt-7 mx-auto max-w-md text-[15px] leading-relaxed text-white/88 lg:mx-0 lg:text-[16px]"
+              className="mt-7 mx-auto max-w-md text-[15px] leading-relaxed text-foreground/85 lg:mx-0 lg:text-[16px]"
             >
               {t.hero.subheadline}
             </motion.p>
@@ -331,17 +331,17 @@ export function Hero() {
                 href="https://form.typeform.com/to/d4xLz0DX"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="cta-shimmer group relative overflow-hidden inline-flex w-full items-center justify-center gap-3 h-14 rounded-full border border-white/10 bg-white/[0.04] pl-7 pr-2 text-[15px] font-semibold text-white/90 shadow-[0_0_20px_rgba(0,181,212,0.06)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-accent/25 hover:bg-accent/[0.07] hover:text-white hover:shadow-[0_0_28px_rgba(0,181,212,0.12)] active:scale-[0.97] sm:w-auto sm:justify-start"
+                className="cta-shimmer group relative overflow-hidden inline-flex w-full items-center justify-center gap-3 h-14 rounded-full border border-border/70 bg-foreground/[0.04] pl-7 pr-2 text-[15px] font-semibold text-foreground shadow-[0_0_20px_rgba(0,181,212,0.06)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-accent/25 hover:bg-accent/[0.07] hover:text-foreground hover:shadow-[0_0_28px_rgba(0,181,212,0.12)] active:scale-[0.97] sm:w-auto sm:justify-start"
               >
                 <span>{t.hero.aplicarSe}</span>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white/90 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105 group-hover:border-accent/20 group-hover:text-accent">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-foreground/[0.06] text-foreground transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105 group-hover:border-accent/20 group-hover:text-accent">
                   <ArrowUpRight className="h-4 w-4" weight="bold" />
                 </span>
               </a>
 
               <a
                 href="#como-funciona"
-                className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 text-[15px] font-medium text-white/90 hover:text-white/85 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 text-[15px] font-medium text-foreground hover:text-foreground/85 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
               >
                 <span>{t.hero.verComoFunciona}</span>
                 <ArrowDown className="h-3.5 w-3.5 transition-transform duration-500 group-hover:translate-y-0.5" />

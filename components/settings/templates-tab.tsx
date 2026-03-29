@@ -511,7 +511,7 @@ function VariableTextarea({
                 width: popupPos.width,
                 zIndex: 99999,
               }}
-              className="rounded-xl border border-border/60 bg-popover/95 backdrop-blur-xl shadow-2xl shadow-black/30 overflow-hidden"
+              className="rounded-xl border border-border/60 bg-popover/95 backdrop-blur-xl shadow-2xl shadow-foreground/8 overflow-hidden"
             >
               <div className="max-h-[260px] overflow-y-auto py-1">
                 {filtered.map((v, i) => {

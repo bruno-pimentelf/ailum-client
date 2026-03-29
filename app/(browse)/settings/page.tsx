@@ -86,7 +86,7 @@ function MobileTabSelector({ activeTab, onSelect }: { activeTab: TabId; onSelect
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="absolute left-2 right-2 top-full z-50 rounded-xl border border-border/60 bg-popover shadow-xl shadow-black/30 overflow-hidden py-1"
+              className="absolute left-2 right-2 top-full z-50 rounded-xl border border-border/60 bg-popover shadow-xl shadow-foreground/8 overflow-hidden py-1"
             >
               {TABS.map((tab) => {
                 const Icon = tab.icon

@@ -22,6 +22,7 @@ export interface BoardContact {
   lastPaymentStatus: string | null
   lastDetectedIntent: string | null
   currentStageId: string | null
+  summary: string | null
   assignedProfessional: { id: string; fullName: string } | null
   messages: Array<{
     content: string
@@ -137,6 +138,7 @@ export type TriggerAction =
   | "GENERATE_PIX"
   | "NOTIFY_OPERATOR"
   | "WAIT_AND_REPEAT"
+  | "GENERATE_SUMMARY"
 
 export interface SendMessageActionConfig {
   useAI?: boolean
@@ -175,6 +177,7 @@ export interface Trigger {
   conditionConfig: ConditionConfig | null
   delayMinutes: number
   cooldownSeconds: number
+  maxRepetitions: number
   isActive: boolean
   createdAt: string
 }

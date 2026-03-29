@@ -61,3 +61,11 @@ export function deleteReminder(contactId: string, reminderId: string) {
     method: "DELETE",
   })
 }
+
+// ─── Summary ──────────────────────────────────────────────────────────────────
+
+export function generateSummary(contactId: string) {
+  return apiFetch<{ summary: string }>(`/conversations/${contactId}/summary`, {
+    method: "POST",
+  })
+}

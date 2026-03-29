@@ -46,9 +46,9 @@ const STATUS_CONFIG: Record<
   },
   CANCELLED: {
     label: "Cancelado",
-    color: "text-white/40",
-    bg: "bg-white/[0.03] border-white/[0.08]",
-    dot: "bg-white/30",
+    color: "text-muted-foreground/60",
+    bg: "bg-foreground/[0.03] border-border/60",
+    dot: "bg-foreground/30",
   },
   COMPLETED: {
     label: "Realizado",
@@ -189,13 +189,13 @@ export function AppointmentStatusModal({
         exit={{ opacity: 0, scale: 0.97, y: 10 }}
         transition={{ duration: 0.3, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[1100px] h-[calc(100vh-1rem)] sm:h-[calc(100vh-1.5rem)] rounded-2xl border border-white/[0.08] bg-background shadow-2xl overflow-hidden flex flex-row"
+        className="w-full max-w-[1100px] h-[calc(100vh-1rem)] sm:h-[calc(100vh-1.5rem)] rounded-2xl border border-border/60 bg-background shadow-2xl overflow-hidden flex flex-row"
       >
         {/* ═══ Left panel — Info & Actions ═══ */}
-        <div className="w-[380px] shrink-0 flex flex-col border-r border-white/[0.06] overflow-hidden">
+        <div className="w-[380px] shrink-0 flex flex-col border-r border-foreground/[0.06] overflow-hidden">
 
           {/* Header */}
-          <div className="px-5 pt-5 pb-4 border-b border-white/[0.06] shrink-0">
+          <div className="px-5 pt-5 pb-4 border-b border-foreground/[0.06] shrink-0">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-accent/[0.08] border border-accent/10 flex items-center justify-center shrink-0">
@@ -215,7 +215,7 @@ export function AppointmentStatusModal({
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 -m-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer"
+                className="p-1.5 -m-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" weight="bold" />
               </button>
@@ -227,11 +227,11 @@ export function AppointmentStatusModal({
                 <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dot}`} />
                 {statusCfg.label}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
                 <CalendarBlank className="h-2.5 w-2.5" />
                 {dateStr}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
                 <Clock className="h-2.5 w-2.5" />
                 {appointment.time} · {appointment.duration}min
               </span>
@@ -259,12 +259,12 @@ export function AppointmentStatusModal({
 
             {/* Notes */}
             {appointment.notes && (
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-3">
+              <div className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.015] p-3">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <NotePencil className="h-3 w-3 text-muted-foreground" />
                   <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Observações</span>
                 </div>
-                <p className="text-[12px] text-white/70 leading-relaxed">{appointment.notes}</p>
+                <p className="text-[12px] text-muted-foreground leading-relaxed">{appointment.notes}</p>
               </div>
             )}
 
@@ -293,7 +293,7 @@ export function AppointmentStatusModal({
                       key={action.target}
                       onClick={() => handleUpdate(action.target)}
                       disabled={isPending}
-                      className={`w-full flex items-center gap-3 h-10 rounded-xl border border-white/[0.06] bg-white/[0.015] px-3.5 text-left text-[12px] font-medium text-foreground transition-all disabled:opacity-40 cursor-pointer ${action.hoverBg} hover:border-white/[0.12] group`}
+                      className={`w-full flex items-center gap-3 h-10 rounded-xl border border-foreground/[0.06] bg-foreground/[0.015] px-3.5 text-left text-[12px] font-medium text-foreground transition-all disabled:opacity-40 cursor-pointer ${action.hoverBg} hover:border-border group`}
                     >
                       <action.icon className={`h-4 w-4 ${action.color} opacity-60 group-hover:opacity-100 transition-opacity`} weight="bold" />
                       <span className="flex-1">{action.label}</span>
@@ -306,7 +306,7 @@ export function AppointmentStatusModal({
                   {!showCancelInput ? (
                     <button
                       onClick={() => setShowCancelInput(true)}
-                      className="w-full flex items-center justify-center gap-1.5 h-9 rounded-xl border border-white/[0.04] text-[11px] text-white/30 hover:text-rose-400/70 hover:border-rose-500/15 hover:bg-rose-500/[0.04] transition-all cursor-pointer"
+                      className="w-full flex items-center justify-center gap-1.5 h-9 rounded-xl border border-foreground/[0.04] text-[11px] text-muted-foreground/50 hover:text-rose-400/70 hover:border-rose-500/15 hover:bg-rose-500/[0.04] transition-all cursor-pointer"
                     >
                       <XCircle className="h-3.5 w-3.5" />
                       Cancelar consulta
@@ -325,12 +325,12 @@ export function AppointmentStatusModal({
                           onChange={(e) => setCancelledReason(e.target.value)}
                           placeholder="Motivo do cancelamento (opcional)"
                           autoFocus
-                          className="w-full h-8 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 text-[12px] text-foreground placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-rose-500/30 transition-all"
+                          className="w-full h-8 rounded-lg border border-border/60 bg-foreground/[0.03] px-3 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-rose-500/30 transition-all"
                         />
                         <div className="flex gap-2">
                           <button
                             onClick={() => { setShowCancelInput(false); setCancelledReason("") }}
-                            className="flex-1 h-8 rounded-lg text-[11px] text-white/40 hover:text-white/60 transition-colors cursor-pointer"
+                            className="flex-1 h-8 rounded-lg text-[11px] text-muted-foreground/60 hover:text-muted-foreground/80 transition-colors cursor-pointer"
                           >
                             Voltar
                           </button>
@@ -348,8 +348,8 @@ export function AppointmentStatusModal({
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-4 rounded-xl border border-white/[0.04] bg-white/[0.01]">
-                <p className="text-[12px] text-white/30">Esta consulta foi cancelada</p>
+              <div className="flex items-center justify-center py-4 rounded-xl border border-foreground/[0.04] bg-foreground/[0.01]">
+                <p className="text-[12px] text-muted-foreground/50">Esta consulta foi cancelada</p>
               </div>
             )}
           </div>
@@ -361,7 +361,7 @@ export function AppointmentStatusModal({
             <ChatView contact={firestoreContact} tenantId={tenantId} />
           ) : (
             <div className="flex-1 flex items-center justify-center">
-              <div className="h-5 w-5 rounded-full border-[1.5px] border-white/10 border-t-accent/60 animate-spin" />
+              <div className="h-5 w-5 rounded-full border-[1.5px] border-border/70 border-t-accent/60 animate-spin" />
             </div>
           )}
         </div>
@@ -382,7 +382,7 @@ function InfoBlock({
   value: string
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-3">
+    <div className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.015] p-3">
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="h-3 w-3 text-muted-foreground" />
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>

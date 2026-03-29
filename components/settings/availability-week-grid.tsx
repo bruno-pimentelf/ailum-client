@@ -161,7 +161,7 @@ export function AvailabilityWeekGrid({
                   className={`
                     relative min-h-[28px] mx-0.5 my-0.5 rounded-md transition-all duration-200
                     ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
-                    ${active ? "ring-1 ring-inset" : "hover:bg-white/[0.04]"}
+                    ${active ? "ring-1 ring-inset" : "hover:bg-foreground/[0.04]"}
                   `}
                   style={
                     active

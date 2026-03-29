@@ -29,11 +29,11 @@ const ease = [0.33, 1, 0.68, 1] as any
 function VoiceAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLanguage>["t"] }) {
   const bars = [0.4, 0.7, 1, 0.6, 0.85, 0.5, 0.9, 0.65, 0.75, 0.45, 0.8, 0.55]
   return (
-    <div className="h-[140px] flex flex-col justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+    <div className="h-[140px] flex flex-col justify-between rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] px-4 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="text-[9px] text-white/85 uppercase tracking-wider">{t.bento.voiceLabel}</span>
+          <span className="text-[9px] text-foreground/85 uppercase tracking-wider">{t.bento.voiceLabel}</span>
         </div>
         <span className="text-[9px] text-accent/60 font-medium">{t.bento.voiceCustom}</span>
       </div>
@@ -52,7 +52,7 @@ function VoiceAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLan
           />
         ))}
       </div>
-      <span className="text-[9px] text-white/90">{t.bento.clinicName}</span>
+      <span className="text-[9px] text-foreground">{t.bento.clinicName}</span>
     </div>
   )
 }
@@ -88,12 +88,12 @@ function HistoryAnim({ active, t }: { active: boolean; t: ReturnType<typeof useL
           initial={{ opacity: 0, x: -8 }}
           animate={visible.includes(i) ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
           transition={{ duration: 0.4, ease }}
-          className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2"
+          className="flex items-center gap-2 rounded-lg border border-foreground/[0.06] bg-foreground/[0.02] px-2.5 py-2"
         >
           <div className={`h-1.5 w-1.5 rounded-full ${line.dot} shrink-0`} />
-          <span className="text-[10px] font-medium text-white/90 flex-1 truncate">{line.label}</span>
+          <span className="text-[10px] font-medium text-foreground flex-1 truncate">{line.label}</span>
           <span className={`text-[9px] font-semibold ${line.color}`}>{line.tag}</span>
-          <span className="text-[8px] text-white/90 font-mono">{line.date}</span>
+          <span className="text-[8px] text-foreground font-mono">{line.date}</span>
         </motion.div>
       ))}
     </div>
@@ -134,7 +134,7 @@ function NotifAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLan
           className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 ${n.border} ${n.bg}`}
         >
           <n.Icon className={`h-3.5 w-3.5 shrink-0 ${n.iconColor}`} weight="fill" />
-          <span className="text-[10px] text-white/88 leading-snug">{n.text}</span>
+          <span className="text-[10px] text-foreground/85 leading-snug">{n.text}</span>
         </motion.div>
       ))}
     </div>
@@ -186,7 +186,7 @@ function ManagerAnim({ active, t }: { active: boolean; t: ReturnType<typeof useL
           <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-1 ring-zinc-950" />
         </div>
         <div>
-          <p className="text-[10px] font-semibold text-white/90 leading-none">{t.bento.managerLabel}</p>
+          <p className="text-[10px] font-semibold text-foreground leading-none">{t.bento.managerLabel}</p>
           <p className="text-[8px] text-emerald-400/70 mt-0.5">{t.bento.managerOnline}</p>
         </div>
       </div>
@@ -204,8 +204,8 @@ function ManagerAnim({ active, t }: { active: boolean; t: ReturnType<typeof useL
               >
                 <div className={`max-w-[75%] rounded-xl px-2.5 py-1.5 text-[10px] leading-snug ${
                   msg.from === "clinic"
-                    ? "bg-accent/[0.1] text-white/85 rounded-br-sm ring-1 ring-accent/[0.08]"
-                    : "bg-white/[0.05] text-white/85 rounded-bl-sm"
+                    ? "bg-accent/[0.1] text-foreground/85 rounded-br-sm ring-1 ring-accent/[0.08]"
+                    : "bg-foreground/[0.05] text-foreground/85 rounded-bl-sm"
                 }`}>
                   {msg.text}
                 </div>
@@ -222,7 +222,7 @@ function ManagerAnim({ active, t }: { active: boolean; t: ReturnType<typeof useL
               exit={{ opacity: 0, scale: 0.9 }}
               className="flex justify-start"
             >
-              <div className="bg-white/[0.05] rounded-xl rounded-bl-sm px-3 py-2">
+              <div className="bg-foreground/[0.05] rounded-xl rounded-bl-sm px-3 py-2">
                 <div className="flex gap-1">
                   {[0, 1, 2].map(i => (
                     <motion.div
@@ -271,19 +271,19 @@ function PixAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLangu
   return (
     <div className="h-[140px] flex flex-col justify-between gap-2">
       {/* WhatsApp message bubble */}
-      <div className="flex flex-col gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <div className="flex flex-col gap-1.5 rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] p-3">
         <div className="flex items-center gap-2">
           <WhatsappLogo className="h-3.5 w-3.5 text-emerald-400/60" weight="fill" />
-          <span className="text-[9px] text-white/85">{t.bento.clinicName} · WhatsApp</span>
+          <span className="text-[9px] text-foreground/85">{t.bento.clinicName} · WhatsApp</span>
         </div>
-        <p className="text-[10px] text-white/85 leading-snug">{t.bento.pixMsg}</p>
+        <p className="text-[10px] text-foreground/85 leading-snug">{t.bento.pixMsg}</p>
         <div className="flex items-center gap-2 rounded-lg border border-accent/15 bg-accent/[0.04] px-2.5 py-1.5">
           <div className="h-5 w-5 rounded bg-zinc-900 border border-accent/20 flex items-center justify-center shrink-0">
             <span className="text-[6px] font-bold text-accent">PIX</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[9px] font-semibold text-accent/80">R$ 150,00</p>
-            <p className="text-[8px] text-white/90 truncate font-mono">00020126…6304ABCD</p>
+            <p className="text-[8px] text-foreground truncate font-mono">00020126…6304ABCD</p>
           </div>
         </div>
       </div>
@@ -292,15 +292,15 @@ function PixAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLangu
       <div className="h-8 flex items-center">
         <AnimatePresence mode="wait">
           {phase === "idle" && (
-            <motion.div key="idle" exit={{ opacity: 0 }} className="w-full h-px bg-white/[0.06]" />
+            <motion.div key="idle" exit={{ opacity: 0 }} className="w-full h-px bg-foreground/[0.06]" />
           )}
           {phase === "progress" && (
             <motion.div key="prog" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full flex flex-col gap-1">
               <div className="flex justify-between">
-                <span className="text-[9px] text-white/85">{t.bento.pixProcessing}</span>
+                <span className="text-[9px] text-foreground/85">{t.bento.pixProcessing}</span>
                 <span className="text-[9px] text-accent/60 tabular-nums font-mono">{progress}%</span>
               </div>
-              <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+              <div className="h-1 rounded-full bg-foreground/[0.06] overflow-hidden">
                 <motion.div className="h-full rounded-full bg-accent/60" style={{ width: `${progress}%` }} />
               </div>
             </motion.div>
@@ -382,10 +382,10 @@ function AgendaAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLa
     /* Responsive: stacks on mobile, side-by-side on sm+ */
     <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-stretch sm:h-[200px]">
       {/* Chart panel */}
-      <div className="flex-1 min-w-0 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 pt-3 pb-2 flex flex-col h-[160px] sm:h-auto">
+      <div className="flex-1 min-w-0 rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] px-4 pt-3 pb-2 flex flex-col h-[160px] sm:h-auto">
         <div className="flex items-center justify-between mb-2 shrink-0">
           <div>
-            <span className="text-[9px] text-white/85 uppercase tracking-wider">{t.bento.chartLabel}</span>
+            <span className="text-[9px] text-foreground/85 uppercase tracking-wider">{t.bento.chartLabel}</span>
             <AnimatePresence>
               {revealed === allChartData.length && (
                 <motion.span
@@ -403,7 +403,7 @@ function AgendaAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLa
               key={total}
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="font-display text-lg font-bold tabular-nums text-white/85 leading-none"
+              className="font-display text-lg font-bold tabular-nums text-foreground/85 leading-none"
             >
               {total}
             </motion.span>
@@ -447,10 +447,10 @@ function AgendaAnim({ active, t }: { active: boolean; t: ReturnType<typeof useLa
             initial={{ opacity: 0, x: 8 }}
             animate={metricsVisible ? { opacity: 1, x: 0 } : { opacity: 0, x: 8 }}
             transition={{ duration: 0.35, delay: i * 0.1, ease }}
-            className="flex-1 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 sm:py-0 flex flex-col justify-center"
+            className="flex-1 rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] px-3 py-2.5 sm:py-0 flex flex-col justify-center"
           >
             <p className={`text-[17px] font-bold tabular-nums leading-none ${m.color}`}>{m.value}</p>
-            <p className="text-[9px] text-white/85 mt-1.5 leading-tight">{m.label}</p>
+            <p className="text-[9px] text-foreground/85 mt-1.5 leading-tight">{m.label}</p>
           </motion.div>
         ))}
       </div>
@@ -482,7 +482,7 @@ function BentoCard({ card }: { card: CardDef }) {
       className={`group ${card.span}`}
     >
       {/* Double-bezel outer shell */}
-      <div className="rounded-[1.5rem] bg-white/[0.02] p-[1px] ring-1 ring-white/[0.06] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:ring-accent/20 group-hover:shadow-[0_16px_40px_-12px_rgba(0,181,212,0.08)]">
+      <div className="rounded-[1.5rem] bg-foreground/[0.02] p-[1px] ring-1 ring-white/[0.06] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:ring-accent/20 group-hover:shadow-[0_16px_40px_-12px_rgba(0,181,212,0.08)]">
         {/* Inner core */}
         <div className="relative overflow-hidden rounded-[calc(1.5rem-1px)] bg-zinc-950/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.04)]">
           {/* Hover gradient */}
@@ -503,11 +503,11 @@ function BentoCard({ card }: { card: CardDef }) {
             </div>
 
             {/* Bottom: text */}
-            <div className="border-t border-white/[0.04] px-7 py-6 mt-auto">
+            <div className="border-t border-foreground/[0.04] px-7 py-6 mt-auto">
               <h3 className="font-display text-[15px] font-bold tracking-tight text-foreground">
                 {card.title}
               </h3>
-              <p className="mt-2.5 text-[13px] leading-relaxed text-white/85">
+              <p className="mt-2.5 text-[13px] leading-relaxed text-foreground/85">
                 {card.description}
               </p>
             </div>
@@ -577,7 +577,7 @@ export function Bento() {
           <h2 className="mt-5 font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl leading-[1.1]">
             {t.bento.title}
             <br />
-            <span className="text-white/90">{t.bento.titleAccent}</span>
+            <span className="text-foreground">{t.bento.titleAccent}</span>
           </h2>
         </FadeIn>
 

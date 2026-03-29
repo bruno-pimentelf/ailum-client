@@ -80,7 +80,7 @@ function InfoBlock({
   value: string
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-3">
+    <div className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.015] p-3">
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="h-3 w-3 text-muted-foreground" />
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
@@ -151,12 +151,12 @@ export function ChargeDetailModal({ open, onClose, charge }: ChargeDetailModalPr
         exit={{ opacity: 0, scale: 0.97, y: 10 }}
         transition={{ duration: 0.3, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[1100px] h-[calc(100vh-1rem)] sm:h-[calc(100vh-1.5rem)] rounded-2xl border border-white/[0.08] bg-background shadow-2xl overflow-hidden flex flex-row"
+        className="w-full max-w-[1100px] h-[calc(100vh-1rem)] sm:h-[calc(100vh-1.5rem)] rounded-2xl border border-border/60 bg-background shadow-2xl overflow-hidden flex flex-row"
       >
         {/* ═══ Left panel — Charge Info ═══ */}
-        <div className="w-[380px] shrink-0 flex flex-col border-r border-white/[0.06] overflow-hidden">
+        <div className="w-[380px] shrink-0 flex flex-col border-r border-foreground/[0.06] overflow-hidden">
           {/* Header */}
-          <div className="px-5 pt-5 pb-4 border-b border-white/[0.06] shrink-0">
+          <div className="px-5 pt-5 pb-4 border-b border-foreground/[0.06] shrink-0">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-orange-500/[0.08] border border-orange-500/10 flex items-center justify-center shrink-0">
@@ -176,7 +176,7 @@ export function ChargeDetailModal({ open, onClose, charge }: ChargeDetailModalPr
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 -m-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer"
+                className="p-1.5 -m-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" weight="bold" />
               </button>
@@ -188,12 +188,12 @@ export function ChargeDetailModal({ open, onClose, charge }: ChargeDetailModalPr
                 <Warning className="h-2.5 w-2.5" weight="fill" />
                 Vencido
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
                 <CurrencyDollar className="h-2.5 w-2.5" />
                 {formatCurrency(charge.amount)}
               </span>
               {charge.dueAt && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
                   <CalendarBlank className="h-2.5 w-2.5" />
                   {formatDate(charge.dueAt)}
                 </span>
@@ -222,7 +222,7 @@ export function ChargeDetailModal({ open, onClose, charge }: ChargeDetailModalPr
 
             {/* PIX copy-paste */}
             {charge.pixCopyPaste && (
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-3">
+              <div className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.015] p-3">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
                     <Copy className="h-3 w-3 text-muted-foreground" />
@@ -245,15 +245,15 @@ export function ChargeDetailModal({ open, onClose, charge }: ChargeDetailModalPr
                     )}
                   </button>
                 </div>
-                <p className="text-[11px] text-white/50 font-mono break-all line-clamp-3">
+                <p className="text-[11px] text-muted-foreground/70 font-mono break-all line-clamp-3">
                   {charge.pixCopyPaste}
                 </p>
               </div>
             )}
 
             {/* Context hint */}
-            <div className="rounded-xl border border-white/[0.04] bg-white/[0.01] p-3">
-              <p className="text-[11px] text-white/30 leading-relaxed">
+            <div className="rounded-xl border border-foreground/[0.04] bg-foreground/[0.01] p-3">
+              <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
                 Veja a conversa ao lado para entender o contexto da cobrança e entrar em contato com o paciente se necessário.
               </p>
             </div>
@@ -266,7 +266,7 @@ export function ChargeDetailModal({ open, onClose, charge }: ChargeDetailModalPr
             <ChatView contact={firestoreContact} tenantId={tenantId} />
           ) : (
             <div className="flex-1 flex items-center justify-center">
-              <div className="h-5 w-5 rounded-full border-[1.5px] border-white/10 border-t-accent/60 animate-spin" />
+              <div className="h-5 w-5 rounded-full border-[1.5px] border-border/70 border-t-accent/60 animate-spin" />
             </div>
           )}
         </div>

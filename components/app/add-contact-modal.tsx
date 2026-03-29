@@ -79,7 +79,7 @@ export function AddContactModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.24, ease: [0.33, 1, 0.68, 1] }}
-            className="fixed inset-x-4 top-[15vh] z-50 mx-auto max-w-md rounded-2xl border border-border/60 bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+            className="fixed inset-x-4 top-[15vh] z-50 mx-auto max-w-md rounded-2xl border border-border/60 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
           >
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
               <div className="flex items-center gap-2.5">

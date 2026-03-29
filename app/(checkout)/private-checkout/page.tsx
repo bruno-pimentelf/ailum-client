@@ -172,21 +172,21 @@ function CheckoutModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.97 }}
         transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-        className="fixed inset-x-4 top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-md rounded-2xl border border-white/10 bg-zinc-950/95 shadow-2xl shadow-black/60 backdrop-blur-2xl overflow-hidden"
+        className="fixed inset-x-4 top-[50%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-md rounded-2xl border border-border/70 bg-zinc-950/95 shadow-2xl shadow-foreground/10 backdrop-blur-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-foreground/[0.06] px-6 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
               <CreditCard className="h-4 w-4 text-accent" weight="duotone" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Assinar {plan.name}</h3>
-              <p className="text-[11px] text-white/45">{plan.price}/mês · plano anual</p>
+              <h3 className="text-sm font-semibold text-foreground">Assinar {plan.name}</h3>
+              <p className="text-[11px] text-muted-foreground/65">{plan.price}/mês · plano anual</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -194,34 +194,34 @@ function CheckoutModal({
 
         <div className="px-6 py-5 space-y-4">
           <div>
-            <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider">Nome da clínica</label>
+            <label className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">Nome da clínica</label>
             <Input
               value={clinicName}
               onChange={(e) => setClinicName(e.target.value)}
               placeholder="Ex: Clínica Harmonia"
-              className="mt-1.5 h-11 rounded-xl border-white/10 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/30"
+              className="mt-1.5 h-11 rounded-xl border-border/70 bg-foreground/[0.03] px-3 text-sm text-foreground placeholder:text-muted-foreground/50"
             />
           </div>
           <div>
-            <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider">E-mail financeiro</label>
+            <label className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">E-mail financeiro</label>
             <Input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="financeiro@clinica.com"
               type="email"
-              className="mt-1.5 h-11 rounded-xl border-white/10 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/30"
+              className="mt-1.5 h-11 rounded-xl border-border/70 bg-foreground/[0.03] px-3 text-sm text-foreground placeholder:text-muted-foreground/50"
             />
           </div>
           <div>
-            <label className="text-[11px] font-medium text-white/50 uppercase tracking-wider">WhatsApp</label>
-            <div className="mt-1.5 flex h-11 items-center rounded-xl border border-white/10 bg-white/[0.03]">
-              <span className="px-3 text-sm font-medium text-white/50">+55</span>
+            <label className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">WhatsApp</label>
+            <div className="mt-1.5 flex h-11 items-center rounded-xl border border-border/70 bg-foreground/[0.03]">
+              <span className="px-3 text-sm font-medium text-muted-foreground/70">+55</span>
               <Input
                 value={phoneLocal}
                 onChange={(e) => setPhoneLocal(maskPhoneBR(e.target.value))}
                 placeholder="(11) 99999-8888"
                 inputMode="numeric"
-                className="h-full border-0 bg-transparent text-sm text-white placeholder:text-white/30 focus-visible:ring-0"
+                className="h-full border-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-0"
               />
             </div>
           </div>
@@ -229,7 +229,7 @@ function CheckoutModal({
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit || createCheckout.isPending}
-            className="h-12 w-full rounded-xl border border-accent/25 bg-accent/20 text-sm font-semibold text-white shadow-[0_0_30px_rgba(0,181,212,0.15)] transition-all duration-500 hover:bg-accent/30 disabled:opacity-40"
+            className="h-12 w-full rounded-xl border border-accent/25 bg-accent/20 text-sm font-semibold text-foreground shadow-[0_0_30px_rgba(0,181,212,0.15)] transition-all duration-500 hover:bg-accent/30 disabled:opacity-40"
           >
             {createCheckout.isPending ? (
               "Preparando checkout..."
@@ -241,7 +241,7 @@ function CheckoutModal({
             )}
           </Button>
 
-          <div className="flex items-center justify-center gap-1.5 text-[10px] text-white/35">
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/50">
             <LockSimple className="h-3 w-3" />
             Checkout seguro processado pela InfinitePay
           </div>
@@ -279,10 +279,10 @@ function ComparisonSection() {
         </p>
         <h2 className="mt-4 font-display text-[clamp(1.5rem,3vw,2.2rem)] font-bold leading-[1.1] tracking-tight text-foreground">
           Secretária treinada{" "}
-          <span className="text-white/40">vs.</span>{" "}
+          <span className="text-muted-foreground/60">vs.</span>{" "}
           <span className="text-accent">Ailum</span>
         </h2>
-        <p className="mt-3 text-sm text-white/45">
+        <p className="mt-3 text-sm text-muted-foreground/65">
           Veja por que clínicas estão migrando para IA.
         </p>
       </div>
@@ -293,7 +293,7 @@ function ComparisonSection() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.015] p-7"
+          className="relative overflow-hidden rounded-2xl border border-border/60 bg-foreground/[0.015] p-7"
         >
           <div className="absolute -top-20 -left-20 h-40 w-40 bg-rose-500/[0.04] rounded-full blur-3xl pointer-events-none" />
 
@@ -302,7 +302,7 @@ function ComparisonSection() {
               <UserCircleGear className="h-4 w-4 text-rose-400" weight="duotone" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Secretária Treinada</h3>
+              <h3 className="text-sm font-semibold text-foreground">Secretária Treinada</h3>
               <p className="text-[10px] text-rose-400/70 font-medium uppercase tracking-wider">Alternativa tradicional</p>
             </div>
           </div>
@@ -317,7 +317,7 @@ function ComparisonSection() {
                 className="flex items-start gap-2.5"
               >
                 <item.icon className="h-3.5 w-3.5 shrink-0 text-rose-400/60 mt-0.5" weight="fill" />
-                <span className="text-[13px] text-white/50 leading-snug">{item.text}</span>
+                <span className="text-[13px] text-muted-foreground/70 leading-snug">{item.text}</span>
               </motion.div>
             ))}
           </div>
@@ -334,7 +334,7 @@ function ComparisonSection() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="relative overflow-hidden rounded-2xl border border-accent/20 bg-white/[0.02] p-7 shadow-lg shadow-accent/[0.06]"
+          className="relative overflow-hidden rounded-2xl border border-accent/20 bg-foreground/[0.02] p-7 shadow-lg shadow-accent/[0.06]"
         >
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
           <div className="absolute -top-20 -right-20 h-40 w-40 bg-accent/[0.06] rounded-full blur-3xl pointer-events-none" />
@@ -344,7 +344,7 @@ function ComparisonSection() {
               <Sparkle className="h-4 w-4 text-accent" weight="fill" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Ailum</h3>
+              <h3 className="text-sm font-semibold text-foreground">Ailum</h3>
               <p className="text-[10px] text-accent/70 font-medium uppercase tracking-wider">Inteligência artificial</p>
             </div>
           </div>
@@ -359,7 +359,7 @@ function ComparisonSection() {
                 className="flex items-start gap-2.5"
               >
                 <item.icon className="h-3.5 w-3.5 shrink-0 text-accent mt-0.5" weight="fill" />
-                <span className="text-[13px] text-white/65 leading-snug">{item.text}</span>
+                <span className="text-[13px] text-muted-foreground/80 leading-snug">{item.text}</span>
               </motion.div>
             ))}
           </div>
@@ -412,7 +412,7 @@ export default function PrivateCheckoutPage() {
             <span className="text-accent">Comece no nível alto padrão.</span>
           </h1>
 
-          <p className="mt-4 text-sm text-white/50">
+          <p className="mt-4 text-sm text-muted-foreground/70">
             Planos anuais. Em até 12x no cartão de crédito.
           </p>
         </motion.div>
@@ -431,8 +431,8 @@ export default function PrivateCheckoutPage() {
               transition={{ type: "spring", stiffness: 400, damping: 25, delay: i * 0.1 }}
               className={`group relative overflow-hidden rounded-2xl border p-7 transition-all duration-500 ${
                 plan.highlight
-                  ? "border-accent/30 bg-white/[0.025] shadow-lg shadow-accent/[0.08]"
-                  : "border-white/10 bg-white/[0.015] hover:border-white/20 hover:shadow-md hover:shadow-accent/[0.03]"
+                  ? "border-accent/30 bg-foreground/[0.025] shadow-lg shadow-accent/[0.08]"
+                  : "border-border/70 bg-foreground/[0.015] hover:border-border hover:shadow-md hover:shadow-accent/[0.03]"
               }`}
             >
               {plan.highlight && (
@@ -454,14 +454,14 @@ export default function PrivateCheckoutPage() {
                 </motion.div>
               )}
 
-              <h3 className="text-sm font-semibold text-white">{plan.name}</h3>
+              <h3 className="text-sm font-semibold text-foreground">{plan.name}</h3>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-3xl font-semibold tracking-tight text-white">
+                <span className="text-3xl font-semibold tracking-tight text-foreground">
                   {plan.price}
                 </span>
-                <span className="text-sm text-white/40">/mês</span>
+                <span className="text-sm text-muted-foreground/60">/mês</span>
               </div>
-              <p className="mt-2 text-xs text-white/50">{plan.description}</p>
+              <p className="mt-2 text-xs text-muted-foreground/70">{plan.description}</p>
 
               <Button
                 onClick={() => setSelectedPlan(plan)}
@@ -477,9 +477,9 @@ export default function PrivateCheckoutPage() {
                 </span>
               </Button>
 
-              <ul className="mt-7 flex flex-col gap-3 border-t border-white/[0.06] pt-6">
+              <ul className="mt-7 flex flex-col gap-3 border-t border-foreground/[0.06] pt-6">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2.5 text-[13px] text-white/55">
+                  <li key={feature} className="flex items-center gap-2.5 text-[13px] text-muted-foreground/70">
                     <Check className="h-3.5 w-3.5 shrink-0 text-accent" />
                     {feature}
                   </li>
@@ -494,7 +494,7 @@ export default function PrivateCheckoutPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="relative mt-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.015] p-7 md:p-8"
+          className="relative mt-4 overflow-hidden rounded-2xl border border-border/60 bg-foreground/[0.015] p-7 md:p-8"
         >
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-gradient-to-b from-violet-500/[0.04] via-accent/[0.03] to-transparent rounded-full blur-3xl pointer-events-none" />
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
@@ -506,12 +506,12 @@ export default function PrivateCheckoutPage() {
                   <Crown className="h-4 w-4 text-violet-400" weight="fill" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Custom</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Custom</h3>
                   <p className="text-[10px] text-violet-400/70 font-medium uppercase tracking-wider">Sob medida</p>
                 </div>
               </div>
 
-              <p className="text-[14px] text-white/55 leading-relaxed max-w-xl">
+              <p className="text-[14px] text-muted-foreground/70 leading-relaxed max-w-xl">
                 Precisa de mais conversas, múltiplos WhatsApps ou integrações específicas?
                 Montamos um plano sob medida para a sua operação. Fale direto com o nosso time.
               </p>
@@ -536,8 +536,8 @@ export default function PrivateCheckoutPage() {
 
             <div className="flex flex-col items-center gap-3 shrink-0">
               <div className="text-center">
-                <span className="text-2xl font-bold tracking-tight text-white">Personalizado</span>
-                <p className="text-[11px] text-white/40 mt-0.5">montado para você</p>
+                <span className="text-2xl font-bold tracking-tight text-foreground">Personalizado</span>
+                <p className="text-[11px] text-muted-foreground/60 mt-0.5">montado para você</p>
               </div>
               <Button
                 onClick={() => setCustomPlanOpen(true)}
@@ -557,7 +557,7 @@ export default function PrivateCheckoutPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="mt-8 flex items-center justify-center gap-2 text-xs text-white/30"
+          className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground/50"
         >
           <LockSimple className="h-3.5 w-3.5" />
           Pagamento seguro processado pela InfinitePay

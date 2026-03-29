@@ -116,6 +116,7 @@ export function useBoard(funnelId: string | null, params?: { search?: string }) 
                   lastPaymentStatus: null,
                   lastDetectedIntent: null,
                   currentStageId: newStageId,
+                  summary: null,
                   assignedProfessional: null,
                   messages: [],
                 }

@@ -115,24 +115,24 @@ function SlashMenu({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96, y: -4 }}
       transition={{ duration: 0.12, ease: [0.33, 1, 0.68, 1] }}
-      className="w-64 rounded-xl border border-white/[0.10] bg-[oklch(0.16_0.02_263)] shadow-2xl shadow-black/70 py-1.5 max-h-72 overflow-y-auto"
+      className="w-64 rounded-xl border border-border/80 bg-surface shadow-2xl shadow-foreground/12 py-1.5 max-h-72 overflow-y-auto"
     >
-      <p className="px-3 py-1 text-[9px] font-bold text-white/85 uppercase tracking-wider">Comandos</p>
+      <p className="px-3 py-1 text-[9px] font-bold text-foreground/85 uppercase tracking-wider">Comandos</p>
       {items.map((item, i) => (
         <button
           key={item.title}
           ref={i === selectedIndex ? activeRef : undefined}
           onClick={() => onSelect(item)}
           className={`cursor-pointer w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors duration-100 ${
-            i === selectedIndex ? "bg-white/[0.08]" : "hover:bg-white/[0.05]"
+            i === selectedIndex ? "bg-foreground/[0.08]" : "hover:bg-foreground/[0.05]"
           }`}
         >
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.04] text-white/85">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border/60 bg-foreground/[0.04] text-foreground/85">
             {item.icon}
           </div>
           <div>
-            <p className="text-[12px] font-bold text-white/85">{item.title}</p>
-            <p className="text-[10px] text-white/85">{item.description}</p>
+            <p className="text-[12px] font-bold text-foreground/85">{item.title}</p>
+            <p className="text-[10px] text-foreground/85">{item.description}</p>
           </div>
         </button>
       ))}
@@ -221,8 +221,8 @@ function Toolbar({ editor }: { editor: Editor }) {
       }}
       className={`cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-100 ${
         isActive
-          ? "bg-white/[0.14] text-white"
-          : "text-white/90 hover:bg-white/[0.08] hover:text-white/90"
+          ? "bg-foreground/[0.14] text-foreground"
+          : "text-foreground hover:bg-foreground/[0.08] hover:text-foreground"
       }`}
     >
       {icon}
@@ -230,20 +230,20 @@ function Toolbar({ editor }: { editor: Editor }) {
   )
 
   return (
-    <div className="flex items-center gap-0.5 px-3 py-2 border-b border-white/[0.06] flex-wrap">
+    <div className="flex items-center gap-0.5 px-3 py-2 border-b border-foreground/[0.06] flex-wrap">
       {btn("Negrito", <TextBolderIcon className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleBold().run(), editor.isActive("bold"))}
       {btn("Itálico", <TextItalic className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleItalic().run(), editor.isActive("italic"))}
       {btn("Código inline", <Code className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleCode().run(), editor.isActive("code"))}
-      <div className="h-4 w-px bg-white/[0.08] mx-1" />
+      <div className="h-4 w-px bg-foreground/[0.08] mx-1" />
       {btn("Título 1", <TextHOne className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleHeading({ level: 1 }).run(), editor.isActive("heading", { level: 1 }))}
       {btn("Título 2", <TextHTwo className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive("heading", { level: 2 }))}
       {btn("Título 3", <TextHThree className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive("heading", { level: 3 }))}
-      <div className="h-4 w-px bg-white/[0.08] mx-1" />
+      <div className="h-4 w-px bg-foreground/[0.08] mx-1" />
       {btn("Lista", <ListBullets className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleBulletList().run(), editor.isActive("bulletList"))}
       {btn("Lista numerada", <ListNumbers className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleOrderedList().run(), editor.isActive("orderedList"))}
       {btn("Citação", <Quotes className="h-3.5 w-3.5" />, () => editor.chain().focus().toggleBlockquote().run(), editor.isActive("blockquote"))}
       {btn("Bloco de código", <Code className="h-3.5 w-3.5" weight="bold" />, () => editor.chain().focus().toggleCodeBlock().run(), editor.isActive("codeBlock"))}
-      <div className="h-4 w-px bg-white/[0.08] mx-1" />
+      <div className="h-4 w-px bg-foreground/[0.08] mx-1" />
       {btn("Desfazer", <ArrowCounterClockwise className="h-3.5 w-3.5" />, () => editor.chain().focus().undo().run(), false)}
       {btn("Refazer", <ArrowClockwise className="h-3.5 w-3.5" />, () => editor.chain().focus().redo().run(), false)}
     </div>
@@ -361,7 +361,7 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight = 220, 
   const charCount = editor?.storage.characterCount?.characters?.() ?? 0
 
   return (
-    <div className={`relative flex flex-col rounded-xl border border-white/[0.10] bg-white/[0.03] overflow-hidden focus-within:border-white/[0.20] focus-within:ring-1 focus-within:ring-accent/30 transition-all duration-200 flex-1 min-h-0 ${className ?? ""}`}>
+    <div className={`relative flex flex-col rounded-xl border border-border/80 bg-foreground/[0.03] overflow-hidden focus-within:border-border focus-within:ring-1 focus-within:ring-accent/30 transition-all duration-200 flex-1 min-h-0 ${className ?? ""}`}>
       {editor && <Toolbar editor={editor} />}
 
       <div
@@ -393,11 +393,11 @@ export function MarkdownEditor({ value, onChange, placeholder, minHeight = 220, 
       </div>
 
       {/* Footer: hint + char count */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-white/[0.06]">
-        <p className="text-[10px] text-white/90">
-          Digite <kbd className="rounded px-1 py-0.5 border border-white/[0.12] bg-white/[0.04] text-white/85 font-mono text-[9px]">/</kbd> para ver comandos
+      <div className="flex items-center justify-between px-4 py-2 border-t border-foreground/[0.06]">
+        <p className="text-[10px] text-foreground">
+          Digite <kbd className="rounded px-1 py-0.5 border border-border bg-foreground/[0.04] text-foreground/85 font-mono text-[9px]">/</kbd> para ver comandos
         </p>
-        <span className="text-[10px] text-white/90 tabular-nums">{charCount} / 4000</span>
+        <span className="text-[10px] text-foreground tabular-nums">{charCount} / 4000</span>
       </div>
     </div>
   )

@@ -116,7 +116,7 @@ function PixCard({ amount }: { amount: string }) {
       <p className="font-display text-xl sm:text-2xl font-bold tracking-tight text-white">
         {amount}
       </p>
-      <p className="text-[11px] sm:text-xs text-white/30 mt-1">Clínica Harmonia LTDA</p>
+      <p className="text-[11px] sm:text-xs text-muted-foreground/50 mt-1">Clínica Harmonia LTDA</p>
     </div>
   )
 }
@@ -220,7 +220,7 @@ export const HeroDashboard = memo(function HeroDashboard() {
       </div>
 
       {/* Container */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/[0.06] bg-white/[0.02]">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-foreground/[0.06] bg-foreground/[0.02]">
         {/* Top accent line */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 
@@ -241,10 +241,10 @@ export const HeroDashboard = memo(function HeroDashboard() {
                     <WhatsappLogo className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400/80" weight="fill" />
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-[15px] font-semibold text-white/90 leading-none tracking-tight">
+                    <h3 className="text-sm sm:text-[15px] font-semibold text-foreground leading-none tracking-tight">
                       WhatsApp
                     </h3>
-                    <p className="text-[11px] sm:text-xs text-white/35 mt-1 leading-none">
+                    <p className="text-[11px] sm:text-xs text-muted-foreground/50 mt-1 leading-none">
                       Clínica Harmonia
                     </p>
                   </div>
@@ -259,7 +259,7 @@ export const HeroDashboard = memo(function HeroDashboard() {
               </div>
 
               {/* Divider */}
-              <div className="h-px bg-white/[0.04] mb-5 sm:mb-6" />
+              <div className="h-px bg-foreground/[0.04] mb-5 sm:mb-6" />
 
               {/* Chat messages */}
               <div
@@ -280,15 +280,15 @@ export const HeroDashboard = memo(function HeroDashboard() {
                           <PixCard amount={msg.amount ?? ""} />
                         </div>
                       ) : msg.from === "patient" ? (
-                        <div className="max-w-[88%] sm:max-w-[80%] rounded-2xl rounded-bl-sm bg-white/[0.05] px-4 py-3 sm:px-5 sm:py-3.5">
-                          <p className="text-[13px] sm:text-sm font-medium leading-relaxed text-white/70">
+                        <div className="max-w-[88%] sm:max-w-[80%] rounded-2xl rounded-bl-sm bg-foreground/[0.05] px-4 py-3 sm:px-5 sm:py-3.5">
+                          <p className="text-[13px] sm:text-sm font-medium leading-relaxed text-muted-foreground">
                             {msg.text}
                           </p>
                         </div>
                       ) : (
                         <div className="relative max-w-[88%] sm:max-w-[80%] overflow-hidden rounded-2xl rounded-br-sm bg-accent/[0.06] ring-1 ring-accent/[0.08] px-4 py-3 sm:px-5 sm:py-3.5">
                           <AIPulse />
-                          <p className="relative text-[13px] sm:text-sm font-medium leading-relaxed text-white/80">
+                          <p className="relative text-[13px] sm:text-sm font-medium leading-relaxed text-foreground/80">
                             {msg.text}
                           </p>
                         </div>
@@ -327,10 +327,10 @@ export const HeroDashboard = memo(function HeroDashboard() {
                     <Lightning className="h-4 w-4 sm:h-5 sm:w-5 text-accent/70" weight="fill" />
                   </div>
                   <div>
-                    <h3 className="text-sm sm:text-[15px] font-semibold text-white/90 leading-none tracking-tight">
+                    <h3 className="text-sm sm:text-[15px] font-semibold text-foreground leading-none tracking-tight">
                       Ações da IA
                     </h3>
-                    <p className="text-[11px] sm:text-xs text-white/35 mt-1 leading-none">
+                    <p className="text-[11px] sm:text-xs text-muted-foreground/50 mt-1 leading-none">
                       Executadas em tempo real
                     </p>
                   </div>
@@ -342,7 +342,7 @@ export const HeroDashboard = memo(function HeroDashboard() {
               </div>
 
               {/* Divider */}
-              <div className="h-px bg-white/[0.04] mb-5 sm:mb-6" />
+              <div className="h-px bg-foreground/[0.04] mb-5 sm:mb-6" />
 
               {/* Action list */}
               <div
@@ -357,15 +357,15 @@ export const HeroDashboard = memo(function HeroDashboard() {
                       animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                       transition={{ duration: 0.6, ease, delay: 0.05 }}
                     >
-                      <div className="group flex items-center gap-3.5 sm:gap-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] border border-transparent hover:border-white/[0.04] px-4 py-3.5 sm:px-5 sm:py-4 transition-all duration-500">
-                        <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.03] ring-1 ring-white/[0.06] group-hover:ring-white/[0.1] transition-all duration-500">
+                      <div className="group flex items-center gap-3.5 sm:gap-4 rounded-xl bg-foreground/[0.02] hover:bg-foreground/[0.04] border border-transparent hover:border-foreground/[0.04] px-4 py-3.5 sm:px-5 sm:py-4 transition-all duration-500">
+                        <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-foreground/[0.03] ring-1 ring-white/[0.06] group-hover:ring-white/[0.1] transition-all duration-500">
                           <ActionIcon type={action.icon} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] sm:text-sm font-semibold text-white/80 leading-none tracking-tight">
+                          <p className="text-[13px] sm:text-sm font-semibold text-foreground/80 leading-none tracking-tight">
                             {action.label}
                           </p>
-                          <p className="mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-white/35 leading-none">
+                          <p className="mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-muted-foreground/50 leading-none">
                             {action.detail}
                           </p>
                         </div>

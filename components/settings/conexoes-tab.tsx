@@ -21,6 +21,7 @@ import {
   Gear,
   WifiHigh,
   WifiSlash,
+  CaretRight,
 } from "@phosphor-icons/react"
 import {
   useIntegrations,
@@ -40,14 +41,14 @@ import type { Integration } from "@/lib/api/integrations"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
-const inputCls = "w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[12px] font-mono text-white/90 placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-accent/50 focus:border-accent/30 transition-all"
+const inputCls = "w-full h-10 rounded-xl border border-border/70 bg-foreground/[0.03] px-3.5 text-[12px] font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/50 focus:border-accent/30 transition-all"
 
 function Spinner({ className = "h-3 w-3" }: { className?: string }) {
   return (
     <motion.div
       animate={{ rotate: 360 }}
       transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-      className={`rounded-full border-2 border-white/20 border-t-white/70 ${className}`}
+      className={`rounded-full border-2 border-border border-t-white/70 ${className}`}
     />
   )
 }
@@ -63,15 +64,15 @@ function SectionHeader({ icon: Icon, title, subtitle, badge, action, color = "te
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03]`}>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-foreground/[0.03]`}>
           <Icon className={`h-5 w-5 ${color}`} weight="fill" />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <p className="text-[13px] font-bold text-white/90">{title}</p>
+            <p className="text-[13px] font-bold text-foreground">{title}</p>
             {badge}
           </div>
-          <p className="text-[11px] text-white/50 mt-0.5">{subtitle}</p>
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5">{subtitle}</p>
         </div>
       </div>
       {action}
@@ -79,14 +80,14 @@ function SectionHeader({ icon: Icon, title, subtitle, badge, action, color = "te
   )
 }
 
-// ── Instance Card ─────────────────────────────────────────────────────────────
+// ── Instance Row (expandable) ─────────────────────────────────────────────────
 
-function InstanceCard({ instance, isSelected, onSelect }: {
+function InstanceRow({ instance, isExpanded, onToggle }: {
   instance: Integration
-  isSelected: boolean
-  onSelect: () => void
+  isExpanded: boolean
+  onToggle: () => void
 }) {
-  const { data: status, isLoading: statusLoading } = useZapiStatus({
+  const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useZapiStatus({
     enabled: true,
     refetchInterval: 15_000,
     instanceId: instance.instanceId ?? undefined,
@@ -95,237 +96,188 @@ function InstanceCard({ instance, isSelected, onSelect }: {
   const deleteInstance = useDeleteZapiInstance()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const aiLabel = instance.isAiEnabled
-    ? "IA ativa"
-    : instance.isAiTestMode
-      ? "Teste"
-      : "IA off"
-
-  const aiColor = instance.isAiEnabled
-    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-    : instance.isAiTestMode
-      ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
-      : "text-white/40 bg-white/[0.03] border-white/[0.06]"
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.2, ease }}
-      className={`group rounded-xl border p-4 transition-all cursor-pointer ${
-        isSelected
-          ? "border-accent/30 bg-accent/[0.04] ring-1 ring-accent/20"
-          : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.035]"
-      }`}
-      onClick={onSelect}
-    >
-      <div className="flex items-start gap-3">
-        {/* Status dot + WhatsApp icon */}
-        <div className="relative shrink-0">
-          <div className="h-10 w-10 rounded-lg border border-white/[0.08] bg-white/[0.04] flex items-center justify-center">
-            <WhatsappLogo className="h-5 w-5 text-emerald-400" weight="fill" />
-          </div>
-          <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[oklch(0.14_0.02_263)] ${
-            statusLoading ? "bg-white/20" : connected ? "bg-emerald-400" : "bg-rose-400"
-          }`} />
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-bold text-white/90 truncate">
-            {instance.label || `Instância ${(instance.instanceId ?? "").slice(0, 8)}...`}
-          </p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`flex items-center gap-1 text-[10px] font-medium ${connected ? "text-emerald-400" : "text-white/40"}`}>
-              {connected ? <WifiHigh className="h-3 w-3" /> : <WifiSlash className="h-3 w-3" />}
-              {statusLoading ? "..." : connected ? "Online" : "Offline"}
-            </span>
-            <span className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold ${aiColor}`}>
-              {instance.isAiTestMode && !instance.isAiEnabled && <Flask className="h-2.5 w-2.5" weight="fill" />}
-              {instance.isAiEnabled && <Robot className="h-2.5 w-2.5" weight="fill" />}
-              {aiLabel}
-            </span>
-          </div>
-          <p className="text-[10px] font-mono text-white/25 mt-1 truncate">{instance.instanceId}</p>
-        </div>
-
-        {/* Delete */}
-        <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => { e.stopPropagation(); confirmDelete ? deleteInstance.mutate(instance.instanceId ?? "") : setConfirmDelete(true) }}
-            onBlur={() => setConfirmDelete(false)}
-            disabled={deleteInstance.isPending}
-            className={`cursor-pointer flex h-7 items-center justify-center rounded-lg text-[10px] font-bold transition-all disabled:opacity-50 ${
-              confirmDelete
-                ? "gap-1 px-2 bg-rose-500/15 border border-rose-500/30 text-rose-400 hover:bg-rose-500/25 w-auto"
-                : "w-7 text-white/30 hover:text-rose-400 hover:bg-rose-500/[0.08]"
-            }`}
-          >
-            {deleteInstance.isPending
-              ? <Spinner />
-              : confirmDelete
-                ? <><Check className="h-3 w-3" weight="bold" /> Excluir</>
-                : <Trash className="h-3 w-3" />}
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ── Instance Detail Panel ─────────────────────────────────────────────────────
-
-function InstanceDetailPanel({ instance }: { instance: Integration }) {
-  const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useZapiStatus({
-    enabled: true,
-    refetchInterval: 15_000,
-    instanceId: instance.instanceId ?? undefined,
-  })
-  const connected = status?.connected === true
-
   const { data: qrData, isFetching: qrFetching, isError: qrError, refetch: refetchQr } = useZapiQrCode({
-    enabled: !connected,
+    enabled: isExpanded && !connected,
     instanceId: instance.instanceId ?? undefined,
   })
 
   useEffect(() => {
-    if (connected) return
+    if (!isExpanded || connected) return
     const id = setInterval(() => refetchQr(), 12_000)
     return () => clearInterval(id)
-  }, [connected, refetchQr])
+  }, [isExpanded, connected, refetchQr])
 
   const disconnect = useZapiDisconnect()
   const restart = useZapiRestart()
   const syncRouting = useSyncZapiContactRouting()
   const [syncOnlyUnknown, setSyncOnlyUnknown] = useState(true)
 
+  const aiLabel = instance.isAiEnabled ? "IA ativa" : instance.isAiTestMode ? "Teste" : "IA off"
+  const aiColor = instance.isAiEnabled
+    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+    : instance.isAiTestMode
+      ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+      : "text-muted-foreground/60 bg-foreground/[0.03] border-foreground/[0.06]"
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      layout
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.2, ease }}
-      className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden"
     >
-      {/* Connection status bar */}
-      <div className={`flex items-center gap-3 px-4 py-3 border-b ${
-        connected ? "border-emerald-500/15 bg-emerald-500/[0.04]" : "border-amber-500/15 bg-amber-500/[0.03]"
-      }`}>
-        <span className={`h-2 w-2 rounded-full shrink-0 ${connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
-        <p className={`text-[12px] font-semibold flex-1 ${connected ? "text-emerald-400" : "text-amber-400"}`}>
-          {statusLoading ? "Verificando..." : connected ? "WhatsApp conectado" : "WhatsApp desconectado"}
+      {/* Row header */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggle}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle() } }}
+        className={`cursor-pointer group w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
+          isExpanded ? "bg-foreground/[0.03]" : "hover:bg-foreground/[0.02]"
+        }`}
+      >
+        {/* Status dot */}
+        <span className={`h-2 w-2 rounded-full shrink-0 ${
+          statusLoading ? "bg-foreground/20" : connected ? "bg-emerald-400" : "bg-rose-400"
+        }`} />
+
+        {/* Label */}
+        <p className="text-[13px] font-semibold text-foreground truncate flex-1 min-w-0">
+          {instance.label || `Instância ${(instance.instanceId ?? "").slice(0, 8)}...`}
         </p>
-        <button onClick={() => refetchStatus()} disabled={statusLoading}
-          className="cursor-pointer text-white/40 hover:text-white/70 transition-colors disabled:opacity-40">
-          <ArrowsClockwise className={`h-3.5 w-3.5 ${statusLoading ? "animate-spin" : ""}`} />
-        </button>
+
+        {/* Badges */}
+        <span className={`flex items-center gap-1 text-[10px] font-medium shrink-0 ${connected ? "text-emerald-400" : "text-muted-foreground/50"}`}>
+          {connected ? <WifiHigh className="h-3 w-3" /> : <WifiSlash className="h-3 w-3" />}
+          {statusLoading ? "..." : connected ? "Online" : "Offline"}
+        </span>
+        <span className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold shrink-0 ${aiColor}`}>
+          {instance.isAiTestMode && !instance.isAiEnabled && <Flask className="h-2.5 w-2.5" weight="fill" />}
+          {instance.isAiEnabled && <Robot className="h-2.5 w-2.5" weight="fill" />}
+          {aiLabel}
+        </span>
+
+        {/* Delete */}
+        <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => confirmDelete ? deleteInstance.mutate(instance.instanceId ?? "") : setConfirmDelete(true)}
+            onBlur={() => setConfirmDelete(false)}
+            disabled={deleteInstance.isPending}
+            className={`cursor-pointer flex h-7 items-center justify-center rounded-lg text-[10px] font-bold transition-all disabled:opacity-50 ${
+              confirmDelete
+                ? "gap-1 px-2 bg-rose-500/15 border border-rose-500/30 text-rose-400 hover:bg-rose-500/25 w-auto"
+                : "w-7 text-muted-foreground/40 hover:text-rose-400 hover:bg-rose-500/[0.08]"
+            }`}
+          >
+            {deleteInstance.isPending ? <Spinner /> : confirmDelete ? <><Check className="h-3 w-3" weight="bold" /> Excluir</> : <Trash className="h-3 w-3" />}
+          </button>
+        </div>
+
+        {/* Chevron */}
+        <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.15 }} className="shrink-0">
+          <CaretRight className="h-3 w-3 text-muted-foreground/40" weight="bold" />
+        </motion.div>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* QR Code section — only when disconnected */}
-        {!connected && (
-          <div className="flex flex-col items-center gap-3 py-2">
-            <div className="relative flex h-44 w-44 items-center justify-center rounded-xl border border-white/[0.08] bg-white overflow-hidden">
-              {qrFetching && !qrData && <Spinner className="h-6 w-6" />}
-              {qrError && (
-                <div className="flex flex-col items-center gap-1 px-3 text-center">
-                  <Warning className="h-5 w-5 text-amber-500/70" />
-                  <p className="text-[10px] text-slate-500">Não foi possível gerar o QR</p>
+      {/* Expanded detail */}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.25, ease }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-1 space-y-3 border-t border-foreground/[0.04]">
+              {/* QR Code — only when disconnected */}
+              {!connected && (
+                <div className="flex flex-col items-center gap-3 py-3">
+                  <div className="relative flex h-40 w-40 items-center justify-center rounded-xl border border-border/60 bg-white overflow-hidden">
+                    {qrFetching && !qrData && <Spinner className="h-6 w-6" />}
+                    {qrError && (
+                      <div className="flex flex-col items-center gap-1 px-3 text-center">
+                        <Warning className="h-5 w-5 text-amber-500/70" />
+                        <p className="text-[10px] text-slate-500">Não foi possível gerar o QR</p>
+                      </div>
+                    )}
+                    {qrData?.value && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={qrData.value} alt="QR Code WhatsApp" className="h-full w-full object-contain" />
+                    )}
+                    {qrFetching && qrData && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-xl"><Spinner className="h-5 w-5" /></div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/60">WhatsApp &rarr; Aparelhos conectados &rarr; Conectar</p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => refetchQr()} disabled={qrFetching}
+                      className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-border/70 bg-foreground/[0.03] px-3 py-1.5 text-[10px] font-bold text-muted-foreground/70 hover:text-foreground/85 transition-all disabled:opacity-40">
+                      <ArrowsClockwise className={`h-3 w-3 ${qrFetching ? "animate-spin" : ""}`} /> Atualizar QR
+                    </button>
+                    <button onClick={() => refetchStatus()} disabled={statusLoading}
+                      className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-[10px] font-bold text-emerald-400/70 hover:text-emerald-400 transition-all disabled:opacity-40">
+                      {statusLoading ? <Spinner /> : <Check className="h-3 w-3" weight="bold" />} Verificar
+                    </button>
+                  </div>
                 </div>
               )}
-              {qrData?.value && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={qrData.value} alt="QR Code WhatsApp" className="h-full w-full object-contain" />
-              )}
-              {qrFetching && qrData && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-xl">
-                  <Spinner className="h-5 w-5" />
+
+              {/* Actions when connected */}
+              {connected && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button onClick={() => disconnect.mutate(undefined, { onSuccess: () => refetchQr() })} disabled={disconnect.isPending}
+                    className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-1.5 text-[10px] font-bold text-amber-400/70 hover:text-amber-400 transition-all disabled:opacity-40">
+                    {disconnect.isPending ? <Spinner /> : <LinkBreak className="h-3 w-3" />} Desconectar
+                  </button>
+                  <button onClick={() => restart.mutate(undefined, { onSuccess: () => refetchStatus() })} disabled={restart.isPending}
+                    className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-border/70 bg-foreground/[0.03] px-3 py-1.5 text-[10px] font-bold text-muted-foreground/70 hover:text-foreground/85 transition-all disabled:opacity-40">
+                    {restart.isPending ? <Spinner /> : <ArrowsClockwise className="h-3 w-3" />} Reiniciar
+                  </button>
                 </div>
               )}
-            </div>
-            <div className="text-center space-y-0.5">
-              <p className="text-[12px] font-bold text-white/85">Escaneie para conectar</p>
-              <p className="text-[10px] text-white/40">WhatsApp &rarr; Aparelhos conectados &rarr; Conectar</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => refetchQr()} disabled={qrFetching}
-                className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3 py-1.5 text-[10px] font-bold text-white/60 hover:text-white/85 transition-all disabled:opacity-40">
-                <ArrowsClockwise className={`h-3 w-3 ${qrFetching ? "animate-spin" : ""}`} /> Atualizar QR
-              </button>
-              <button onClick={() => refetchStatus()} disabled={statusLoading}
-                className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-[10px] font-bold text-emerald-400/70 hover:text-emerald-400 transition-all disabled:opacity-40">
-                {statusLoading ? <Spinner /> : <Check className="h-3 w-3" weight="bold" />} Verificar
-              </button>
-            </div>
-          </div>
-        )}
 
-        {/* Actions */}
-        {connected && (
-          <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => disconnect.mutate(undefined, { onSuccess: () => refetchQr() })} disabled={disconnect.isPending}
-              className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-1.5 text-[10px] font-bold text-amber-400/70 hover:text-amber-400 transition-all disabled:opacity-40">
-              {disconnect.isPending ? <Spinner /> : <LinkBreak className="h-3 w-3" />} Desconectar
-            </button>
-            <button onClick={() => restart.mutate(undefined, { onSuccess: () => refetchStatus() })} disabled={restart.isPending}
-              className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-white/[0.03] px-3 py-1.5 text-[10px] font-bold text-white/60 hover:text-white/85 transition-all disabled:opacity-40">
-              {restart.isPending ? <Spinner /> : <ArrowsClockwise className="h-3 w-3" />} Reiniciar
-            </button>
-          </div>
-        )}
+              {status?.smartphoneConnected === false && connected && (
+                <p className="text-[10px] text-amber-400/60 flex items-center gap-1.5">
+                  <Phone className="h-3 w-3" /> Smartphone offline — mantenha o WhatsApp aberto
+                </p>
+              )}
 
-        {/* Smartphone warning */}
-        {status?.smartphoneConnected === false && connected && (
-          <p className="text-[10px] text-amber-400/60 flex items-center gap-1.5">
-            <Phone className="h-3 w-3" /> Smartphone offline — mantenha o WhatsApp aberto no celular
-          </p>
-        )}
+              {/* Sync routing */}
+              {connected && (
+                <details className="group/sync">
+                  <summary className="cursor-pointer text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider hover:text-muted-foreground/70 transition-colors list-none flex items-center gap-1.5">
+                    <Gear className="h-3 w-3" /> Sincronizar roteamento
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={syncOnlyUnknown} onChange={(e) => setSyncOnlyUnknown(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-border bg-foreground/[0.04] text-accent focus:ring-accent/30" />
+                      <span className="text-[11px] text-muted-foreground/70">Apenas contatos sem instância</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => syncRouting.mutate({ instanceId: instance.instanceId ?? undefined, page: 1, pageSize: 100, maxPages: 3, onlyUnknown: syncOnlyUnknown, upsertMissingContacts: false })}
+                        disabled={syncRouting.isPending}
+                        className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent/15 border border-accent/25 px-3 py-1.5 text-[10px] font-bold text-accent hover:bg-accent/25 transition-all disabled:opacity-40">
+                        {syncRouting.isPending ? <Spinner /> : <ArrowsClockwise className="h-3 w-3" />} Sincronizar
+                      </button>
+                      {syncRouting.data && <p className="text-[10px] text-muted-foreground/60">{syncRouting.data.syncedContacts} contatos de {syncRouting.data.scannedChats} chats</p>}
+                    </div>
+                  </div>
+                </details>
+              )}
 
-        {/* Sync routing (collapsed by default) */}
-        {connected && (
-          <details className="group">
-            <summary className="cursor-pointer text-[10px] font-bold text-white/40 uppercase tracking-wider hover:text-white/60 transition-colors list-none flex items-center gap-1.5">
-              <Gear className="h-3 w-3" />
-              Sincronizar roteamento
-              <span className="text-[9px] font-normal normal-case text-white/25 ml-1">Vincular contatos a esta instância</span>
-            </summary>
-            <div className="mt-3 space-y-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={syncOnlyUnknown} onChange={(e) => setSyncOnlyUnknown(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-white/[0.15] bg-white/[0.04] text-accent focus:ring-accent/30" />
-                <span className="text-[11px] text-white/60">Apenas contatos sem instância definida</span>
-              </label>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => syncRouting.mutate({
-                    instanceId: instance.instanceId ?? undefined,
-                    page: 1, pageSize: 100, maxPages: 3,
-                    onlyUnknown: syncOnlyUnknown,
-                    upsertMissingContacts: false,
-                  })}
-                  disabled={syncRouting.isPending}
-                  className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent/15 border border-accent/25 px-3 py-1.5 text-[10px] font-bold text-accent hover:bg-accent/25 transition-all disabled:opacity-40"
-                >
-                  {syncRouting.isPending ? <Spinner /> : <ArrowsClockwise className="h-3 w-3" />} Sincronizar
-                </button>
-                {syncRouting.data && (
-                  <p className="text-[10px] text-white/40">
-                    {syncRouting.data.syncedContacts} contatos de {syncRouting.data.scannedChats} chats
-                  </p>
-                )}
-              </div>
+              {(disconnect.isSuccess || restart.isSuccess) && (
+                <p className="text-[10px] text-emerald-400/70">{disconnect.isSuccess ? "Desconectado." : "Reiniciada."}</p>
+              )}
+
+              <p className="text-[9px] font-mono text-muted-foreground/20">{instance.instanceId}</p>
             </div>
-          </details>
+          </motion.div>
         )}
-
-        {(disconnect.isSuccess || restart.isSuccess) && (
-          <p className="text-[10px] text-emerald-400/70">
-            {disconnect.isSuccess ? "Desconectado com sucesso." : "Instância reiniciada."}
-          </p>
-        )}
-      </div>
+      </AnimatePresence>
     </motion.div>
   )
 }
@@ -367,16 +319,16 @@ function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
         initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
         transition={{ duration: 0.22, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-white/[0.10] bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+        className="w-full max-w-md rounded-2xl border border-border/80 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
               <WhatsappLogo className="h-4 w-4 text-emerald-400" weight="fill" />
             </div>
-            <h2 className="text-[14px] font-semibold text-white/90">Nova instância WhatsApp</h2>
+            <h2 className="text-[14px] font-semibold text-foreground">Nova instância WhatsApp</h2>
           </div>
-          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-colors">
+          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -392,12 +344,12 @@ function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
           </AnimatePresence>
 
           <div>
-            <label className="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">Rótulo</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Rótulo</label>
             <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ex: Recepção, Comercial, Dr. João..." className={inputCls} autoFocus />
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">Instance ID *</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Instance ID *</label>
             <input value={instanceId} onChange={(e) => setInstanceId(e.target.value)} placeholder="3EE8E4989B..." className={inputCls} />
             {instanceCheck?.inUse && !instanceCheck.sameAccount && (
               <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-rose-400">
@@ -412,13 +364,13 @@ function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">Instance Token *</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Instance Token *</label>
             <input type="password" value={instanceToken} onChange={(e) => setInstanceToken(e.target.value)} placeholder="••••••••••••••••" className={inputCls} />
           </div>
 
           <div className="flex items-center gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="cursor-pointer flex-1 rounded-xl border border-white/[0.09] py-2.5 text-[12px] text-white/50 hover:text-white/85 hover:bg-white/[0.04] transition-colors">
+              className="cursor-pointer flex-1 rounded-xl border border-border/70 py-2.5 text-[12px] text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.04] transition-colors">
               Cancelar
             </button>
             <button type="submit"
@@ -449,7 +401,7 @@ function AsaasSection({ integration }: { integration: Integration | null }) {
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+    <div className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] p-4 space-y-3">
       <AnimatePresence>
         {saveAsaas.isSuccess && (
           <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -467,11 +419,11 @@ function AsaasSection({ integration }: { integration: Integration | null }) {
 
       <form onSubmit={handleSave} className="space-y-3">
         <div>
-          <label className="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">
+          <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">
             {isConnected ? "Nova API Key (substituir)" : "API Key"}
           </label>
           <input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); saveAsaas.reset() }} placeholder="$aact_MzkwODA..." className={inputCls} />
-          <p className="text-[10px] text-white/25 mt-1">Sandbox: asaas.com &rarr; Integrações &rarr; Chave da API</p>
+          <p className="text-[10px] text-muted-foreground/40 mt-1">Sandbox: asaas.com &rarr; Integrações &rarr; Chave da API</p>
         </div>
         <div className="flex items-center gap-2">
           <button type="submit" disabled={saveAsaas.isPending || !apiKey.trim()}
@@ -497,23 +449,12 @@ export function ConexoesTab() {
   const { data: me } = useMe()
   const isAdmin = me?.role === "ADMIN"
   const { data: integrations, isLoading, isError, refetch } = useIntegrations()
-  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null)
+  const [expandedInstanceId, setExpandedInstanceId] = useState<string | null>(null)
   const [showNewInstance, setShowNewInstance] = useState(false)
 
   const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId)
   const asaasIntegration = (integrations ?? []).find((i) => i.provider === "asaas") ?? null
   const hasAsaas = !!(asaasIntegration?.isActive && asaasIntegration?.hasApiKey)
-  const selectedInstance = zapiInstances.find((i) => i.instanceId === selectedInstanceId) ?? null
-
-  // Auto-select first instance if none selected
-  useEffect(() => {
-    if (!selectedInstanceId && zapiInstances.length > 0) {
-      setSelectedInstanceId(zapiInstances[0]!.instanceId)
-    }
-    if (selectedInstanceId && !zapiInstances.find((i) => i.instanceId === selectedInstanceId)) {
-      setSelectedInstanceId(zapiInstances[0]?.instanceId ?? null)
-    }
-  }, [zapiInstances, selectedInstanceId])
 
   if (me && !isAdmin) {
     return (
@@ -535,7 +476,7 @@ export function ConexoesTab() {
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
             <Sparkle className="h-5 w-5 text-accent" />
           </motion.div>
-          <p className="text-[11px] text-white/50">Carregando integrações...</p>
+          <p className="text-[11px] text-muted-foreground/70">Carregando integrações...</p>
         </div>
       </div>
     )
@@ -543,9 +484,9 @@ export function ConexoesTab() {
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-14 rounded-2xl border border-dashed border-white/[0.07] gap-3">
-        <PlugsConnected className="h-7 w-7 text-white/20" weight="duotone" />
-        <p className="text-[12px] text-white/50">Erro ao carregar integrações</p>
+      <div className="flex flex-col items-center justify-center py-14 rounded-2xl border border-dashed border-border/50 gap-3">
+        <PlugsConnected className="h-7 w-7 text-muted-foreground/30" weight="duotone" />
+        <p className="text-[12px] text-muted-foreground/70">Erro ao carregar integrações</p>
         <button onClick={() => refetch()} className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-3.5 py-2 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all">
           Tentar novamente
         </button>
@@ -581,37 +522,27 @@ export function ConexoesTab() {
         />
 
         {zapiInstances.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {/* Instance cards */}
-            <div className="space-y-2">
-              <AnimatePresence initial={false}>
-                {zapiInstances.map((inst) => (
-                  <InstanceCard
-                    key={inst.instanceId}
-                    instance={inst}
-                    isSelected={selectedInstanceId === inst.instanceId}
-                    onSelect={() => setSelectedInstanceId(inst.instanceId)}
-                  />
-                ))}
-              </AnimatePresence>
-            </div>
-
-            {/* Detail panel for selected instance */}
-            <AnimatePresence mode="wait">
-              {selectedInstance && (
-                <InstanceDetailPanel key={selectedInstance.instanceId} instance={selectedInstance} />
-              )}
+          <div className="rounded-xl border border-border/60 bg-foreground/[0.01] overflow-hidden divide-y divide-white/[0.05]">
+            <AnimatePresence initial={false}>
+              {zapiInstances.map((inst) => (
+                <InstanceRow
+                  key={inst.instanceId}
+                  instance={inst}
+                  isExpanded={expandedInstanceId === inst.instanceId}
+                  onToggle={() => setExpandedInstanceId((v) => v === inst.instanceId ? null : inst.instanceId)}
+                />
+              ))}
             </AnimatePresence>
           </div>
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-white/[0.07] gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.02]">
-              <WhatsappLogo className="h-5 w-5 text-white/25" weight="fill" />
+            className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-border/50 gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/50 bg-foreground/[0.02]">
+              <WhatsappLogo className="h-5 w-5 text-muted-foreground/40" weight="fill" />
             </div>
             <div className="text-center">
-              <p className="text-[13px] font-bold text-white/85">Nenhuma instância WhatsApp</p>
-              <p className="text-[11px] text-white/40 mt-0.5">Adicione uma instância Z-API para começar a receber mensagens</p>
+              <p className="text-[13px] font-bold text-foreground/85">Nenhuma instância WhatsApp</p>
+              <p className="text-[11px] text-muted-foreground/60 mt-0.5">Adicione uma instância Z-API para começar a receber mensagens</p>
             </div>
             <button onClick={() => setShowNewInstance(true)}
               className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-3.5 py-2 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all">

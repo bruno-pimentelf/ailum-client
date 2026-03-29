@@ -440,7 +440,7 @@ export function HowItWorks() {
                   className={`flex items-center gap-2 shrink-0 px-4 py-2.5 rounded-full border text-[13px] font-medium transition-all duration-300 ${
                     isActive
                       ? "border-accent/25 bg-accent/[0.06] text-accent"
-                      : "border-white/[0.06] bg-white/[0.02] text-white/88"
+                      : "border-foreground/[0.06] bg-foreground/[0.02] text-foreground/85"
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" weight="fill" />
@@ -458,7 +458,7 @@ export function HowItWorks() {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.4, ease }}
             >
-              <p className="text-[13px] leading-relaxed text-white/85 mb-5">
+              <p className="text-[13px] leading-relaxed text-foreground/85 mb-5">
                 {steps[activeStep].description}
               </p>
               {steps[activeStep].demo(isInView)}
@@ -503,21 +503,21 @@ export function HowItWorks() {
                 className={`relative text-left p-6 rounded-2xl border transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
                   isActive
                     ? "border-accent/20 bg-accent/[0.04] shadow-[0_0_30px_rgba(0,181,212,0.05)]"
-                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.1] hover:bg-white/[0.03]"
+                    : "border-foreground/[0.06] bg-foreground/[0.02] hover:border-white/[0.1] hover:bg-foreground/[0.03]"
                 }`}
               >
 
                 <div className="flex items-center gap-3 mb-3">
                   <span
                     className={`text-[11px] font-mono tabular-nums transition-colors duration-300 ${
-                      isActive ? "text-accent" : "text-white/90"
+                      isActive ? "text-accent" : "text-foreground"
                     }`}
                   >
                     {step.number}
                   </span>
                   <Icon
                     className={`h-4 w-4 transition-colors duration-300 ${
-                      isActive ? "text-accent" : "text-white/90"
+                      isActive ? "text-accent" : "text-foreground"
                     }`}
                     weight="fill"
                   />
@@ -525,7 +525,7 @@ export function HowItWorks() {
                 <h3 className="font-display text-[15px] font-bold tracking-tight text-foreground">
                   {step.title}
                 </h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/85">
+                <p className="mt-2 text-[13px] leading-relaxed text-foreground/85">
                   {step.description}
                 </p>
 
@@ -544,7 +544,7 @@ export function HowItWorks() {
 
         {/* Demo showcase area */}
         <FadeIn delay={0.3} direction="none">
-        <div className="rounded-[2rem] bg-white/[0.02] p-2 ring-1 ring-white/[0.06]">
+        <div className="rounded-[2rem] bg-foreground/[0.02] p-2 ring-1 ring-white/[0.06]">
           <div className="rounded-[calc(2rem-0.5rem)] overflow-hidden min-h-[440px] flex items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.div

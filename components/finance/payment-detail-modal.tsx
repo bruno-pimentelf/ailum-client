@@ -70,7 +70,7 @@ function InfoBlock({
   value: string
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-3">
+    <div className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.015] p-3">
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="h-3 w-3 text-muted-foreground" />
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
@@ -136,12 +136,12 @@ export function PaymentDetailModal({ open, onClose, payment, contactName }: Paym
         exit={{ opacity: 0, scale: 0.97, y: 10 }}
         transition={{ duration: 0.3, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[1100px] h-[calc(100vh-1rem)] sm:h-[calc(100vh-1.5rem)] rounded-2xl border border-white/[0.08] bg-background shadow-2xl overflow-hidden flex flex-row"
+        className="w-full max-w-[1100px] h-[calc(100vh-1rem)] sm:h-[calc(100vh-1.5rem)] rounded-2xl border border-border/60 bg-background shadow-2xl overflow-hidden flex flex-row"
       >
         {/* ═══ Left panel — Payment Info ═══ */}
-        <div className="w-[380px] shrink-0 flex flex-col border-r border-white/[0.06] overflow-hidden">
+        <div className="w-[380px] shrink-0 flex flex-col border-r border-foreground/[0.06] overflow-hidden">
           {/* Header */}
-          <div className="px-5 pt-5 pb-4 border-b border-white/[0.06] shrink-0">
+          <div className="px-5 pt-5 pb-4 border-b border-foreground/[0.06] shrink-0">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-accent/[0.08] border border-accent/10 flex items-center justify-center shrink-0">
@@ -161,7 +161,7 @@ export function PaymentDetailModal({ open, onClose, payment, contactName }: Paym
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 -m-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer"
+                className="p-1.5 -m-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04] transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" weight="bold" />
               </button>
@@ -172,11 +172,11 @@ export function PaymentDetailModal({ open, onClose, payment, contactName }: Paym
               <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${statusCfg.bg} ${statusCfg.color}`}>
                 {statusCfg.label}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
                 <CurrencyDollar className="h-2.5 w-2.5" />
                 {formatCurrency(payment.value)}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-2 py-0.5 text-[10px] text-muted-foreground">
                 <Receipt className="h-2.5 w-2.5" />
                 {BILLING_LABELS[payment.billingType] ?? payment.billingType}
               </span>
@@ -212,8 +212,8 @@ export function PaymentDetailModal({ open, onClose, payment, contactName }: Paym
             )}
 
             {!contactId && (
-              <div className="rounded-xl border border-white/[0.04] bg-white/[0.01] p-3">
-                <p className="text-[11px] text-white/30 leading-relaxed">
+              <div className="rounded-xl border border-foreground/[0.04] bg-foreground/[0.01] p-3">
+                <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
                   Esta cobrança não está vinculada a um contato no sistema.
                 </p>
               </div>

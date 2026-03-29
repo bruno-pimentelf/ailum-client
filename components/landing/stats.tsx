@@ -21,7 +21,7 @@ export function Stats() {
               <div
                 className={`flex flex-col items-center text-center px-4 py-6 lg:py-0 ${
                   i < metrics.length - 1
-                    ? "md:border-r md:border-white/[0.06]"
+                    ? "md:border-r md:border-foreground/[0.06]"
                     : ""
                 }`}
               >
@@ -32,7 +32,7 @@ export function Stats() {
                     prefix={metric.prefix || ""}
                   />
                 </span>
-                <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-white/85">
+                <span className="mt-3 text-[11px] font-medium uppercase tracking-[0.15em] text-foreground/85">
                   {metric.label}
                 </span>
               </div>

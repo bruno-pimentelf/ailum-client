@@ -3,6 +3,7 @@ import { Outfit, DM_Sans, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { LanguageProvider } from "@/components/providers/language-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -34,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <head>
         <Script id="meta-pixel" strategy="afterInteractive">{`
           !function(f,b,e,v,n,t,s)
@@ -61,7 +62,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <QueryProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          <ThemeProvider defaultTheme="dark">
+            <LanguageProvider>{children}</LanguageProvider>
+          </ThemeProvider>
         </QueryProvider>
       </body>
     </html>

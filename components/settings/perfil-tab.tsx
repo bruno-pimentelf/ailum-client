@@ -8,13 +8,56 @@ import {
   IdentificationCard,
   Buildings,
   Warning,
+  Sun,
+  Moon,
+  Monitor,
 } from "@phosphor-icons/react"
 import { useMe } from "@/hooks/use-me"
+import { useTheme, type Theme } from "@/components/providers/theme-provider"
 
 const ROLE_LABEL: Record<string, { label: string; icon: React.ElementType; bg: string; border: string; text: string }> = {
   ADMIN:        { label: "Admin",        icon: Crown,              bg: "bg-violet-500/10", border: "border-violet-500/25", text: "text-violet-300" },
   PROFESSIONAL: { label: "Profissional", icon: Stethoscope,        bg: "bg-cyan-500/10",   border: "border-cyan-500/25",   text: "text-cyan-300"   },
   SECRETARY:    { label: "Secretária",   icon: IdentificationCard, bg: "bg-amber-500/10",  border: "border-amber-500/25",  text: "text-amber-300"  },
+}
+
+const THEME_OPTIONS: { value: Theme; label: string; icon: React.ElementType }[] = [
+  { value: "light", label: "Claro", icon: Sun },
+  { value: "dark",  label: "Escuro", icon: Moon },
+  { value: "system", label: "Sistema", icon: Monitor },
+]
+
+function ThemeSelector() {
+  const { theme, setTheme } = useTheme()
+
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/30 p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Sun className="h-4 w-4 text-muted-foreground" weight="duotone" />
+        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Aparência</span>
+      </div>
+      <div className="flex gap-2">
+        {THEME_OPTIONS.map((opt) => {
+          const Icon = opt.icon
+          const active = theme === opt.value
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setTheme(opt.value)}
+              className={`cursor-pointer flex-1 flex flex-col items-center gap-2 rounded-xl border py-3.5 transition-all ${
+                active
+                  ? "border-accent/40 bg-accent/10 text-accent"
+                  : "border-border/50 bg-muted/10 text-muted-foreground/60 hover:border-border hover:text-muted-foreground"
+              }`}
+            >
+              <Icon className="h-5 w-5" weight={active ? "fill" : "regular"} />
+              <span className="text-[11px] font-semibold">{opt.label}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 export function PerfilTab() {
@@ -124,6 +167,9 @@ export function PerfilTab() {
           </div>
         </div>
       </div>
+
+      {/* Aparência */}
+      <ThemeSelector />
 
       <p className="text-[11px] text-muted-foreground/85 text-right">
         Para alterar nome ou e-mail, entre em contato com o suporte.

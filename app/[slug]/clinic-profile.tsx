@@ -186,7 +186,7 @@ export function ClinicProfile({ clinic }: Props) {
                       {service.professionals.slice(0, 3).map((p) => (
                         <span
                           key={p.id}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1 text-[11px] text-muted-foreground"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-foreground/5 px-2.5 py-1 text-[11px] text-muted-foreground"
                         >
                           {p.avatarUrl ? (
                             <span className="relative h-5 w-5 rounded-full overflow-hidden">
@@ -247,7 +247,7 @@ export function ClinicProfile({ clinic }: Props) {
                   transition={{ duration: 0.6, delay: i * 0.06, ease }}
                   className="group flex gap-5 rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-sm hover:border-accent/20 hover:bg-card/50 transition-all duration-300"
                 >
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white/5">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-foreground/5">
                     {pro.avatarUrl ? (
                       <Image
                         src={pro.avatarUrl}

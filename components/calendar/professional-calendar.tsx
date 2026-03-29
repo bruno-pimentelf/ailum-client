@@ -86,8 +86,8 @@ function CalendarToast({
       transition={{ duration: 0.2 }}
       className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2.5 rounded-xl px-4 py-2.5 shadow-xl border ${
         isError
-          ? "border-rose-500/25 bg-rose-950/90"
-          : "border-amber-500/25 bg-amber-950/90"
+          ? "border-rose-500/25 bg-destructive/15"
+          : "border-amber-500/25 bg-warning/15"
       }`}
     >
       {isError ? (
@@ -98,7 +98,7 @@ function CalendarToast({
       <p className={`text-[12px] font-medium ${isError ? "text-rose-400" : "text-amber-300"}`}>
         {message}
       </p>
-      <button onClick={onDismiss} className="ml-1 text-white/90 hover:text-white/85 transition-colors">
+      <button onClick={onDismiss} className="ml-1 text-foreground hover:text-foreground/85 transition-colors">
         <X className="h-3.5 w-3.5" weight="bold" />
       </button>
     </motion.div>
@@ -179,8 +179,8 @@ function PaidBadge({ paid }: { paid: boolean }) {
     <span
       className={`inline-flex items-center rounded-full border px-1.5 py-px text-[8px] font-bold tracking-wide shrink-0 ${
         paid
-          ? "bg-white/[0.06] border-white/[0.12] text-white/85"
-          : "bg-white/[0.02] border-white/[0.06] text-white/85"
+          ? "bg-foreground/[0.06] border-border text-foreground/85"
+          : "bg-foreground/[0.02] border-foreground/[0.06] text-foreground/85"
       }`}
     >
       {paid ? "Pago" : "Pendente"}
@@ -211,17 +211,17 @@ function BlockDayModal({
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-background shadow-2xl p-6"
+        className="w-full max-w-sm rounded-2xl border border-border/60 bg-background shadow-2xl p-6"
       >
-        <h3 className="text-[15px] font-bold text-white/90 flex items-center gap-2">
+        <h3 className="text-[15px] font-bold text-foreground flex items-center gap-2">
           <Lock className="h-4 w-4 text-amber-400" />
           Bloquear dia
         </h3>
-        <p className="text-[12px] text-white/85 mt-2">
+        <p className="text-[12px] text-foreground/85 mt-2">
           {WEEKDAYS[date.getDay()]}, {date.getDate()} de {MONTHS_PT[date.getMonth()]}
         </p>
         <div className="mt-4">
-          <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1.5">
+          <label className="block text-[10px] font-bold text-foreground/85 uppercase tracking-wider mb-1.5">
             Motivo (opcional)
           </label>
           <input
@@ -229,20 +229,20 @@ function BlockDayModal({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Ex: Consulta externa"
-            className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50"
+            className="w-full h-10 rounded-xl border border-border/70 bg-foreground/[0.03] px-3 text-[13px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-accent/50"
           />
         </div>
         <div className="flex gap-2 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/90 text-[13px] font-semibold hover:bg-white/[0.04]"
+            className="flex-1 h-10 rounded-xl border border-border/60 text-foreground text-[13px] font-semibold hover:bg-foreground/[0.04]"
           >
             Cancelar
           </button>
           <button
             onClick={() => onConfirm(reason.trim() || undefined)}
             disabled={isPending}
-            className="flex-1 h-10 rounded-xl bg-amber-500/80 text-white text-[13px] font-bold hover:bg-amber-500 disabled:opacity-50"
+            className="flex-1 h-10 rounded-xl bg-amber-500/80 text-foreground text-[13px] font-bold hover:bg-amber-500 disabled:opacity-50"
           >
             {isPending ? "…" : "Bloquear"}
           </button>
@@ -282,38 +282,38 @@ function BlockRangeModal({
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-background shadow-2xl p-6"
+        className="w-full max-w-sm rounded-2xl border border-border/60 bg-background shadow-2xl p-6"
       >
-        <h3 className="text-[15px] font-bold text-white/90 flex items-center gap-2">
+        <h3 className="text-[15px] font-bold text-foreground flex items-center gap-2">
           <Lock className="h-4 w-4 text-amber-400" />
           Bloquear período
         </h3>
-        <p className="text-[12px] text-white/85 mt-2">Ex.: férias, licença</p>
+        <p className="text-[12px] text-foreground/85 mt-2">Ex.: férias, licença</p>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-foreground/85 uppercase tracking-wider mb-1">
               De
             </label>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px]"
+              className="w-full h-10 rounded-xl border border-border/70 bg-foreground/[0.03] px-3 text-[13px]"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-foreground/85 uppercase tracking-wider mb-1">
               Até
             </label>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px]"
+              className="w-full h-10 rounded-xl border border-border/70 bg-foreground/[0.03] px-3 text-[13px]"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-white/85 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-foreground/85 uppercase tracking-wider mb-1">
               Motivo (opcional)
             </label>
             <input
@@ -321,21 +321,21 @@ function BlockRangeModal({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ex: Férias"
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3 text-[13px]"
+              className="w-full h-10 rounded-xl border border-border/70 bg-foreground/[0.03] px-3 text-[13px]"
             />
           </div>
         </div>
         <div className="flex gap-2 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 h-10 rounded-xl border border-white/[0.08] text-white/90 text-[13px] font-semibold"
+            className="flex-1 h-10 rounded-xl border border-border/60 text-foreground text-[13px] font-semibold"
           >
             Cancelar
           </button>
           <button
             onClick={() => from && to && onConfirm(from, to, reason.trim() || undefined)}
             disabled={isPending || !from || !to}
-            className="flex-1 h-10 rounded-xl bg-amber-500/80 text-white text-[13px] font-bold disabled:opacity-50"
+            className="flex-1 h-10 rounded-xl bg-amber-500/80 text-foreground text-[13px] font-bold disabled:opacity-50"
           >
             {isPending ? "…" : "Bloquear"}
           </button>
@@ -403,33 +403,33 @@ function QuickScheduleCard({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -4, scale: 0.97 }}
         transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-        className="fixed z-50 rounded-xl border border-white/[0.08] bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/40"
+        className="fixed z-50 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/40"
         style={{ left: pos.left, top: pos.top, width: mode === "schedule" ? 340 : 240 }}
       >
         {/* Header */}
         <div className="px-4 pt-4 pb-3">
-          <p className="text-[22px] font-bold tracking-tight text-white leading-none">
+          <p className="text-[22px] font-bold tracking-tight text-foreground leading-none">
             {time}
           </p>
-          <p className="text-[12px] text-white/35 mt-1.5 leading-snug">
+          <p className="text-[12px] text-muted-foreground/50 mt-1.5 leading-snug">
             {dayLabel}
           </p>
         </div>
 
-        <div className="h-px bg-white/[0.06]" />
+        <div className="h-px bg-foreground/[0.06]" />
 
         {mode === "pick" ? (
           <div className="p-1.5">
             <button
               onClick={() => setMode("schedule")}
-              className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-white/90 hover:bg-accent/10 transition-colors duration-150"
+              className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-foreground hover:bg-accent/10 transition-colors duration-150"
             >
               <Plus className="h-4 w-4 text-accent" weight="bold" />
               Agendar consulta
             </button>
             <button
               onClick={() => { onBlock(); onClose() }}
-              className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-white/90 hover:bg-white/[0.06] transition-colors duration-150"
+              className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-foreground hover:bg-foreground/[0.06] transition-colors duration-150"
             >
               <Lock className="h-4 w-4 text-amber-400/70" weight="fill" />
               Bloquear horário
@@ -509,18 +509,18 @@ function InlineScheduleForm({
       {selectedContact ? (
         <div className="flex items-center justify-between rounded-lg border border-accent/30 bg-accent/[0.06] px-3 py-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="h-6 w-6 rounded-full bg-white/[0.08] flex items-center justify-center text-[9px] font-bold text-white/80 shrink-0">
+            <div className="h-6 w-6 rounded-full bg-foreground/[0.08] flex items-center justify-center text-[9px] font-bold text-foreground/80 shrink-0">
               {(selectedContact.name ?? "?").slice(0, 2).toUpperCase()}
             </div>
-            <span className="text-[12px] font-medium text-white/85 truncate">{selectedContact.name}</span>
+            <span className="text-[12px] font-medium text-foreground/85 truncate">{selectedContact.name}</span>
           </div>
-          <button onClick={() => setSelectedContact(null)} className="text-white/40 hover:text-white/70 p-0.5">
+          <button onClick={() => setSelectedContact(null)} className="text-muted-foreground/60 hover:text-muted-foreground p-0.5">
             <X className="h-3 w-3" />
           </button>
         </div>
       ) : (
         <div className="relative">
-          <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
+          <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
           <input
             ref={searchRef}
             type="text"
@@ -528,22 +528,22 @@ function InlineScheduleForm({
             onChange={(e) => setPatientSearch(e.target.value)}
             placeholder="Buscar paciente..."
             autoFocus
-            className="w-full h-9 rounded-lg border border-white/[0.08] bg-white/[0.03] pl-8 pr-3 text-[12px] text-white/90 placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-accent/40"
+            className="w-full h-9 rounded-lg border border-border/60 bg-foreground/[0.03] pl-8 pr-3 text-[12px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/40"
           />
           {patientSearch.length > 0 && contacts.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-1 rounded-lg border border-white/[0.08] bg-background/95 backdrop-blur-xl overflow-hidden z-10 max-h-[140px] overflow-y-auto">
+            <div className="absolute left-0 right-0 top-full mt-1 rounded-lg border border-border/60 bg-background/95 backdrop-blur-xl overflow-hidden z-10 max-h-[140px] overflow-y-auto">
               {contacts.slice(0, 4).map((c: { id: string; name: string | null; phone: string | null }) => (
                 <button
                   key={c.id}
                   onClick={() => { setSelectedContact(c); setPatientSearch("") }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-white/[0.04] transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-foreground/[0.04] transition-colors"
                 >
-                  <div className="h-6 w-6 shrink-0 rounded-full bg-white/[0.08] flex items-center justify-center text-[9px] font-bold text-white/80">
+                  <div className="h-6 w-6 shrink-0 rounded-full bg-foreground/[0.08] flex items-center justify-center text-[9px] font-bold text-foreground/80">
                     {(c.name ?? c.phone ?? "?").slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[12px] font-medium text-white/85 truncate">{c.name}</p>
-                    <p className="text-[10px] text-white/40 truncate">{c.phone}</p>
+                    <p className="text-[12px] font-medium text-foreground/85 truncate">{c.name}</p>
+                    <p className="text-[10px] text-muted-foreground/60 truncate">{c.phone}</p>
                   </div>
                 </button>
               ))}
@@ -562,7 +562,7 @@ function InlineScheduleForm({
               className={`rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all ${
                 serviceId === s.id
                   ? "bg-accent/15 border border-accent/30 text-accent"
-                  : "border border-white/[0.08] text-white/50 hover:text-white/70 hover:border-white/[0.12]"
+                  : "border border-border/60 text-muted-foreground/70 hover:text-muted-foreground hover:border-border"
               }`}
             >
               {s.name} · {s.durationMin}min
@@ -665,21 +665,21 @@ function DayContextMenu({
       <motion.div
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed z-50 min-w-[180px] rounded-xl border border-white/[0.08] bg-background/95 backdrop-blur py-1 shadow-xl"
+        className="fixed z-50 min-w-[180px] rounded-xl border border-border/60 bg-background/95 backdrop-blur py-1 shadow-xl"
         style={{ left: x, top: y }}
       >
         <button
           onClick={() => { onSchedule(); onClose() }}
-          className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-foreground hover:bg-foreground/[0.06]"
         >
           <CalendarBlank className="h-3.5 w-3.5 text-accent" weight="duotone" />
           Agendar consulta
         </button>
-        <div className="mx-3 my-1 border-t border-white/[0.06]" />
+        <div className="mx-3 my-1 border-t border-foreground/[0.06]" />
         {slot && !isBlocked && (
           <button
             onClick={() => { onBlockSlot(); onClose() }}
-            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
+            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-foreground hover:bg-foreground/[0.06]"
           >
             <Lock className="h-3.5 w-3.5 text-amber-400" />
             Bloquear {slot.startTime}–{slot.endTime}
@@ -688,7 +688,7 @@ function DayContextMenu({
         {isBlocked ? (
           <button
             onClick={() => { onUnblockDay(); onClose() }}
-            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
+            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-foreground hover:bg-foreground/[0.06]"
           >
             <LockOpen className="h-3.5 w-3.5 text-emerald-400" />
             Desbloquear dia
@@ -696,7 +696,7 @@ function DayContextMenu({
         ) : (
           <button
             onClick={() => { onBlockDay(); onClose() }}
-            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
+            className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-foreground hover:bg-foreground/[0.06]"
           >
             <Lock className="h-3.5 w-3.5 text-amber-400" />
             Bloquear dia
@@ -704,7 +704,7 @@ function DayContextMenu({
         )}
         <button
           onClick={() => { onBlockRange(); onClose() }}
-          className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-white/90 hover:bg-white/[0.06]"
+          className="w-full flex items-center gap-2 px-4 py-2 text-left text-[12px] text-foreground hover:bg-foreground/[0.06]"
         >
           <Lock className="h-3.5 w-3.5 text-amber-400" />
           Bloquear período
@@ -852,7 +852,7 @@ export function ProfessionalCalendar({
             {onBackToAll && (
               <button
                 onClick={onBackToAll}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-white/[0.08] text-white/85 hover:text-white/90 hover:bg-white/[0.04] text-[12px] font-medium"
+                className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-border/60 text-foreground/85 hover:text-foreground hover:bg-foreground/[0.04] text-[12px] font-medium"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Ver todos
@@ -863,7 +863,7 @@ export function ProfessionalCalendar({
                 onClick={() =>
                   setSelectedDate((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - (viewMode === "week" ? 7 : 1)))
                 }
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-foreground/85 hover:text-foreground/85"
               >
                 <CaretLeft className="h-3.5 w-3.5" />
               </button>
@@ -871,12 +871,12 @@ export function ProfessionalCalendar({
                 onClick={() =>
                   setSelectedDate((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + (viewMode === "week" ? 7 : 1)))
                 }
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-white/85 hover:text-white/85"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-foreground/85 hover:text-foreground/85"
               >
                 <CaretRight className="h-3.5 w-3.5" />
               </button>
             </div>
-            <h1 className="text-[16px] font-black text-white/90">
+            <h1 className="text-[16px] font-black text-foreground">
               {viewMode === "week"
                 ? `Semana de ${weekDays[0]?.getDate()} – ${weekDays[6]?.getDate()} ${MONTHS_PT[selectedDate.getMonth()]}`
                 : `${MONTHS_PT[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`}
@@ -892,19 +892,19 @@ export function ProfessionalCalendar({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5">
+            <div className="flex items-center rounded-lg border border-border/60 bg-foreground/[0.02] p-0.5">
               {(["week", "month"] as ViewMode[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => setViewMode(m)}
                   className={`relative px-3 py-1 text-[11px] font-bold rounded-md ${
-                    viewMode === m ? "text-white/90" : "text-white/85 hover:text-white/85"
+                    viewMode === m ? "text-foreground" : "text-foreground/85 hover:text-foreground/85"
                   }`}
                 >
                   {viewMode === m && (
                     <motion.div
                       layoutId="view-pill-pro"
-                      className="absolute inset-0 bg-white/[0.07] rounded-md"
+                      className="absolute inset-0 bg-foreground/[0.07] rounded-md"
                       transition={{ duration: 0.25, ease }}
                     />
                   )}
@@ -931,7 +931,7 @@ export function ProfessionalCalendar({
         {/* Edit hint */}
         {canEdit && (
           <div className="px-6 pb-3 text-[10px]">
-            <span className="text-white/40">Clique no horário para agendar</span>
+            <span className="text-muted-foreground/60">Clique no horário para agendar</span>
           </div>
         )}
 
@@ -945,7 +945,7 @@ export function ProfessionalCalendar({
                   key={p.id}
                   onClick={() => onSwitchProfessional(p.id)}
                   className={`relative shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition-all duration-200 cursor-pointer ${
-                    active ? "text-white/90" : "text-white/50 hover:text-white/70"
+                    active ? "text-foreground" : "text-muted-foreground/70 hover:text-muted-foreground"
                   }`}
                 >
                   {active && (
@@ -978,9 +978,9 @@ export function ProfessionalCalendar({
         ) : viewMode === "week" ? (
           <>
           {/* Legend */}
-          <div className="flex items-center gap-4 px-4 py-1.5 border-b border-white/[0.04] text-[10px] text-white/40">
+          <div className="flex items-center gap-4 px-4 py-1.5 border-b border-foreground/[0.04] text-[10px] text-muted-foreground/60">
             <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-background border border-white/[0.08]" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-background border border-border/60" />
               Disponível
             </span>
             <span className="flex items-center gap-1.5">
@@ -997,7 +997,7 @@ export function ProfessionalCalendar({
             </span>
           </div>
 
-          <div className="flex border-b border-white/[0.14] min-w-[800px] shrink-0">
+          <div className="flex border-b border-border min-w-[800px] shrink-0">
             <div className="w-14 shrink-0" />
             <div className="flex-1 grid grid-cols-7">
             {weekDays.map((d) => {
@@ -1015,16 +1015,16 @@ export function ProfessionalCalendar({
                       })
                     }
                   }}
-                  className={`py-2 flex flex-col items-center gap-0.5 border-l border-white/[0.10] ${
-                    today ? "bg-accent/5" : "hover:bg-white/[0.02]"
+                  className={`py-2 flex flex-col items-center gap-0.5 border-l border-border/80 ${
+                    today ? "bg-accent/5" : "hover:bg-foreground/[0.02]"
                   }`}
                 >
-                  <span className="text-[9px] font-extrabold uppercase text-white/90">
+                  <span className="text-[9px] font-extrabold uppercase text-foreground">
                     {WEEKDAYS[d.getDay()]}
                   </span>
                   <span
                     className={`h-6 w-6 flex items-center justify-center rounded-full text-[12px] font-bold ${
-                      today ? "bg-accent text-accent-foreground" : "text-white/85"
+                      today ? "bg-accent text-accent-foreground" : "text-foreground/85"
                     }`}
                   >
                     {d.getDate()}
@@ -1067,7 +1067,7 @@ export function ProfessionalCalendar({
                     className="flex items-start justify-end pr-2 pt-0.5 -mt-[1px]"
                     style={{ height: HOUR_HEIGHT }}
                   >
-                    <span className="text-[9px] font-bold text-white/90 font-mono tabular-nums">
+                    <span className="text-[9px] font-bold text-foreground font-mono tabular-nums">
                       {String(hour).padStart(2, "0")}:00
                     </span>
                   </div>
@@ -1087,7 +1087,7 @@ export function ProfessionalCalendar({
                   return (
                     <div
                       key={d.toISOString()}
-                      className="relative border-l border-white/[0.10]"
+                      className="relative border-l border-border/80"
                       style={{
                         minHeight: DAY_HEIGHT,
                         cursor: canEdit && !dayAvail.blocked ? "pointer" : undefined,
@@ -1113,7 +1113,7 @@ export function ProfessionalCalendar({
                       {HOURS.slice(0, -1).map((hour) => (
                         <div key={hour}>
                           <div
-                            className="absolute left-0 right-0 border-t border-white/[0.06]"
+                            className="absolute left-0 right-0 border-t border-foreground/[0.06]"
                             style={{ top: (hour - 7) * HOUR_HEIGHT }}
                           />
                           <div
@@ -1174,16 +1174,16 @@ export function ProfessionalCalendar({
                             }}
                             className={`absolute left-1 right-1 rounded-md px-1.5 py-1 text-left cursor-pointer hover:ring-2 hover:ring-accent/40 transition-all overflow-hidden z-[2] ${
                               apt.status === "confirmed"
-                                ? "bg-blue-500/50 border border-blue-500/60 text-white/95"
+                                ? "bg-blue-500/50 border border-blue-500/60 text-foreground"
                                 : apt.status === "cancelled"
-                                  ? "bg-white/[0.04] border border-white/10 opacity-40 line-through"
-                                  : "border border-dashed border-white/30 bg-white/[0.06] text-white/90"
+                                  ? "bg-foreground/[0.04] border border-border/70 opacity-40 line-through"
+                                  : "border border-dashed border-white/30 bg-foreground/[0.06] text-foreground"
                             }`}
                             style={{ top, height: h }}
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span className={`h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-black shrink-0 ${
-                                apt.status === "confirmed" ? "bg-blue-400/30 text-white/90" : "bg-white/10 text-white/60"
+                                apt.status === "confirmed" ? "bg-blue-400/30 text-foreground" : "bg-foreground/10 text-muted-foreground/80"
                               }`}>
                                 {initial}
                               </span>
@@ -1225,11 +1225,11 @@ export function ProfessionalCalendar({
           </>
         ) : (
           <div className="p-6">
-            <div className="grid grid-cols-7 border-b border-white/[0.14]">
+            <div className="grid grid-cols-7 border-b border-border">
               {WEEKDAYS.map((d) => (
                 <div
                   key={d}
-                  className="py-2 text-center text-[10px] font-extrabold uppercase tracking-widest text-white/90"
+                  className="py-2 text-center text-[10px] font-extrabold uppercase tracking-widest text-foreground"
                 >
                   {d}
                 </div>
@@ -1248,7 +1248,7 @@ export function ProfessionalCalendar({
                 const today = new Date()
                 return days.map((day, i) => {
                   if (day === null) {
-                    return <div key={`empty-${i}`} className="border-b border-r border-white/[0.10] p-1" />
+                    return <div key={`empty-${i}`} className="border-b border-r border-border/80 p-1" />
                   }
                   const d = new Date(y, m, day)
                   const dayAvail = computeDayAvailability(d, opts)
@@ -1278,14 +1278,14 @@ export function ProfessionalCalendar({
                           setContextMenu({ date: d, x: rect.left, y: rect.top })
                         }
                       }}
-                      className={`flex flex-col gap-1 p-2 border-b border-r border-white/[0.10] text-left transition-colors ${
-                        canEdit ? "cursor-pointer hover:bg-white/[0.02]" : ""
+                      className={`flex flex-col gap-1 p-2 border-b border-r border-border/80 text-left transition-colors ${
+                        canEdit ? "cursor-pointer hover:bg-foreground/[0.02]" : ""
                       } ${isToday ? "bg-accent/10" : ""}`}
                     >
                       <div className="flex items-center justify-between">
                         <span
                           className={`h-6 w-6 flex items-center justify-center rounded-full text-[12px] font-bold ${
-                            isToday ? "bg-accent text-accent-foreground" : "text-white/90"
+                            isToday ? "bg-accent text-accent-foreground" : "text-foreground"
                           }`}
                         >
                           {day}
@@ -1316,14 +1316,14 @@ export function ProfessionalCalendar({
                                 ? "bg-blue-500/40 text-blue-200"
                                 : apt.status === "cancelled"
                                   ? "opacity-40 line-through"
-                                  : "bg-white/[0.06] text-white/85"
+                                  : "bg-foreground/[0.06] text-foreground/85"
                             }`}
                           >
                             {apt.time} {apt.patientName.split(" ")[0]}
                           </button>
                         ))}
                         {dayApts.length > 3 && (
-                          <span className="text-[8px] text-white/85">+{dayApts.length - 3}</span>
+                          <span className="text-[8px] text-foreground/85">+{dayApts.length - 3}</span>
                         )}
                       </div>
                     </div>

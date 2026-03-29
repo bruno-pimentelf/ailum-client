@@ -183,7 +183,7 @@ function formatWhatsAppText(text: string): React.ReactNode[] {
       result.push(text.slice(lastIndex, match.index))
     }
     if (match[1] != null) {
-      result.push(<code key={match.index} className="px-1 py-0.5 rounded bg-white/[0.06] text-[12px] font-mono">{match[1]}</code>)
+      result.push(<code key={match.index} className="px-1 py-0.5 rounded bg-foreground/[0.06] text-[12px] font-mono">{match[1]}</code>)
     } else if (match[2] != null) {
       result.push(<strong key={match.index} className="font-semibold">{match[2]}</strong>)
     } else if (match[3] != null) {
@@ -273,7 +273,7 @@ function Toast({ message, onDismiss }: { message: string; onDismiss: () => void 
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 4, scale: 0.96 }}
       transition={{ duration: 0.2, ease }}
-      className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-xl border border-rose-500/25 bg-[oklch(0.17_0.025_263)] px-4 py-2.5 shadow-xl"
+      className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-xl border border-rose-500/25 bg-overlay px-4 py-2.5 shadow-xl"
     >
       <Warning className="h-4 w-4 text-rose-400 shrink-0" weight="fill" />
       <p className="text-[12px] text-rose-400 font-medium">{message}</p>
@@ -556,10 +556,10 @@ function MediaViewerModal({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.98 }}
           transition={{ duration: 0.2, ease }}
-          className="relative w-full max-w-[840px] overflow-hidden rounded-2xl border border-white/10 bg-[oklch(0.18_0.02_260)] shadow-2xl"
+          className="relative w-full max-w-[840px] overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl"
         >
-          <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
-            <p className="truncate text-[12px] font-medium text-white/88">
+          <div className="flex items-center justify-between gap-2 border-b border-border/70 px-4 py-3">
+            <p className="truncate text-[12px] font-medium text-foreground/85">
               {media.type === "document" ? media.fileName || "Documento" : "Visualização de mídia"}
             </p>
             <div className="flex items-center gap-1.5">
@@ -567,7 +567,7 @@ function MediaViewerModal({
                 href={media.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/88 hover:text-white hover:bg-white/10 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground/85 hover:text-foreground hover:bg-foreground/10 transition-colors"
                 title="Abrir em nova aba"
               >
                 <ArrowsOutSimple className="h-4 w-4" />
@@ -576,7 +576,7 @@ function MediaViewerModal({
                 <a
                   href={media.url}
                   download={media.fileName ?? undefined}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/88 hover:text-white hover:bg-white/10 transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-foreground/85 hover:text-foreground hover:bg-foreground/10 transition-colors"
                   title="Baixar"
                 >
                   <DownloadSimple className="h-4 w-4" />
@@ -585,7 +585,7 @@ function MediaViewerModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-white/88 hover:text-white hover:bg-white/10 transition-colors"
+                className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-foreground/85 hover:text-foreground hover:bg-foreground/10 transition-colors"
                 aria-label="Fechar visualizador"
               >
                 <X className="h-4 w-4" />
@@ -607,7 +607,7 @@ function MediaViewerModal({
               </div>
             )}
             {media.type === "document" && (
-              <div className="h-[72vh] overflow-hidden rounded-xl border border-white/10 bg-black/20">
+              <div className="h-[72vh] overflow-hidden rounded-xl border border-border/70 bg-black/20">
                 <iframe src={media.url} className="h-full w-full" title={media.fileName || "Documento"} />
               </div>
             )}
@@ -731,7 +731,7 @@ function MessageBubble({
                 className="max-w-[260px] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
               />
               <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80" />
-              <span className="pointer-events-none absolute bottom-2 right-2 rounded-full border border-white/20 bg-black/40 px-2 py-1 text-[10px] text-white/85">
+              <span className="pointer-events-none absolute bottom-2 right-2 rounded-full border border-border bg-black/40 px-2 py-1 text-[10px] text-foreground/85">
                 Toque para ampliar
               </span>
             </button>
@@ -789,7 +789,7 @@ function MessageBubble({
             >
               <video controls={false} src={m.videoUrl} className="max-w-[260px] rounded-xl" />
               <span className="pointer-events-none absolute inset-0 bg-black/30 transition-colors duration-300 group-hover:bg-black/40" />
-              <span className="pointer-events-none absolute inset-x-0 bottom-2 mx-auto flex w-fit items-center gap-1.5 rounded-full border border-white/20 bg-black/45 px-2.5 py-1 text-[10px] text-white/85">
+              <span className="pointer-events-none absolute inset-x-0 bottom-2 mx-auto flex w-fit items-center gap-1.5 rounded-full border border-border bg-black/45 px-2.5 py-1 text-[10px] text-foreground/85">
                 <FilmStrip className="h-3 w-3" />
                 Abrir vídeo
               </span>
@@ -1028,7 +1028,7 @@ function MessageBubble({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.92, y: 4 }}
                   transition={{ duration: 0.15, ease }}
-                  className={`absolute bottom-full mb-1.5 z-30 rounded-xl border border-border/60 bg-popover/98 backdrop-blur-md shadow-xl shadow-black/30 p-2 ${
+                  className={`absolute bottom-full mb-1.5 z-30 rounded-xl border border-border/60 bg-popover/98 backdrop-blur-md shadow-xl shadow-foreground/8 p-2 ${
                     isMe ? "right-0" : "left-0"
                   }`}
                 >
@@ -1066,17 +1066,18 @@ function MessageBubble({
 
 // ─── Typing indicator ─────────────────────────────────────────────────────────
 
-function TypingIndicator({ label }: { label: string }) {
+function TypingIndicator({ label, side = "left" }: { label: string; side?: "left" | "right" }) {
+  const isRight = side === "right"
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 6 }}
       transition={{ duration: 0.2, ease }}
-      className="flex items-center gap-2"
+      className={`flex items-center gap-2 ${isRight ? "flex-row-reverse" : ""}`}
     >
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted/40" />
-      <div className="rounded-2xl rounded-bl-sm border border-border/60 bg-card px-4 py-2.5 flex items-center gap-1.5">
+      {!isRight && <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted/40" />}
+      <div className={`rounded-2xl border border-border/60 px-4 py-2.5 flex items-center gap-1.5 ${isRight ? "rounded-br-sm bg-accent/15" : "rounded-bl-sm bg-card"}`}>
         <span className="text-[11px] text-muted-foreground/85 italic">{label}</span>
         <span className="flex gap-0.5">
           {[0, 1, 2].map((i) => (
@@ -1126,7 +1127,7 @@ function TemplatePicker({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-xl border border-border/60 bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+        className="absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-xl border border-border/60 bg-popover shadow-xl shadow-foreground/8 overflow-hidden z-50"
       >
         <div className="px-4 py-6 text-center">
           <p className="text-[12px] text-muted-foreground/50">Nenhum template encontrado</p>
@@ -1141,7 +1142,7 @@ function TemplatePicker({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.15 }}
-      className="absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-xl border border-border/60 bg-popover shadow-xl shadow-black/30 overflow-hidden z-50"
+      className="absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-xl border border-border/60 bg-popover shadow-xl shadow-foreground/8 overflow-hidden z-50"
     >
       <div className="px-3 py-2 border-b border-border/40">
         <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">Templates</p>
@@ -1354,17 +1355,14 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       : m
   )
 
-  const messageById = useRef(new Map<string, AnyMessage>())
-  const messageByZapi = useRef(new Map<string, AnyMessage>())
-  useEffect(() => {
+  const { messageById, messageByZapi } = useMemo(() => {
     const byId = new Map<string, AnyMessage>()
     const byZapi = new Map<string, AnyMessage>()
     for (const m of allMessages) {
       byId.set(m.id, m)
       if (m.zapiMessageId) byZapi.set(m.zapiMessageId, m)
     }
-    messageById.current = byId
-    messageByZapi.current = byZapi
+    return { messageById: byId, messageByZapi: byZapi }
   }, [allMessages])
 
   const previewText = useCallback((m: AnyMessage | null | undefined) => {
@@ -1908,7 +1906,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
         {allMessages.map((msg, i) => {
           const refId = msg.referenceMessageId
           const refMsg = refId
-            ? (messageById.current.get(refId) ?? messageByZapi.current.get(refId) ?? null)
+            ? (messageById.get(refId) ?? messageByZapi.get(refId) ?? null)
             : null
           const currentKey = getMsgDateKey(msg.createdAt)
           const prevKey = i > 0 ? getMsgDateKey(allMessages[i - 1].createdAt) : null
@@ -1932,7 +1930,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
 
         <AnimatePresence>
           {contactTyping && <TypingIndicator key="ct" label="digitando" />}
-          {agentTyping && <TypingIndicator key="at" label="agente escrevendo" />}
+          {agentTyping && <TypingIndicator key="at" label="agente escrevendo" side="right" />}
         </AnimatePresence>
 
         {/* Instance routing hint — only shown when tenant has multiple Z-API instances */}

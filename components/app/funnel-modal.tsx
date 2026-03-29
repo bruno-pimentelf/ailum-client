@@ -117,7 +117,7 @@ function StageRow({
 
         {/* Color dot */}
         <div
-          className="h-3 w-3 rounded-full shrink-0 border border-white/10"
+          className="h-3 w-3 rounded-full shrink-0 border border-border/70"
           style={{ background: stage.color }}
         />
 
@@ -368,7 +368,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.28, ease }}
-            className="fixed inset-x-4 top-[10vh] z-50 mx-auto max-w-2xl rounded-2xl border border-border/60 bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+            className="fixed inset-x-4 top-[10vh] z-50 mx-auto max-w-2xl rounded-2xl border border-border/60 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">

@@ -64,12 +64,26 @@ const ACTION_LABELS: Record<string, string> = {
   GENERATE_PIX: "Gerar PIX",
   NOTIFY_OPERATOR: "Notificar operador",
   WAIT_AND_REPEAT: "Aguardar e repetir",
+  GENERATE_SUMMARY: "Gerar resumo",
 }
 
 function getTriggerMessage(ac: unknown): string {
   if (ac && typeof ac === "object" && "message" in ac && typeof (ac as { message: unknown }).message === "string")
-    return ((ac as { message: string }).message).slice(0, 60)
+    return ((ac as { message: string }).message).slice(0, 80)
   return ""
+}
+
+function formatDelay(minutes: number): string {
+  if (minutes < 60) return `${minutes}min`
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}min`
+}
+
+function getTriggerUseAI(ac: unknown): boolean {
+  if (ac && typeof ac === "object" && "useAI" in ac) return Boolean((ac as { useAI: unknown }).useAI)
+  return false
 }
 
 interface StageConfigModalProps {
@@ -283,95 +297,162 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
             <div className="flex-1 min-h-0 flex flex-col">
               {activeTab === "triggers" ? (
                 /* ─── Triggers tab ─── */
-                <div className="flex-1 overflow-y-auto overscroll-contain px-6 sm:px-8 py-5 flex flex-col gap-5">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-6 sm:px-8 py-5 flex flex-col gap-6">
                 {triggersLoading ? (
                     <div className="flex justify-center py-12">
                       <Spinner className="h-6 w-6 text-accent animate-spin" />
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-center justify-between">
-                        <p className="text-[12px] text-muted-foreground">
-                          Mensagens e ações automáticas ao entrar na etapa ou em eventos
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setAddingTrigger(true)}
-                          className="flex items-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-[12px] font-semibold text-accent hover:bg-accent/20 transition-colors cursor-pointer"
-                        >
-                          <Plus className="h-4 w-4" weight="bold" />
-                          Novo trigger
-                        </button>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {triggers.length === 0 && (
-                          <div className="rounded-xl border border-dashed border-border/50 bg-muted/5 py-10 text-center">
-                            <Lightning className="h-10 w-10 text-muted-foreground/85 mx-auto mb-2" weight="duotone" />
-                            <p className="text-[13px] text-muted-foreground">Nenhum trigger configurado</p>
-                            <p className="text-[11px] text-muted-foreground/85 mt-1">Adicione triggers para enviar mensagens automáticas</p>
-                            <button
-                              type="button"
-                              onClick={() => setAddingTrigger(true)}
-                              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1.5 text-[12px] font-semibold text-accent hover:bg-accent/20 cursor-pointer"
-                            >
-                              <Plus className="h-3.5 w-3.5" /> Adicionar trigger
-                            </button>
-                          </div>
-                        )}
-                        {triggers.map((t) => (
-                          <motion.div
-                            key={t.id}
-                            initial={{ opacity: 0, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/5 px-4 py-3"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => toggleTrigger.mutate(t.id)}
-                              className="shrink-0 cursor-pointer"
-                              title={t.isActive ? "Desativar" : "Ativar"}
-                            >
-                              {t.isActive ? (
-                                <ToggleRight className="h-6 w-6 text-accent" weight="fill" />
+                      {/* ── Follow-ups section (STALE_IN_STAGE) ── */}
+                      {(() => {
+                        const followUps = triggers
+                          .filter((t) => t.event === "STALE_IN_STAGE")
+                          .sort((a, b) => a.delayMinutes - b.delayMinutes)
+                        const otherTriggers = triggers.filter((t) => t.event !== "STALE_IN_STAGE")
+
+                        return (
+                          <>
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <div>
+                                  <p className="text-[13px] font-semibold text-foreground">Follow-ups</p>
+                                  <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                                    Mensagens enviadas quando o contato para de responder
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setAddingTrigger(true)}
+                                  className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-[11px] font-bold text-accent hover:bg-accent/20 transition-colors cursor-pointer"
+                                >
+                                  <Plus className="h-3 w-3" weight="bold" /> Novo
+                                </button>
+                              </div>
+
+                              {followUps.length > 0 ? (
+                                <div className="relative">
+                                  {/* Timeline line */}
+                                  <div className="absolute left-[15px] top-3 bottom-3 w-px bg-border/40" />
+
+                                  <div className="space-y-1">
+                                    {followUps.map((t, i) => (
+                                      <motion.div
+                                        key={t.id}
+                                        initial={{ opacity: 0, x: -4 }}
+                                        animate={{ opacity: t.isActive ? 1 : 0.45, x: 0 }}
+                                        transition={{ duration: 0.2, delay: i * 0.05 }}
+                                        className="group relative flex items-start gap-3 pl-1"
+                                      >
+                                        {/* Timeline dot */}
+                                        <div className={`relative z-10 mt-3 flex h-[10px] w-[10px] shrink-0 items-center justify-center rounded-full border-2 ${
+                                          t.isActive
+                                            ? "border-accent bg-accent/30"
+                                            : "border-muted-foreground/30 bg-muted/30"
+                                        }`}>
+                                          <span className={`h-1 w-1 rounded-full ${t.isActive ? "bg-accent" : "bg-muted-foreground/40"}`} />
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="flex-1 min-w-0 rounded-lg border border-border/30 bg-muted/5 px-3 py-2.5 hover:border-border/50 transition-colors">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[10px] font-bold text-accent/70 bg-accent/10 rounded px-1.5 py-0.5">
+                                              {formatDelay(t.delayMinutes)}
+                                            </span>
+                                            {t.maxRepetitions > 0 && (
+                                              <span className="text-[9px] text-muted-foreground/50">
+                                                {t.maxRepetitions}x máx
+                                              </span>
+                                            )}
+                                            {getTriggerUseAI(t.actionConfig) && (
+                                              <span className="text-[9px] text-violet-400/70 bg-violet-500/10 rounded px-1 py-px font-medium">IA</span>
+                                            )}
+                                          </div>
+                                          <p className="text-[12px] text-foreground/80 line-clamp-2 leading-relaxed">
+                                            {getTriggerMessage(t.actionConfig) || (ACTION_LABELS[t.action] ?? t.action)}
+                                          </p>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-0.5 shrink-0 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button type="button" onClick={() => toggleTrigger.mutate(t.id)}
+                                            className="cursor-pointer shrink-0" title={t.isActive ? "Desativar" : "Ativar"}>
+                                            {t.isActive
+                                              ? <ToggleRight className="h-5 w-5 text-accent" weight="fill" />
+                                              : <ToggleLeft className="h-5 w-5 text-muted-foreground/60" />}
+                                          </button>
+                                          <button type="button" onClick={() => setEditingTrigger(t)}
+                                            className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/30" title="Editar">
+                                            <PencilSimple className="h-3.5 w-3.5" />
+                                          </button>
+                                          <button type="button" onClick={async () => { if (confirm("Excluir este follow-up?")) await deleteTrigger.mutateAsync(t.id) }}
+                                            disabled={deleteTrigger.isPending}
+                                            className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-rose-400 hover:bg-rose-500/10" title="Excluir">
+                                            <Trash className="h-3.5 w-3.5" />
+                                          </button>
+                                        </div>
+                                      </motion.div>
+                                    ))}
+                                  </div>
+
+                                  {/* Summary */}
+                                  <div className="mt-3 ml-8 flex items-center gap-2">
+                                    <span className="text-[10px] text-muted-foreground/40">
+                                      {followUps.filter((t) => t.isActive).length} follow-up{followUps.filter((t) => t.isActive).length !== 1 ? "s" : ""} ativo{followUps.filter((t) => t.isActive).length !== 1 ? "s" : ""}
+                                      {followUps.length > followUps.filter((t) => t.isActive).length && ` · ${followUps.length - followUps.filter((t) => t.isActive).length} inativo${followUps.length - followUps.filter((t) => t.isActive).length !== 1 ? "s" : ""}`}
+                                    </span>
+                                  </div>
+                                </div>
                               ) : (
-                                <ToggleLeft className="h-6 w-6 text-muted-foreground/90" />
-                              )}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[12px] font-semibold text-foreground">
-                                {EVENT_LABELS[t.event] ?? t.event} → {ACTION_LABELS[t.action] ?? t.action}
-                              </p>
-                              {t.action === "SEND_MESSAGE" && (
-                                <p className="text-[11px] text-muted-foreground truncate">
-                                  {getTriggerMessage(t.actionConfig) || "Sem mensagem"}
-                                </p>
+                                <div className="rounded-xl border border-dashed border-border/40 py-6 text-center">
+                                  <p className="text-[12px] text-muted-foreground/50">Nenhum follow-up configurado</p>
+                                  <p className="text-[10px] text-muted-foreground/35 mt-0.5">O contato não receberá mensagens automáticas se parar de responder</p>
+                                </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => setEditingTrigger(t)}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
-                                title="Editar"
-                              >
-                                <PencilSimple className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  if (confirm("Excluir este trigger?"))
-                                    await deleteTrigger.mutateAsync(t.id)
-                                }}
-                                disabled={deleteTrigger.isPending}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
-                                title="Excluir"
-                              >
-                                <Trash className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
+
+                            {/* ── Other triggers ── */}
+                            {otherTriggers.length > 0 && (
+                              <div>
+                                <p className="text-[13px] font-semibold text-foreground mb-3">Outros triggers</p>
+                                <div className="space-y-1.5">
+                                  {otherTriggers.map((t) => (
+                                    <motion.div
+                                      key={t.id}
+                                      initial={{ opacity: 0, y: 4 }}
+                                      animate={{ opacity: t.isActive ? 1 : 0.45, y: 0 }}
+                                      className="group flex items-center gap-3 rounded-xl border border-border/40 bg-muted/5 px-3 py-2.5"
+                                    >
+                                      <button type="button" onClick={() => toggleTrigger.mutate(t.id)} className="shrink-0 cursor-pointer" title={t.isActive ? "Desativar" : "Ativar"}>
+                                        {t.isActive ? <ToggleRight className="h-5 w-5 text-accent" weight="fill" /> : <ToggleLeft className="h-5 w-5 text-muted-foreground/60" />}
+                                      </button>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-[12px] font-medium text-foreground/80">
+                                          {EVENT_LABELS[t.event] ?? t.event} → {ACTION_LABELS[t.action] ?? t.action}
+                                        </p>
+                                        {t.action === "SEND_MESSAGE" && (
+                                          <p className="text-[11px] text-muted-foreground/50 truncate">{getTriggerMessage(t.actionConfig) || "Sem mensagem"}</p>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button type="button" onClick={() => setEditingTrigger(t)}
+                                          className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/30" title="Editar">
+                                          <PencilSimple className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button type="button" onClick={async () => { if (confirm("Excluir?")) await deleteTrigger.mutateAsync(t.id) }}
+                                          disabled={deleteTrigger.isPending}
+                                          className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-rose-400 hover:bg-rose-500/10" title="Excluir">
+                                          <Trash className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    </motion.div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
                     </>
                   )}
                   <TriggerEditorModal

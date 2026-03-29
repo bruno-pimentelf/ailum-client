@@ -8,6 +8,8 @@ import {
   Phone,
   Heart,
   Clock,
+  Sparkle,
+  ArrowsClockwise,
   CalendarBlank,
   MapPin,
   Stethoscope,
@@ -32,7 +34,7 @@ import { useTenant } from "@/hooks/use-tenant"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { FirestoreContact, FirestoreReminder } from "@/lib/types/firestore"
-import { createReminder, toggleReminder, deleteReminder } from "@/lib/api/conversations"
+import { createReminder, toggleReminder, deleteReminder, generateSummary } from "@/lib/api/conversations"
 
 // ─── Memory key labels & icons ────────────────────────────────────────────────
 
@@ -375,6 +377,105 @@ function NewReminderForm({ contactId, onClose }: { contactId: string; onClose: (
   )
 }
 
+// ─── Summary section ─────────────────────────────────────────────────────────
+
+function SummarySection({ contactId, summary, summaryUpdatedAt }: {
+  contactId: string
+  summary?: string | null
+  summaryUpdatedAt?: { toDate?: () => Date } | null
+}) {
+  const [generating, setGenerating] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+
+  async function handleGenerate() {
+    setGenerating(true)
+    try {
+      await generateSummary(contactId)
+      // Firestore snapshot will update the UI automatically
+    } catch { /* */ }
+    setGenerating(false)
+  }
+
+  const updatedLabel = (() => {
+    if (!summaryUpdatedAt) return null
+    const date = summaryUpdatedAt.toDate?.() ?? (typeof summaryUpdatedAt === 'string' ? new Date(summaryUpdatedAt as unknown as string) : null)
+    if (!date) return null
+    const now = Date.now()
+    const diffMin = Math.floor((now - date.getTime()) / 60_000)
+    if (diffMin < 1) return "agora"
+    if (diffMin < 60) return `${diffMin}min atrás`
+    const diffH = Math.floor(diffMin / 60)
+    if (diffH < 24) return `${diffH}h atrás`
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+  })()
+
+  const isLong = (summary?.length ?? 0) > 200
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-2">
+          <Sparkle className="h-3.5 w-3.5 text-accent" weight="fill" />
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Resumo</p>
+          {updatedLabel && (
+            <span className="text-[9px] text-muted-foreground/40">{updatedLabel}</span>
+          )}
+        </div>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="cursor-pointer flex items-center gap-1 text-[10px] font-bold text-accent/60 hover:text-accent transition-colors disabled:opacity-50"
+          title={summary ? "Regerar resumo" : "Gerar resumo da conversa"}
+        >
+          {generating
+            ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="h-3 w-3 rounded-full border-[1.5px] border-accent/30 border-t-accent" />
+            : <ArrowsClockwise className="h-3 w-3" />
+          }
+          {summary ? "Atualizar" : "Gerar"}
+        </button>
+      </div>
+
+      {summary ? (
+        <div className="rounded-xl border border-accent/15 bg-accent/[0.03] px-3.5 py-3">
+          <div className={`text-[11px] text-foreground/80 leading-relaxed space-y-2 ${!expanded && isLong ? "line-clamp-6" : ""}`}>
+            {summary.split(/\n\n+/).map((block, i) => {
+              const boldMatch = block.match(/^\*\*(.+?)\*\*\s*\n?([\s\S]*)$/)
+              if (boldMatch) {
+                return (
+                  <div key={i}>
+                    <p className="text-[10px] font-bold text-accent/70 uppercase tracking-wider mb-0.5">{boldMatch[1]}</p>
+                    {boldMatch[2] && <p>{boldMatch[2].trim()}</p>}
+                  </div>
+                )
+              }
+              return <p key={i}>{block}</p>
+            })}
+          </div>
+          {isLong && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="cursor-pointer mt-1.5 text-[10px] font-semibold text-accent/70 hover:text-accent transition-colors"
+            >
+              {expanded ? "Ver menos" : "Ver mais"}
+            </button>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="cursor-pointer w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-accent/20 py-4 text-[11px] text-accent/50 hover:text-accent/70 hover:border-accent/30 transition-all disabled:opacity-50"
+        >
+          {generating
+            ? <><motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="h-3.5 w-3.5 rounded-full border-2 border-accent/20 border-t-accent" /> Gerando resumo...</>
+            : <><Sparkle className="h-3.5 w-3.5" weight="fill" /> Gerar resumo da conversa</>
+          }
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 interface ContactInfoPanelProps {
@@ -461,6 +562,9 @@ export function ContactInfoPanel({ contactId, initialContact }: ContactInfoPanel
             <p className="text-[12px] text-muted-foreground/60">Nenhuma informação de contato registrada</p>
           )}
         </div>
+
+        {/* Summary */}
+        <SummarySection contactId={contactId} summary={contact.summary} summaryUpdatedAt={contact.summaryUpdatedAt} />
 
         {/* Reminders */}
         <div className="space-y-2">

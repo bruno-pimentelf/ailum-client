@@ -75,20 +75,20 @@ export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95, y: -4 }}
       transition={{ duration: 0.15, ease: [0.33, 1, 0.68, 1] }}
-      className="w-72 rounded-2xl border border-white/[0.10] bg-[oklch(0.16_0.02_263)] shadow-2xl shadow-black/70 flex flex-col overflow-hidden"
+      className="w-72 rounded-2xl border border-border/80 bg-surface shadow-2xl shadow-foreground/12 flex flex-col overflow-hidden"
     >
       {/* Search */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.06]">
-        <MagnifyingGlass className="h-3.5 w-3.5 text-white/85 shrink-0" />
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-foreground/[0.06]">
+        <MagnifyingGlass className="h-3.5 w-3.5 text-foreground/85 shrink-0" />
         <input
           ref={searchRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar emoji..."
-          className="flex-1 bg-transparent text-[12px] text-white/90 placeholder:text-white/40 focus:outline-none"
+          className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
         />
         {search && (
-          <button onClick={() => setSearch("")} className="cursor-pointer text-white/85 hover:text-white/90 transition-colors">
+          <button onClick={() => setSearch("")} className="cursor-pointer text-foreground/85 hover:text-foreground transition-colors">
             <X className="h-3 w-3" />
           </button>
         )}
@@ -104,8 +104,8 @@ export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
               title={cat.label}
               className={`cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-base transition-all duration-150 ${
                 activeCategory === i
-                  ? "bg-white/[0.10] shadow-sm"
-                  : "hover:bg-white/[0.05] opacity-50 hover:opacity-80"
+                  ? "bg-foreground/10 shadow-sm"
+                  : "hover:bg-foreground/[0.05] opacity-50 hover:opacity-80"
               }`}
             >
               {cat.icon}
@@ -120,8 +120,8 @@ export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
           <button
             key={`${emoji}-${i}`}
             onClick={() => handleSelect(emoji)}
-            className={`cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-all duration-100 hover:bg-white/[0.10] hover:scale-110 ${
-              value === emoji ? "bg-white/[0.12] ring-1 ring-white/20" : ""
+            className={`cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-all duration-100 hover:bg-foreground/10 hover:scale-110 ${
+              value === emoji ? "bg-foreground/[0.12] ring-1 ring-white/20" : ""
             }`}
           >
             {emoji}
@@ -130,9 +130,9 @@ export function EmojiPicker({ value, onChange, onClose }: EmojiPickerProps) {
       </div>
 
       {/* Current selection */}
-      <div className="flex items-center gap-2 px-3 py-2 border-t border-white/[0.06]">
+      <div className="flex items-center gap-2 px-3 py-2 border-t border-foreground/[0.06]">
         <span className="text-xl">{value}</span>
-        <span className="text-[11px] text-white/85">Selecionado</span>
+        <span className="text-[11px] text-foreground/85">Selecionado</span>
       </div>
     </motion.div>
   )
@@ -164,7 +164,7 @@ export function EmojiButton({ value, onChange, className }: EmojiButtonProps) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.10] bg-white/[0.04] text-2xl transition-all duration-150 hover:bg-white/[0.08] hover:border-white/[0.18] hover:scale-105 active:scale-95"
+        className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-xl border border-border/80 bg-foreground/[0.04] text-2xl transition-all duration-150 hover:bg-foreground/[0.08] hover:border-white/[0.18] hover:scale-105 active:scale-95"
         title="Escolher emoji"
       >
         {value}

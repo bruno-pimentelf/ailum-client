@@ -56,7 +56,7 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
       <div className="pointer-events-none absolute -inset-20 bg-[radial-gradient(circle_at_50%_50%,rgba(0,181,212,0.06)_0%,transparent_70%)]" />
 
       {/* Card shell — double bezel */}
-      <div className="relative rounded-[2rem] bg-white/[0.02] p-[1px] ring-1 ring-white/[0.06]">
+      <div className="relative rounded-[2rem] bg-foreground/[0.02] p-[1px] ring-1 ring-white/[0.06]">
         <div className="relative overflow-hidden rounded-[calc(2rem-1px)] bg-zinc-950/70 shadow-[inset_0_1px_1px_rgba(255,255,255,0.04)]">
           {/* Hover gradient */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/[0.04] via-transparent to-transparent" />
@@ -69,7 +69,7 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
               </div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent/60">{t.nfse.cardTag}</p>
-                <p className="text-[13px] font-medium text-white/85 mt-0.5">{t.nfse.cardTitle}</p>
+                <p className="text-[13px] font-medium text-foreground/85 mt-0.5">{t.nfse.cardTitle}</p>
               </div>
             </div>
 
@@ -80,13 +80,13 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.2, ease }}
-                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 flex flex-col gap-3"
+                className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] p-5 flex flex-col gap-3"
               >
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/15 flex items-center justify-center">
                     <CurrencyCircleDollar className="h-3.5 w-3.5 text-emerald-400" weight="fill" />
                   </div>
-                  <span className="text-[10px] font-semibold text-white/85 uppercase tracking-wider">{t.nfse.step1Label}</span>
+                  <span className="text-[10px] font-semibold text-foreground/85 uppercase tracking-wider">{t.nfse.step1Label}</span>
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -107,10 +107,10 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
                   ) : (
                     <motion.div
                       key="pix-waiting"
-                      className="flex items-center gap-2 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2"
+                      className="flex items-center gap-2 rounded-lg border border-foreground/[0.04] bg-foreground/[0.02] px-3 py-2"
                     >
-                      <div className="h-1.5 w-1.5 rounded-full bg-white/20 animate-pulse" />
-                      <p className="text-[10px] text-white/40">{t.nfse.pixWaiting}</p>
+                      <div className="h-1.5 w-1.5 rounded-full bg-foreground/20 animate-pulse" />
+                      <p className="text-[10px] text-muted-foreground/60">{t.nfse.pixWaiting}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -125,13 +125,13 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.35, ease }}
-                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 flex flex-col gap-3"
+                className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] p-5 flex flex-col gap-3"
               >
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 rounded-lg bg-accent/10 ring-1 ring-accent/15 flex items-center justify-center">
                     <Lightning className="h-3.5 w-3.5 text-accent" weight="fill" />
                   </div>
-                  <span className="text-[10px] font-semibold text-white/85 uppercase tracking-wider">{t.nfse.step2Label}</span>
+                  <span className="text-[10px] font-semibold text-foreground/85 uppercase tracking-wider">{t.nfse.step2Label}</span>
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -147,7 +147,7 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
                         <span className="text-[9px] text-accent/80">{t.nfse.generating}</span>
                         <span className="text-[9px] text-accent/50 tabular-nums font-mono">{progress}%</span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                      <div className="h-1.5 rounded-full bg-foreground/[0.06] overflow-hidden">
                         <motion.div className="h-full rounded-full bg-accent/60" style={{ width: `${progress}%` }} />
                       </div>
                     </motion.div>
@@ -168,10 +168,10 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
                   ) : (
                     <motion.div
                       key="idle"
-                      className="flex items-center gap-2 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2"
+                      className="flex items-center gap-2 rounded-lg border border-foreground/[0.04] bg-foreground/[0.02] px-3 py-2"
                     >
-                      <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                      <p className="text-[10px] text-white/40">{t.nfse.awaitingPayment}</p>
+                      <div className="h-1.5 w-1.5 rounded-full bg-foreground/20" />
+                      <p className="text-[10px] text-muted-foreground/60">{t.nfse.awaitingPayment}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -182,13 +182,13 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.5, ease }}
-                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 flex flex-col gap-3"
+                className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] p-5 flex flex-col gap-3"
               >
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 rounded-lg bg-violet-500/10 ring-1 ring-violet-500/15 flex items-center justify-center">
                     <FileText className="h-3.5 w-3.5 text-violet-400" weight="fill" />
                   </div>
-                  <span className="text-[10px] font-semibold text-white/85 uppercase tracking-wider">{t.nfse.step3Label}</span>
+                  <span className="text-[10px] font-semibold text-foreground/85 uppercase tracking-wider">{t.nfse.step3Label}</span>
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -209,10 +209,10 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
                   ) : (
                     <motion.div
                       key="waiting"
-                      className="flex items-center gap-2 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2"
+                      className="flex items-center gap-2 rounded-lg border border-foreground/[0.04] bg-foreground/[0.02] px-3 py-2"
                     >
-                      <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                      <p className="text-[10px] text-white/40">{t.nfse.awaitingNfse}</p>
+                      <div className="h-1.5 w-1.5 rounded-full bg-foreground/20" />
+                      <p className="text-[10px] text-muted-foreground/60">{t.nfse.awaitingNfse}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -250,11 +250,11 @@ function InvoiceDemo({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
               className="mt-6 flex items-center justify-center gap-2"
             >
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-              <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-4 py-1.5">
+              <div className="flex items-center gap-2 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-4 py-1.5">
                 <div className="h-4 w-4 rounded bg-[#1a73e8]/15 flex items-center justify-center">
                   <span className="text-[6px] font-bold text-[#5b9cf6]">AS</span>
                 </div>
-                <span className="text-[10px] text-white/50">{t.nfse.poweredBy}</span>
+                <span className="text-[10px] text-muted-foreground/70">{t.nfse.poweredBy}</span>
               </div>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
             </motion.div>
@@ -289,7 +289,7 @@ export function NfseShowcase() {
               <br />
               <span className="text-accent">{t.nfse.titleAccent}</span>
             </h2>
-            <p className="mt-5 text-[15px] leading-relaxed text-white/50 max-w-md">
+            <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground/70 max-w-md">
               {t.nfse.description}
             </p>
 
@@ -307,7 +307,7 @@ export function NfseShowcase() {
                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 ring-1 ring-accent/15 shrink-0">
                     <CheckCircle className="h-3 w-3 text-accent" weight="fill" />
                   </div>
-                  <span className="text-[13px] text-white/70">{bullet}</span>
+                  <span className="text-[13px] text-muted-foreground">{bullet}</span>
                 </motion.div>
               ))}
             </div>

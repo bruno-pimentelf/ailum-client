@@ -42,7 +42,7 @@ const MARQUEE_ITEMS = [...AMBASSADORS, ...AMBASSADORS]
 function AmbassadorCard({ person }: { person: (typeof AMBASSADORS)[number] }) {
   return (
     <div className="group relative shrink-0 w-[220px] sm:w-[260px] md:w-[320px]">
-      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.06] bg-white/[0.015] transition-all duration-500 hover:border-white/[0.12] hover:shadow-lg hover:shadow-accent/[0.04]">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-foreground/[0.06] bg-foreground/[0.015] transition-all duration-500 hover:border-border hover:shadow-lg hover:shadow-accent/[0.04]">
         {/* Image */}
         <div className="relative aspect-[3/4] w-full overflow-hidden">
           <Image
@@ -64,7 +64,7 @@ function AmbassadorCard({ person }: { person: (typeof AMBASSADORS)[number] }) {
             {person.name}
           </p>
           {person.specialty && (
-            <p className="mt-0.5 sm:mt-1 text-[11px] sm:text-[12px] text-white/60">
+            <p className="mt-0.5 sm:mt-1 text-[11px] sm:text-[12px] text-muted-foreground/80">
               {person.specialty}
             </p>
           )}
@@ -92,7 +92,7 @@ export function Testimonials() {
       <div className="mx-auto max-w-6xl px-6">
         {/* Header */}
         <FadeIn direction="up" className="mb-10 sm:mb-16 md:mb-20 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1.5 mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.06] bg-foreground/[0.03] px-3.5 py-1.5 mb-6">
             <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent">
               Nossos embaixadores
             </span>
@@ -101,7 +101,7 @@ export function Testimonials() {
             Referências que{" "}
             <span className="font-display italic text-accent">representam</span>
           </h2>
-          <p className="mt-3 text-sm text-white/45 max-w-md mx-auto">
+          <p className="mt-3 text-sm text-muted-foreground/65 max-w-md mx-auto">
             Profissionais que elevam o padrão da saúde ao lado da Ailum.
           </p>
         </FadeIn>

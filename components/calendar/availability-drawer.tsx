@@ -155,10 +155,10 @@ function ProfessionalPickerDrawer({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.05, ease }}
-            className="group flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-left hover:border-accent/30 hover:bg-accent/[0.04] transition-all duration-150 cursor-pointer"
+            className="group flex items-center gap-3 rounded-xl border border-border/50 bg-foreground/[0.03] px-4 py-3 text-left hover:border-accent/30 hover:bg-accent/[0.04] transition-all duration-150 cursor-pointer"
           >
             <div
-              className="h-8 w-8 rounded-lg border border-white/10 flex items-center justify-center shrink-0"
+              className="h-8 w-8 rounded-lg border border-border/70 flex items-center justify-center shrink-0"
               style={{ backgroundColor: `${p.calendarColor}20` }}
             >
               <User
@@ -459,7 +459,7 @@ export function AvailabilityDrawer({ open, onClose, defaultProfessionalId }: Ava
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/[0.07] transition-all duration-150 cursor-pointer"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/[0.07] transition-all duration-150 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -479,7 +479,7 @@ export function AvailabilityDrawer({ open, onClose, defaultProfessionalId }: Ava
                         className={`relative shrink-0 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all duration-150 cursor-pointer ${
                           active
                             ? "text-foreground"
-                            : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+                            : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
                         }`}
                       >
                         {active && (

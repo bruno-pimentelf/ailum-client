@@ -46,7 +46,7 @@ function AgendaScreen() {
   return (
     <div ref={ref} className="space-y-2">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-semibold text-white/80">Hoje, 25 mar</p>
+        <p className="text-[11px] font-semibold text-foreground/80">Hoje, 25 mar</p>
         <span className="text-[9px] text-accent/60 font-medium">{apts.length} consultas</span>
       </div>
       {apts.slice(0, visibleApts).map((apt, i) => (
@@ -55,19 +55,19 @@ function AgendaScreen() {
           initial={{ opacity: 0, x: -12 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, ease }}
-          className="flex items-center gap-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] px-3 py-2"
+          className="flex items-center gap-2.5 rounded-lg bg-foreground/[0.03] border border-foreground/[0.05] px-3 py-2"
         >
           <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 ${
-            apt.status === "confirmed" ? "bg-blue-500/30 text-blue-300" : "bg-white/[0.06] text-white/50"
+            apt.status === "confirmed" ? "bg-blue-500/30 text-blue-300" : "bg-foreground/[0.06] text-muted-foreground/70"
           }`}>
             {apt.patient[0]}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-semibold text-white/80 truncate">{apt.patient}</p>
-            <p className="text-[8px] text-white/35">{apt.type}</p>
+            <p className="text-[10px] font-semibold text-foreground/80 truncate">{apt.patient}</p>
+            <p className="text-[8px] text-muted-foreground/50">{apt.type}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[10px] font-mono font-bold text-white/60 tabular-nums">{apt.time}</p>
+            <p className="text-[10px] font-mono font-bold text-muted-foreground/80 tabular-nums">{apt.time}</p>
             {apt.status === "confirmed" ? (
               <CheckCircle className="h-3 w-3 text-emerald-400/50 ml-auto" weight="fill" />
             ) : (
@@ -106,8 +106,8 @@ function NotificationsScreen() {
   return (
     <div ref={ref} className="space-y-1.5">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-semibold text-white/80">Notificações</p>
-        <span className="text-[9px] text-white/30">{count} novas</span>
+        <p className="text-[11px] font-semibold text-foreground/80">Notificações</p>
+        <span className="text-[9px] text-muted-foreground/50">{count} novas</span>
       </div>
       {notifs.slice(0, count).map((n, i) => (
         <motion.div
@@ -115,12 +115,12 @@ function NotificationsScreen() {
           initial={{ opacity: 0, y: -8, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.3, ease }}
-          className="flex items-start gap-2 rounded-lg bg-white/[0.02] px-2.5 py-2"
+          className="flex items-start gap-2 rounded-lg bg-foreground/[0.02] px-2.5 py-2"
         >
           <n.icon className={`h-3.5 w-3.5 ${n.color} shrink-0 mt-0.5`} weight="fill" />
           <div className="flex-1 min-w-0">
-            <p className="text-[9px] text-white/65 leading-snug">{n.text}</p>
-            <p className="text-[8px] text-white/25 mt-0.5">{n.time}</p>
+            <p className="text-[9px] text-muted-foreground/85 leading-snug">{n.text}</p>
+            <p className="text-[8px] text-muted-foreground/40 mt-0.5">{n.time}</p>
           </div>
         </motion.div>
       ))}
@@ -147,7 +147,7 @@ function ConciergeScreen() {
     <div ref={ref} className="space-y-2">
       <div className="flex items-center gap-2 mb-3">
         <Sparkle className="h-3.5 w-3.5 text-accent/60" weight="fill" />
-        <p className="text-[11px] font-semibold text-white/80">Concierge</p>
+        <p className="text-[11px] font-semibold text-foreground/80">Concierge</p>
       </div>
 
       {/* Audio message */}
@@ -172,7 +172,7 @@ function ConciergeScreen() {
                   />
                 ))}
               </div>
-              <span className="text-[9px] text-white/40 ml-1">0:04</span>
+              <span className="text-[9px] text-muted-foreground/60 ml-1">0:04</span>
             </div>
           </motion.div>
         )}
@@ -187,12 +187,12 @@ function ConciergeScreen() {
             exit={{ opacity: 0 }}
             className="flex justify-start"
           >
-            <div className="rounded-xl rounded-bl-sm bg-white/[0.03] border border-white/[0.06] px-3 py-2 flex items-center gap-1.5">
+            <div className="rounded-xl rounded-bl-sm bg-foreground/[0.03] border border-foreground/[0.06] px-3 py-2 flex items-center gap-1.5">
               <Sparkle className="h-2.5 w-2.5 text-accent/30" weight="fill" />
               {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
-                  className="h-1 w-1 rounded-full bg-white/20"
+                  className="h-1 w-1 rounded-full bg-foreground/20"
                   animate={{ opacity: [0.3, 1, 0.3] }}
                   transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
                 />
@@ -211,17 +211,17 @@ function ConciergeScreen() {
             transition={{ duration: 0.5, ease }}
             className="space-y-1.5"
           >
-            <div className="rounded-xl rounded-bl-sm bg-white/[0.03] border border-white/[0.06] px-3 py-2">
-              <p className="text-[10px] text-white/65 leading-relaxed">Remarquei a Julia para quinta às 14h. Confirmação enviada por WhatsApp.</p>
+            <div className="rounded-xl rounded-bl-sm bg-foreground/[0.03] border border-foreground/[0.06] px-3 py-2">
+              <p className="text-[10px] text-muted-foreground/85 leading-relaxed">Remarquei a Julia para quinta às 14h. Confirmação enviada por WhatsApp.</p>
             </div>
             <motion.div
               initial={{ opacity: 0, x: -6 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.3, ease }}
-              className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] px-2 py-1"
+              className="inline-flex items-center gap-1.5 rounded-md bg-foreground/[0.03] border border-foreground/[0.06] px-2 py-1"
             >
               <CheckCircle className="h-3 w-3 text-emerald-400/60" weight="fill" />
-              <span className="text-[8px] font-medium text-white/45">Remarcar consulta</span>
+              <span className="text-[8px] font-medium text-muted-foreground/65">Remarcar consulta</span>
             </motion.div>
           </motion.div>
         )}
@@ -239,15 +239,15 @@ function PhoneFrame({ children, label }: { children: React.ReactNode; label: str
         {/* Ambient glow behind phone */}
         <div className="absolute -inset-8 bg-accent/[0.03] rounded-[4rem] blur-[60px] pointer-events-none" />
         {/* Phone shell */}
-        <div className="relative rounded-[2.5rem] border border-white/[0.10] bg-white/[0.03] p-[3px] shadow-2xl shadow-black/40">
+        <div className="relative rounded-[2.5rem] border border-border/80 bg-foreground/[0.03] p-[3px] shadow-2xl shadow-black/40">
           <div className="rounded-[calc(2.5rem-3px)] bg-zinc-950/95 overflow-hidden">
             {/* Status bar */}
             <div className="flex items-center justify-between px-6 pt-3 pb-1">
-              <span className="text-[9px] font-semibold text-white/40 tabular-nums">9:41</span>
-              <div className="h-[4px] w-20 rounded-full bg-white/[0.08]" />
+              <span className="text-[9px] font-semibold text-muted-foreground/60 tabular-nums">9:41</span>
+              <div className="h-[4px] w-20 rounded-full bg-foreground/[0.08]" />
               <div className="flex items-center gap-1">
-                <div className="h-[6px] w-[6px] rounded-full bg-white/[0.15]" />
-                <div className="h-[6px] w-[6px] rounded-full bg-white/[0.15]" />
+                <div className="h-[6px] w-[6px] rounded-full bg-foreground/[0.15]" />
+                <div className="h-[6px] w-[6px] rounded-full bg-foreground/[0.15]" />
               </div>
             </div>
             {/* Screen content */}
@@ -256,12 +256,12 @@ function PhoneFrame({ children, label }: { children: React.ReactNode; label: str
             </div>
             {/* Home indicator */}
             <div className="flex justify-center pb-2">
-              <div className="h-[4px] w-28 rounded-full bg-white/[0.10]" />
+              <div className="h-[4px] w-28 rounded-full bg-foreground/10" />
             </div>
           </div>
         </div>
       </div>
-      <span className="text-[12px] font-medium text-white/30">{label}</span>
+      <span className="text-[12px] font-medium text-muted-foreground/50">{label}</span>
     </div>
   )
 }
@@ -313,9 +313,9 @@ export function AppTeaser() {
           </div>
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Ailum na palma da{" "}
-            <span className="font-display italic text-white/50">sua mão</span>
+            <span className="font-display italic text-muted-foreground/70">sua mão</span>
           </h2>
-          <p className="mt-3 text-sm text-white/35 max-w-md mx-auto">
+          <p className="mt-3 text-sm text-muted-foreground/50 max-w-md mx-auto">
             Gerencie consultas, receba notificações e fale com o Concierge — direto do celular.
           </p>
         </FadeIn>
@@ -330,13 +330,13 @@ export function AppTeaser() {
                   key={tab.id}
                   onClick={() => { setActiveTab(tab.id); setAutoRotate(false) }}
                   className={`relative flex items-center gap-2 rounded-lg px-4 py-2 text-[12px] font-medium transition-all duration-300 ${
-                    active ? "text-white/90" : "text-white/40 hover:text-white/60"
+                    active ? "text-foreground" : "text-muted-foreground/60 hover:text-muted-foreground/80"
                   }`}
                 >
                   {active && (
                     <motion.div
                       layoutId="app-teaser-tab"
-                      className="absolute inset-0 rounded-lg bg-white/[0.06] border border-white/[0.08]"
+                      className="absolute inset-0 rounded-lg bg-foreground/[0.06] border border-border/60"
                       transition={{ duration: 0.3, ease }}
                     />
                   )}
@@ -411,7 +411,7 @@ export function AppTeaser() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.4 + i * 0.06, ease }}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[11px] text-white/40"
+                className="inline-flex items-center gap-1.5 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-3.5 py-1.5 text-[11px] text-muted-foreground/60"
               >
                 <item.icon className="h-3 w-3 text-accent/40" weight="fill" />
                 {item.text}

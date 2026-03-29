@@ -151,14 +151,14 @@ function ProfessionalCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 + index * 0.07, ease }}
       whileHover={{ y: -2 }}
-      className="group relative flex flex-col rounded-2xl border border-white/[0.07] bg-white/[0.015] p-px backdrop-blur-sm text-left transition-all duration-200 hover:border-accent/30 hover:bg-accent/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 cursor-pointer"
+      className="group relative flex flex-col rounded-2xl border border-border/50 bg-foreground/[0.015] p-px backdrop-blur-sm text-left transition-all duration-200 hover:border-accent/30 hover:bg-accent/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 cursor-pointer"
     >
       {/* inner padding wrapper */}
       <div className="flex flex-col flex-1 w-full rounded-[calc(1rem-1px)] px-5 py-5 gap-3">
         {/* Icon + color dot */}
         <div className="flex items-center gap-2.5">
           <div
-            className="h-10 w-10 rounded-xl border border-white/10 flex items-center justify-center shrink-0"
+            className="h-10 w-10 rounded-xl border border-border/70 flex items-center justify-center shrink-0"
             style={{ backgroundColor: `${professional.calendarColor}20` }}
           >
             <User

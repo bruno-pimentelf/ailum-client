@@ -26,7 +26,7 @@ import { toYMD, todayYMD } from "@/lib/date-utils"
 import { AilumLoader } from "@/components/ui/ailum-loader"
 
 const inputCls =
-  "w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-white/90 placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+  "w-full h-10 rounded-xl border border-border/70 bg-foreground/[0.03] px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -80,18 +80,18 @@ function PatientField({
     return (
       <div className="flex items-center justify-between rounded-xl border border-accent/40 bg-accent/10 px-3 py-2.5">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-full bg-white/[0.08] flex items-center justify-center text-[10px] font-bold text-white/90">
+          <div className="h-8 w-8 rounded-full bg-foreground/[0.08] flex items-center justify-center text-[10px] font-bold text-foreground">
             {(contact.name ?? contact.phone ?? "?").slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <p className="text-[13px] font-medium text-white/90">{contact.name ?? contact.phone}</p>
-            <p className="text-[11px] text-white/85">{contact.phone}</p>
+            <p className="text-[13px] font-medium text-foreground">{contact.name ?? contact.phone}</p>
+            <p className="text-[11px] text-foreground/85">{contact.phone}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={onClear}
-          className="text-white/85 hover:text-white/85 p-1 rounded-lg hover:bg-white/[0.06] transition-colors"
+          className="text-foreground/85 hover:text-foreground/85 p-1 rounded-lg hover:bg-foreground/[0.06] transition-colors"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -105,7 +105,7 @@ function PatientField({
         <button
           type="button"
           onClick={() => setMode("search")}
-          className="flex items-center gap-1.5 text-[11px] text-white/85 hover:text-white/85 transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-foreground/85 hover:text-foreground/85 transition-colors"
         >
           <ArrowLeft className="h-3 w-3" />
           Buscar existente
@@ -146,7 +146,7 @@ function PatientField({
   return (
     <div className="space-y-2">
       <div className="relative">
-        <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/85" />
+        <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/85" />
         <input
           ref={searchRef}
           type="text"
@@ -160,10 +160,10 @@ function PatientField({
         />
       </div>
       {showResults && (
-        <div className="rounded-xl border border-white/[0.06] divide-y divide-white/[0.04] overflow-hidden">
+        <div className="rounded-xl border border-foreground/[0.06] divide-y divide-white/[0.04] overflow-hidden">
           {contacts.length === 0 ? (
             <div className="px-3 py-3 flex items-center justify-between">
-              <span className="text-[12px] text-white/85">Nenhum contato encontrado</span>
+              <span className="text-[12px] text-foreground/85">Nenhum contato encontrado</span>
               <button
                 type="button"
                 onClick={() => { setNewName(search); setMode("create") }}
@@ -180,14 +180,14 @@ function PatientField({
                   key={c.id}
                   type="button"
                   onClick={() => { onSelect(c); setSearch("") }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-white/[0.04] transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-foreground/[0.04] transition-colors"
                 >
-                  <div className="h-8 w-8 shrink-0 rounded-full bg-white/[0.08] flex items-center justify-center text-[10px] font-bold text-white/90">
+                  <div className="h-8 w-8 shrink-0 rounded-full bg-foreground/[0.08] flex items-center justify-center text-[10px] font-bold text-foreground">
                     {(c.name ?? c.phone ?? "?").slice(0, 2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-white/90 truncate">{c.name ?? c.phone}</p>
-                    <p className="text-[11px] text-white/85 truncate">{c.phone}</p>
+                    <p className="text-[13px] font-medium text-foreground truncate">{c.name ?? c.phone}</p>
+                    <p className="text-[11px] text-foreground/85 truncate">{c.phone}</p>
                   </div>
                 </button>
               ))}
@@ -270,16 +270,16 @@ function ContextualForm({
       exit={{ scale: 0.97, y: 8 }}
       transition={{ duration: 0.2, ease }}
       onClick={(e) => e.stopPropagation()}
-      className="w-full max-w-md rounded-2xl border border-white/[0.10] bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+      className="w-full max-w-md rounded-2xl border border-border/80 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3.5">
+      <div className="flex items-center justify-between border-b border-border/50 px-5 py-3.5">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
             <CalendarBlank className="h-4 w-4 text-accent" weight="duotone" />
           </div>
           <div>
-            <h2 className="text-[13px] font-semibold text-white/90 leading-none">Nova consulta</h2>
+            <h2 className="text-[13px] font-semibold text-foreground leading-none">Nova consulta</h2>
             <div className="flex items-center gap-1.5 mt-1">
               {selectedPro && (
                 <>
@@ -287,19 +287,19 @@ function ContextualForm({
                     className="h-1.5 w-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: selectedPro.calendarColor || "#22c55e" }}
                   />
-                  <span className="text-[11px] text-white/85 font-medium">{selectedPro.fullName}</span>
-                  <span className="text-white/90">·</span>
+                  <span className="text-[11px] text-foreground/85 font-medium">{selectedPro.fullName}</span>
+                  <span className="text-foreground">·</span>
                 </>
               )}
-              <span className="text-[11px] text-white/85">{formatDateLabel(defaultDate)}</span>
-              <span className="text-white/90">·</span>
+              <span className="text-[11px] text-foreground/85">{formatDateLabel(defaultDate)}</span>
+              <span className="text-foreground">·</span>
               <span className="text-[11px] text-accent font-semibold">{defaultTime}</span>
             </div>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/85 hover:bg-white/[0.06] transition-colors"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-foreground/85 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
@@ -310,7 +310,7 @@ function ContextualForm({
         {/* Professional selector — only if not pre-filled */}
         {!defaultProfessionalId && (
           <div className="space-y-2">
-            <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Profissional</label>
+            <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Profissional</label>
             <div className="grid gap-1.5">
               {professionals.map((p) => (
                 <button
@@ -320,11 +320,11 @@ function ContextualForm({
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left transition-all ${
                     professionalId === p.id
                       ? "border-accent/50 bg-accent/10"
-                      : "border-white/[0.08] hover:border-white/[0.12] hover:bg-white/[0.03]"
+                      : "border-border/60 hover:border-border hover:bg-foreground/[0.03]"
                   }`}
                 >
                   <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: p.calendarColor || "#22c55e" }} />
-                  <span className="text-[13px] font-medium text-white/90">{p.fullName}</span>
+                  <span className="text-[13px] font-medium text-foreground">{p.fullName}</span>
                   {professionalId === p.id && <Check className="h-3.5 w-3.5 text-accent ml-auto" weight="bold" />}
                 </button>
               ))}
@@ -334,15 +334,15 @@ function ContextualForm({
 
         {/* Patient */}
         <div className="space-y-2">
-          <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Paciente</label>
+          <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Paciente</label>
           <PatientField contact={contact} onSelect={setContact} onClear={() => setContact(null)} />
         </div>
 
         {/* Service */}
         <div className="space-y-2">
-          <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Serviço</label>
+          <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Serviço</label>
           {consultations.length === 0 ? (
-            <p className="text-[12px] text-white/85">Nenhum serviço disponível. Configure em Configurações → Serviços.</p>
+            <p className="text-[12px] text-foreground/85">Nenhum serviço disponível. Configure em Configurações → Serviços.</p>
           ) : (
             <div className="grid gap-1.5">
               {consultations.map((s) => (
@@ -353,12 +353,12 @@ function ContextualForm({
                   className={`flex items-center justify-between px-3 py-2 rounded-xl border text-left transition-all ${
                     serviceId === s.id
                       ? "border-accent/50 bg-accent/10"
-                      : "border-white/[0.08] hover:border-white/[0.12] hover:bg-white/[0.03]"
+                      : "border-border/60 hover:border-border hover:bg-foreground/[0.03]"
                   }`}
                 >
-                  <span className="text-[13px] font-medium text-white/90">{s.name}</span>
+                  <span className="text-[13px] font-medium text-foreground">{s.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-white/85">{s.durationMin} min</span>
+                    <span className="text-[11px] text-foreground/85">{s.durationMin} min</span>
                     {serviceId === s.id && <Check className="h-3.5 w-3.5 text-accent" weight="bold" />}
                   </div>
                 </button>
@@ -372,13 +372,13 @@ function ContextualForm({
           <button
             type="button"
             onClick={() => setShowNotes(true)}
-            className="text-[11px] text-white/90 hover:text-white/85 underline underline-offset-2 decoration-white/20"
+            className="text-[11px] text-foreground hover:text-foreground/85 underline underline-offset-2 decoration-white/20"
           >
             + Adicionar observação
           </button>
         ) : (
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Observações</label>
+            <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Observações</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -524,31 +524,31 @@ function WizardForm({
       exit={{ scale: 0.96, y: 8 }}
       transition={{ duration: 0.22, ease }}
       onClick={(e) => e.stopPropagation()}
-      className="w-full max-w-lg rounded-2xl border border-white/[0.10] bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+      className="w-full max-w-lg rounded-2xl border border-border/80 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
+      <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
             <CalendarBlank className="h-4 w-4 text-accent" weight="duotone" />
           </div>
           <div>
-            <h2 className="text-[14px] font-semibold text-white/90">Nova consulta</h2>
-            <p className="text-[11px] text-white/90">
+            <h2 className="text-[14px] font-semibold text-foreground">Nova consulta</h2>
+            <p className="text-[11px] text-foreground">
               Passo {step} de 4 — {stepLabel}
             </p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-white/85 hover:text-white/85 hover:bg-white/[0.06] transition-colors"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-foreground/85 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Step indicator */}
-      <div className="flex gap-1 px-5 py-2 border-b border-white/[0.05]">
+      <div className="flex gap-1 px-5 py-2 border-b border-foreground/[0.05]">
         {STEPS.map(({ n, label }) => (
           <button
             key={n}
@@ -558,8 +558,8 @@ function WizardForm({
               step === n
                 ? "bg-accent/20 text-accent"
                 : n < step
-                  ? "text-white/85 hover:text-white/85"
-                  : "text-white/90"
+                  ? "text-foreground/85 hover:text-foreground/85"
+                  : "text-foreground"
             }`}
           >
             {n}. {n === 2 ? "Pro + Serviço" : n === 3 ? "Data + Hora" : n === 4 ? "Observações" : label}
@@ -580,7 +580,7 @@ function WizardForm({
               transition={{ duration: 0.2, ease }}
               className="space-y-3"
             >
-              <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Paciente</label>
+              <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Paciente</label>
               <PatientField contact={contact} onSelect={setContact} onClear={() => setContact(null)} />
             </motion.div>
           )}
@@ -596,7 +596,7 @@ function WizardForm({
               className="space-y-4"
             >
               <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Profissional</label>
+                <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Profissional</label>
                 <div className="grid gap-2">
                   {(professionals ?? []).map((p) => {
                     const selected = professionalId === p.id
@@ -606,11 +606,11 @@ function WizardForm({
                         type="button"
                         onClick={() => setProfessionalId(p.id)}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                          selected ? "border-accent/50 bg-accent/10" : "border-white/[0.08] hover:border-white/[0.12] hover:bg-white/[0.03]"
+                          selected ? "border-accent/50 bg-accent/10" : "border-border/60 hover:border-border hover:bg-foreground/[0.03]"
                         }`}
                       >
                         <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: p.calendarColor || "#22c55e" }} />
-                        <span className="text-[13px] font-medium text-white/90">{p.fullName}</span>
+                        <span className="text-[13px] font-medium text-foreground">{p.fullName}</span>
                         {selected && <Check className="h-4 w-4 text-accent ml-auto" weight="bold" />}
                       </button>
                     )
@@ -618,10 +618,10 @@ function WizardForm({
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Serviço</label>
+                <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Serviço</label>
                 <div className="grid gap-2">
                   {consultations.length === 0 ? (
-                    <p className="text-[12px] text-white/90 py-2">Configure serviços em Configurações → Serviços.</p>
+                    <p className="text-[12px] text-foreground py-2">Configure serviços em Configurações → Serviços.</p>
                   ) : (
                     consultations.map((s) => {
                       const selected = serviceId === s.id
@@ -631,11 +631,11 @@ function WizardForm({
                           type="button"
                           onClick={() => setServiceId(s.id)}
                           className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-left transition-all ${
-                            selected ? "border-accent/50 bg-accent/10" : "border-white/[0.08] hover:border-white/[0.12] hover:bg-white/[0.03]"
+                            selected ? "border-accent/50 bg-accent/10" : "border-border/60 hover:border-border hover:bg-foreground/[0.03]"
                           }`}
                         >
-                          <span className="text-[13px] font-medium text-white/90">{s.name}</span>
-                          <span className="text-[11px] text-white/90">{s.durationMin} min</span>
+                          <span className="text-[13px] font-medium text-foreground">{s.name}</span>
+                          <span className="text-[11px] text-foreground">{s.durationMin} min</span>
                         </button>
                       )
                     })
@@ -656,7 +656,7 @@ function WizardForm({
               className="space-y-4"
             >
               <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Data</label>
+                <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Data</label>
                 <input
                   type="date"
                   value={selectedDate}
@@ -666,11 +666,11 @@ function WizardForm({
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">Horário disponível</label>
+                <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">Horário disponível</label>
                 {slotsQuery.isLoading ? (
                   <AilumLoader variant="section" className="py-6" />
                 ) : slots.length === 0 ? (
-                  <p className="text-[12px] text-white/90 py-2">
+                  <p className="text-[12px] text-foreground py-2">
                     {slotsQuery.data?.reason ?? "Nenhum horário disponível nesta data."}
                   </p>
                 ) : (
@@ -685,7 +685,7 @@ function WizardForm({
                           className={`py-2 rounded-xl border text-[12px] font-semibold transition-all ${
                             selected
                               ? "border-accent/50 bg-accent/15 text-accent"
-                              : "border-white/[0.08] text-white/90 hover:border-white/[0.14] hover:bg-white/[0.04]"
+                              : "border-border/60 text-foreground hover:border-border hover:bg-foreground/[0.04]"
                           }`}
                         >
                           {slot.time}
@@ -708,29 +708,29 @@ function WizardForm({
               transition={{ duration: 0.2, ease }}
               className="space-y-4"
             >
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2 text-[12px]">
+              <div className="rounded-xl border border-border/60 bg-foreground/[0.02] p-4 space-y-2 text-[12px]">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   <div>
-                    <p className="text-white/85">Paciente</p>
-                    <p className="font-semibold text-white/90">{contact?.name ?? contact?.phone ?? "—"}</p>
+                    <p className="text-foreground/85">Paciente</p>
+                    <p className="font-semibold text-foreground">{contact?.name ?? contact?.phone ?? "—"}</p>
                   </div>
                   <div>
-                    <p className="text-white/85">Profissional</p>
-                    <p className="font-semibold text-white/90">{selectedProfessional?.fullName ?? "—"}</p>
+                    <p className="text-foreground/85">Profissional</p>
+                    <p className="font-semibold text-foreground">{selectedProfessional?.fullName ?? "—"}</p>
                   </div>
                   <div>
-                    <p className="text-white/85">Serviço</p>
-                    <p className="font-semibold text-white/90">{selectedService?.name ?? "—"}</p>
+                    <p className="text-foreground/85">Serviço</p>
+                    <p className="font-semibold text-foreground">{selectedService?.name ?? "—"}</p>
                   </div>
                   <div>
-                    <p className="text-white/85">Horário</p>
-                    <p className="font-semibold text-white/90">{selectedDate} · {selectedSlot?.time ?? "—"}</p>
+                    <p className="text-foreground/85">Horário</p>
+                    <p className="font-semibold text-foreground">{selectedDate} · {selectedSlot?.time ?? "—"}</p>
                   </div>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-white/90 uppercase tracking-wider">
-                  Observações <span className="text-white/85 normal-case font-normal">(opcional)</span>
+                <label className="block text-[10px] font-bold text-foreground uppercase tracking-wider">
+                  Observações <span className="text-foreground/85 normal-case font-normal">(opcional)</span>
                 </label>
                 <textarea
                   value={notes}
@@ -766,7 +766,7 @@ function WizardForm({
           <button
             type="button"
             onClick={() => { setError(null); setStep((s) => (s - 1) as Step) }}
-            className="flex-1 rounded-xl border border-white/[0.09] py-2 text-[13px] font-medium text-white/85 hover:text-white/90 hover:bg-white/[0.04] transition-colors"
+            className="flex-1 rounded-xl border border-border/70 py-2 text-[13px] font-medium text-foreground/85 hover:text-foreground hover:bg-foreground/[0.04] transition-colors"
           >
             Voltar
           </button>

@@ -141,14 +141,14 @@ function MiniCalendar({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-semibold text-white/90">Março 2026</span>
-          <span className="text-[10px] text-white/30 font-medium">Semana atual</span>
+          <span className="text-[13px] font-semibold text-foreground">Março 2026</span>
+          <span className="text-[10px] text-muted-foreground/50 font-medium">Semana atual</span>
         </div>
         <div className="flex items-center gap-1">
-          <button className="h-6 w-6 rounded-md flex items-center justify-center text-white/40 hover:text-white/60 hover:bg-white/[0.04] transition-colors">
+          <button className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-foreground/[0.04] transition-colors">
             <CaretLeft className="h-3 w-3" weight="bold" />
           </button>
-          <button className="h-6 w-6 rounded-md flex items-center justify-center text-white/40 hover:text-white/60 hover:bg-white/[0.04] transition-colors">
+          <button className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-foreground/[0.04] transition-colors">
             <CaretRight className="h-3 w-3" weight="bold" />
           </button>
         </div>
@@ -168,12 +168,12 @@ function MiniCalendar({
               transition={{ duration: 0.5, ease }}
               className="flex flex-col items-center py-1.5 rounded-lg"
             >
-              <span className={`text-[8px] font-bold uppercase tracking-wider ${isHighlighted ? "text-accent/80" : "text-white/40"}`}>
+              <span className={`text-[8px] font-bold uppercase tracking-wider ${isHighlighted ? "text-accent/80" : "text-muted-foreground/60"}`}>
                 {WEEKDAYS[d.getDay()]}
               </span>
               <span className={`text-[11px] font-bold mt-0.5 ${
                 isToday ? "bg-accent text-accent-foreground h-5 w-5 rounded-full flex items-center justify-center" :
-                isHighlighted ? "text-accent" : "text-white/60"
+                isHighlighted ? "text-accent" : "text-muted-foreground/80"
               }`}>
                 {d.getDate()}
               </span>
@@ -183,13 +183,13 @@ function MiniCalendar({
       </div>
 
       {/* Time grid */}
-      <div className="relative overflow-hidden rounded-lg border border-white/[0.04]" style={{ height: HOURS.length * HOUR_H }}>
+      <div className="relative overflow-hidden rounded-lg border border-foreground/[0.04]" style={{ height: HOURS.length * HOUR_H }}>
         <div className="grid grid-cols-7 h-full">
           {/* Hour labels */}
           <div className="w-8 flex flex-col">
             {HOURS.map((h) => (
               <div key={h} className="flex items-start justify-end pr-1.5 pt-0.5" style={{ height: HOUR_H }}>
-                <span className="text-[8px] font-mono text-white/25 tabular-nums">
+                <span className="text-[8px] font-mono text-muted-foreground/40 tabular-nums">
                   {String(h).padStart(2, "0")}
                 </span>
               </div>
@@ -202,7 +202,7 @@ function MiniCalendar({
             const isHighlighted = dayIdx === highlightDay
 
             return (
-              <div key={dayIdx} className="relative border-l border-white/[0.04]">
+              <div key={dayIdx} className="relative border-l border-foreground/[0.04]">
                 {/* Day highlight pulse */}
                 <AnimatePresence>
                   {isHighlighted && (
@@ -288,7 +288,7 @@ function MiniCalendar({
                       className={`absolute left-0.5 right-0.5 rounded-[4px] px-1 py-0.5 overflow-hidden z-[2] ${
                         apt.status === "confirmed"
                           ? "bg-blue-500/40 border border-blue-500/50"
-                          : "bg-white/[0.04] border border-dashed border-white/20"
+                          : "bg-foreground/[0.04] border border-dashed border-border"
                       }`}
                       style={{
                         top: (apt.startHour - HOURS[0]) * HOUR_H + 1,
@@ -304,8 +304,8 @@ function MiniCalendar({
                           className="absolute inset-0 bg-blue-400/20 rounded-[4px]"
                         />
                       )}
-                      <p className="text-[7px] font-bold text-white/80 truncate relative z-10">{apt.patient.split(" ")[0]}</p>
-                      <p className="text-[6px] text-white/40 truncate relative z-10">{apt.type}</p>
+                      <p className="text-[7px] font-bold text-foreground/80 truncate relative z-10">{apt.patient.split(" ")[0]}</p>
+                      <p className="text-[6px] text-muted-foreground/60 truncate relative z-10">{apt.type}</p>
                     </motion.div>
                   )
                 })}
@@ -408,12 +408,12 @@ function ConciergeChat({ onCalendarEvent }: { onCalendarEvent: (e: CalendarEvent
           <Sparkle className="h-3.5 w-3.5 text-accent/70" weight="fill" />
         </div>
         <div>
-          <p className="text-[12px] font-semibold text-white/85 leading-none">Concierge IA</p>
-          <p className="text-[10px] text-white/30 mt-0.5 leading-none">Dra. Marina</p>
+          <p className="text-[12px] font-semibold text-foreground/85 leading-none">Concierge IA</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-0.5 leading-none">Dra. Marina</p>
         </div>
       </div>
 
-      <div className="h-px bg-white/[0.04] mb-3" />
+      <div className="h-px bg-foreground/[0.04] mb-3" />
 
       {/* Messages */}
       <div ref={chatRef} className="flex-1 flex flex-col gap-2.5 overflow-y-auto min-h-0 pr-1" style={{ maxHeight: 320 }}>
@@ -424,7 +424,7 @@ function ConciergeChat({ onCalendarEvent }: { onCalendarEvent: (e: CalendarEvent
             className="flex-1 flex flex-col items-center justify-center gap-2 py-8"
           >
             <Sparkle className="h-5 w-5 text-accent/20" weight="fill" />
-            <p className="text-[11px] text-white/25 text-center">Peça ao seu Concierge</p>
+            <p className="text-[11px] text-muted-foreground/40 text-center">Peça ao seu Concierge</p>
           </motion.div>
         )}
 
@@ -439,12 +439,12 @@ function ConciergeChat({ onCalendarEvent }: { onCalendarEvent: (e: CalendarEvent
             >
               {msg.from === "user" ? (
                 <div className="max-w-[85%] rounded-xl rounded-br-sm bg-accent/10 border border-accent/15 px-3 py-2">
-                  <p className="text-[11px] text-white/75 leading-relaxed">{msg.text}</p>
+                  <p className="text-[11px] text-foreground/75 leading-relaxed">{msg.text}</p>
                 </div>
               ) : (
                 <div className="max-w-[90%] space-y-1.5">
-                  <div className="rounded-xl rounded-bl-sm bg-white/[0.03] border border-white/[0.06] px-3 py-2">
-                    <p className="text-[11px] text-white/70 leading-relaxed whitespace-pre-line">{msg.text}</p>
+                  <div className="rounded-xl rounded-bl-sm bg-foreground/[0.03] border border-foreground/[0.06] px-3 py-2">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed whitespace-pre-line">{msg.text}</p>
                   </div>
                   {msg.tools && (
                     <div className="flex flex-wrap gap-1">
@@ -454,7 +454,7 @@ function ConciergeChat({ onCalendarEvent }: { onCalendarEvent: (e: CalendarEvent
                           initial={{ opacity: 0, x: -8, scale: 0.9 }}
                           animate={{ opacity: 1, x: 0, scale: 1 }}
                           transition={{ duration: 0.35, delay: 0.15 + ti * 0.08, ease }}
-                          className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.03] border border-white/[0.06] px-2 py-1"
+                          className="inline-flex items-center gap-1.5 rounded-md bg-foreground/[0.03] border border-foreground/[0.06] px-2 py-1"
                         >
                           <motion.div
                             initial={{ scale: 0 }}
@@ -463,7 +463,7 @@ function ConciergeChat({ onCalendarEvent }: { onCalendarEvent: (e: CalendarEvent
                           >
                             <CheckCircle className="h-3 w-3 text-emerald-400/60" weight="fill" />
                           </motion.div>
-                          <span className="text-[9px] font-medium text-white/50">{tool.label}</span>
+                          <span className="text-[9px] font-medium text-muted-foreground/70">{tool.label}</span>
                         </motion.div>
                       ))}
                     </div>
@@ -483,13 +483,13 @@ function ConciergeChat({ onCalendarEvent }: { onCalendarEvent: (e: CalendarEvent
               transition={{ duration: 0.2 }}
               className="flex justify-start"
             >
-              <div className="rounded-xl rounded-bl-sm bg-white/[0.03] border border-white/[0.06] px-3 py-2.5 flex items-center gap-1.5">
+              <div className="rounded-xl rounded-bl-sm bg-foreground/[0.03] border border-foreground/[0.06] px-3 py-2.5 flex items-center gap-1.5">
                 <Sparkle className="h-3 w-3 text-accent/30" weight="fill" />
                 <div className="flex gap-0.5">
                   {[0, 1, 2].map((i) => (
                     <motion.div
                       key={i}
-                      className="h-1 w-1 rounded-full bg-white/20"
+                      className="h-1 w-1 rounded-full bg-foreground/20"
                       animate={{ opacity: [0.3, 1, 0.3] }}
                       transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
                     />
@@ -502,10 +502,10 @@ function ConciergeChat({ onCalendarEvent }: { onCalendarEvent: (e: CalendarEvent
       </div>
 
       {/* Input */}
-      <div className="mt-3 pt-3 border-t border-white/[0.04]">
-        <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-          <Microphone className="h-3.5 w-3.5 text-white/20 shrink-0" />
-          <span className="flex-1 text-[11px] text-white/20">Fale ou digite...</span>
+      <div className="mt-3 pt-3 border-t border-foreground/[0.04]">
+        <div className="flex items-center gap-2 rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] px-3 py-2">
+          <Microphone className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
+          <span className="flex-1 text-[11px] text-muted-foreground/30">Fale ou digite...</span>
           <PaperPlaneRight className="h-3.5 w-3.5 text-accent/30 shrink-0" />
         </div>
       </div>
@@ -563,7 +563,7 @@ export function CalendarShowcase() {
 
       <div className="mx-auto max-w-7xl px-6">
         <FadeIn direction="up" className="mx-auto max-w-2xl text-center mb-16 md:mb-20">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1.5 mb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-foreground/[0.06] bg-foreground/[0.03] px-3.5 py-1.5 mb-6">
             <CalendarCheck className="h-3 w-3 text-accent/60" weight="fill" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent/70">
               Calendário inteligente
@@ -571,15 +571,15 @@ export function CalendarShowcase() {
           </div>
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Sua agenda no{" "}
-            <span className="font-display italic text-white/50">piloto automático</span>
+            <span className="font-display italic text-muted-foreground/70">piloto automático</span>
           </h2>
-          <p className="mt-3 text-sm text-white/35 max-w-lg mx-auto">
+          <p className="mt-3 text-sm text-muted-foreground/50 max-w-lg mx-auto">
             Visualize consultas, bloqueie horários e gerencie tudo por voz ou texto com o Concierge IA.
           </p>
         </FadeIn>
 
         <FadeIn delay={0.15}>
-          <div className="relative rounded-2xl sm:rounded-3xl border border-white/[0.06] bg-white/[0.015] overflow-hidden">
+          <div className="relative rounded-2xl sm:rounded-3xl border border-foreground/[0.06] bg-foreground/[0.015] overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/25 to-transparent" />
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px]">
@@ -592,7 +592,7 @@ export function CalendarShowcase() {
                 />
               </div>
 
-              <div className="border-t lg:border-t-0 lg:border-l border-white/[0.04] p-5 sm:p-6 flex flex-col">
+              <div className="border-t lg:border-t-0 lg:border-l border-foreground/[0.04] p-5 sm:p-6 flex flex-col">
                 <ConciergeChat onCalendarEvent={handleCalendarEvent} />
               </div>
             </div>
@@ -613,7 +613,7 @@ export function CalendarShowcase() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.4 + i * 0.08, ease }}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 text-[11px] text-white/40"
+                className="inline-flex items-center gap-1.5 rounded-full border border-foreground/[0.06] bg-foreground/[0.02] px-3.5 py-1.5 text-[11px] text-muted-foreground/60"
               >
                 <Sparkle className="h-2.5 w-2.5 text-accent/40" weight="fill" />
                 {label}

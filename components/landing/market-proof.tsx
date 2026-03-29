@@ -70,7 +70,7 @@ function ProofCard({
       transition={{ duration: 0.8, delay: index * 0.08, ease }}
       className={`group relative ${proof.span}`}
     >
-      <div className="relative h-full overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015] backdrop-blur-sm transition-all duration-700 hover:border-white/[0.10] hover:bg-white/[0.03]">
+      <div className="relative h-full overflow-hidden rounded-2xl border border-foreground/[0.06] bg-foreground/[0.015] backdrop-blur-sm transition-all duration-700 hover:border-border/80 hover:bg-foreground/[0.03]">
         {/* Glow blob */}
         <motion.div
           initial={{ opacity: 0, scale: 0.4 }}
@@ -95,10 +95,10 @@ function ProofCard({
             initial={{ opacity: 0, y: 6 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 + index * 0.08, ease }}
-            className="text-[14px] md:text-[15px] leading-relaxed text-white/40"
+            className="text-[14px] md:text-[15px] leading-relaxed text-muted-foreground/60"
           >
             {proof.context}{proof.context ? " " : ""}
-            <span className="font-medium text-white/70">{proof.highlight}</span>
+            <span className="font-medium text-muted-foreground">{proof.highlight}</span>
           </motion.p>
 
           {/* Source */}
@@ -170,12 +170,12 @@ export function MarketProof() {
           transition={{ duration: 1, delay: 0.3, ease }}
           className="mt-14 md:mt-20 text-center font-display text-xl md:text-2xl lg:text-3xl font-semibold tracking-tight leading-snug"
         >
-          <span className="text-white/90 tracking-[0.25em] text-[0.85em]">AILUM</span>
-          <span className="text-white/40"> automatiza tudo isso —</span>
+          <span className="text-foreground tracking-[0.25em] text-[0.85em]">AILUM</span>
+          <span className="text-muted-foreground/60"> automatiza tudo isso —</span>
           <br />
           <span className="text-accent">24h por dia</span>
-          <span className="text-white/20">,</span>{" "}
-          <span className="text-white/90">sem intervalo.</span>
+          <span className="text-muted-foreground/30">,</span>{" "}
+          <span className="text-foreground">sem intervalo.</span>
         </motion.p>
       </div>
     </section>

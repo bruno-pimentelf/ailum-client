@@ -8,7 +8,7 @@ export function Marquee() {
   const content = [...phrases, ...phrases]
 
   return (
-    <section className="relative py-10 md:py-14 overflow-hidden border-y border-white/[0.04]">
+    <section className="relative py-10 md:py-14 overflow-hidden border-y border-foreground/[0.04]">
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-background via-transparent to-background z-10" />
 
       <div className="marquee-track flex items-center gap-10 md:gap-16 whitespace-nowrap">

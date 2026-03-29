@@ -32,7 +32,7 @@ export function Footer() {
   ]
 
   return (
-    <footer className="border-t border-white/[0.04]">
+    <footer className="border-t border-foreground/[0.04]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-14 md:py-20">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-10 md:grid-cols-5 md:gap-8">
           {/* Brand */}
@@ -42,7 +42,7 @@ export function Footer() {
                 AILUM
               </span>
             </Link>
-            <p className="mt-5 text-[13px] leading-relaxed text-white/85 max-w-[220px] md:max-w-none">
+            <p className="mt-5 text-[13px] leading-relaxed text-foreground/85 max-w-[220px] md:max-w-none">
               {t.footer.tagline}
             </p>
           </div>
@@ -50,7 +50,7 @@ export function Footer() {
           {/* Link columns */}
           {footerSections.map(({ title, links }) => (
             <div key={title}>
-              <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/85">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground/85">
                 {title}
               </h4>
               <ul className="mt-5 flex flex-col gap-3">
@@ -59,7 +59,7 @@ export function Footer() {
                     <Link
                       href={link.href}
                       {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                      className="text-[13px] text-white/85 transition-colors duration-300 hover:text-white/90"
+                      className="text-[13px] text-foreground/85 transition-colors duration-300 hover:text-foreground"
                     >
                       {link.label}
                     </Link>
@@ -70,15 +70,15 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/[0.04] pt-8 md:flex-row">
-          <p className="text-[11px] text-white/90">
+        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-foreground/[0.04] pt-8 md:flex-row">
+          <p className="text-[11px] text-foreground">
             &copy; {new Date().getFullYear()} Ailum. {t.footer.direitos}
           </p>
           <div className="flex items-center gap-6">
-            <Link href="/politicas-de-privacidade" target="_blank" rel="noopener noreferrer" className="text-[11px] text-white/90 transition-colors duration-300 hover:text-white/85">
+            <Link href="/politicas-de-privacidade" target="_blank" rel="noopener noreferrer" className="text-[11px] text-foreground transition-colors duration-300 hover:text-foreground/85">
               {t.footer.politica}
             </Link>
-            <Link href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-[11px] text-white/90 transition-colors duration-300 hover:text-white/85">
+            <Link href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-[11px] text-foreground transition-colors duration-300 hover:text-foreground/85">
               {t.footer.termos}
             </Link>
           </div>

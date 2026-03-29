@@ -198,7 +198,7 @@ function LivePromoCard({ collapsed }: { collapsed: boolean }) {
             </motion.div>
             <span className="text-[10px] font-bold text-accent uppercase tracking-wider">Live toda semana</span>
           </div>
-          <p className="text-[11px] font-bold text-white/95 leading-tight">Próxima live no Zoom</p>
+          <p className="text-[11px] font-bold text-foreground leading-tight">Próxima live no Zoom</p>
         </motion.a>
       )}
     </AnimatePresence>

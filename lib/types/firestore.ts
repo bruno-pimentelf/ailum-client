@@ -60,6 +60,10 @@ export interface FirestoreContact {
   // Reminders (synced from contact_reminders table)
   reminders?: FirestoreReminder[]
 
+  // Conversation summary
+  summary?: string | null
+  summaryUpdatedAt?: Timestamp | null
+
   // Metadata
   updatedAt: Timestamp
 }

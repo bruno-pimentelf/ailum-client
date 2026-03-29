@@ -98,7 +98,7 @@ function CreateAccountModal({ open, onClose }: { open: boolean; onClose: () => v
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
           <motion.div key="panel" initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }} transition={{ duration: 0.24, ease }}
-            className="fixed inset-x-4 top-[20vh] z-50 mx-auto max-w-md rounded-2xl border border-border/60 bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+            className="fixed inset-x-4 top-[20vh] z-50 mx-auto max-w-md rounded-2xl border border-border/60 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
           >
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
               <div className="flex items-center gap-2.5">
@@ -261,7 +261,7 @@ function EditRoleModal({ member, open, onClose }: { member: ApiMember | null; op
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
           <motion.div key="panel" initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }} transition={{ duration: 0.24, ease }}
-            className="fixed inset-x-4 top-[22vh] z-50 mx-auto max-w-sm rounded-2xl border border-border/60 bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+            className="fixed inset-x-4 top-[22vh] z-50 mx-auto max-w-sm rounded-2xl border border-border/60 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
           >
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
               <h2 className="text-[14px] font-semibold text-foreground">Alterar perfil</h2>
@@ -375,12 +375,12 @@ function MemberCard({ member, index, onEdit, canManage }: { member: ApiMember; i
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.03, ease }}
-      className="group relative flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition-all duration-150 hover:border-white/[0.10] hover:bg-white/[0.04]"
+      className="group relative flex items-center gap-3 rounded-lg border border-foreground/[0.06] bg-foreground/[0.02] px-3 py-2.5 transition-all duration-150 hover:border-border/80 hover:bg-foreground/[0.04]"
     >
       {member.user?.image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={member.user.image} alt={displayName}
-          className="h-8 w-8 shrink-0 rounded-full object-cover border border-white/[0.08]" />
+          className="h-8 w-8 shrink-0 rounded-full object-cover border border-border/60" />
       ) : (
         <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${cfg.bg} ${cfg.border} ${cfg.text}`}>
           {initials}
@@ -388,8 +388,8 @@ function MemberCard({ member, index, onEdit, canManage }: { member: ApiMember; i
       )}
 
       <div className="flex-1 min-w-0 py-0.5">
-        <p className="text-[12px] font-bold text-white/90 truncate">{displayName}</p>
-        {displaySub && <p className="text-[11px] text-white/90 truncate">{displaySub}</p>}
+        <p className="text-[12px] font-bold text-foreground truncate">{displayName}</p>
+        {displaySub && <p className="text-[11px] text-foreground truncate">{displaySub}</p>}
         {!member.isActive && (
           <span className="text-[9px] font-bold text-amber-400/70 uppercase tracking-wider">convite pendente</span>
         )}
@@ -410,7 +410,7 @@ function MemberCard({ member, index, onEdit, canManage }: { member: ApiMember; i
 
       <div className="relative shrink-0 w-6 flex justify-end">
         {canManage && (
-        <button onClick={() => setMenuOpen((v) => !v)} className="cursor-pointer flex h-6 w-6 items-center justify-center rounded text-white/90 opacity-0 group-hover:opacity-100 hover:bg-white/[0.06] hover:text-white/85 transition-all duration-150">
+        <button onClick={() => setMenuOpen((v) => !v)} className="cursor-pointer flex h-6 w-6 items-center justify-center rounded text-foreground opacity-0 group-hover:opacity-100 hover:bg-foreground/[0.06] hover:text-foreground/85 transition-all duration-150">
           <DotsThree className="h-3.5 w-3.5" weight="bold" />
         </button>
         )}
@@ -420,14 +420,14 @@ function MemberCard({ member, index, onEdit, canManage }: { member: ApiMember; i
               <div className="fixed inset-0 z-10" onClick={() => { setMenuOpen(false); setRemoveConfirm(false) }} aria-hidden />
               <motion.div initial={{ opacity: 0, scale: 0.95, y: -2 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -2 }}
                 transition={{ duration: 0.12, ease }}
-                className="absolute right-0 top-full mt-1 z-20 w-36 rounded-lg border border-white/[0.08] bg-[oklch(0.16_0.02_263)] py-0.5 shadow-lg shadow-black/30">
+                className="absolute right-0 top-full mt-1 z-20 w-36 rounded-lg border border-border/60 bg-surface py-0.5 shadow-lg shadow-foreground/8">
                 <button onClick={() => { onEdit(); setMenuOpen(false) }}
-                  className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/85 hover:bg-white/[0.06] hover:text-white/90 transition-colors">
+                  className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-foreground/85 hover:bg-foreground/[0.06] hover:text-foreground transition-colors">
                   <Pencil className="h-3 w-3" /> Alterar perfil
                 </button>
                 {!removeConfirm ? (
                   <button onClick={() => setRemoveConfirm(true)}
-                    className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-white/90 hover:bg-rose-500/[0.08] hover:text-rose-400 transition-colors">
+                    className="cursor-pointer w-full flex items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-foreground hover:bg-rose-500/[0.08] hover:text-rose-400 transition-colors">
                     <Trash className="h-3 w-3" /> Remover
                   </button>
                 ) : (
@@ -477,9 +477,9 @@ export function MembersTab() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
-            <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/85" />
+            <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/85" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar..."
-              className="cursor-text w-full h-8 pl-8 pr-3 rounded-lg border border-white/[0.06] bg-white/[0.03] text-[12px] text-white/90 placeholder:text-white/22 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-all" />
+              className="cursor-text w-full h-8 pl-8 pr-3 rounded-lg border border-foreground/[0.06] bg-foreground/[0.03] text-[12px] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-all" />
           </div>
           <div className="flex items-center gap-1 flex-wrap">
             {(["all", ...Object.keys(ROLE_CFG)] as ApiRoleFilter[]).map((r) => {
@@ -491,8 +491,8 @@ export function MembersTab() {
                 <button key={r} onClick={() => setRoleFilter(r)}
                   className={`cursor-pointer flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold transition-all duration-150 ${
                     active
-                      ? cfg ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "bg-white/[0.08] border-white/[0.12] text-white/85"
-                      : "border-white/[0.05] bg-white/[0.02] text-white/88 hover:border-white/[0.08] hover:text-white/85"
+                      ? cfg ? `${cfg.bg} ${cfg.border} ${cfg.text}` : "bg-foreground/[0.08] border-border text-foreground/85"
+                      : "border-foreground/[0.05] bg-foreground/[0.02] text-foreground/85 hover:border-border/60 hover:text-foreground/85"
                   }`}>
                   {Icon && <Icon className="h-3 w-3" weight={active ? "fill" : "regular"} />}
                   {label}
@@ -511,7 +511,7 @@ export function MembersTab() {
         {isLoading && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-12 rounded-lg border border-white/[0.04] bg-white/[0.02] animate-pulse" />
+              <div key={i} className="h-12 rounded-lg border border-foreground/[0.04] bg-foreground/[0.02] animate-pulse" />
             ))}
           </div>
         )}
@@ -529,7 +529,7 @@ export function MembersTab() {
         {!isLoading && !error && (
           <div className="flex flex-col gap-6 w-full">
             <div>
-              <h3 className="text-[11px] font-bold text-white/88 uppercase tracking-wider mb-2">Membros</h3>
+              <h3 className="text-[11px] font-bold text-foreground/85 uppercase tracking-wider mb-2">Membros</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-1 w-full">
                 {filtered.length > 0 ? (
                   filtered.map((m, i) => (
@@ -537,10 +537,10 @@ export function MembersTab() {
                   ))
                 ) : (
                   <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.05] bg-white/[0.02] mb-3">
-                      <Users className="h-4 w-4 text-white/82" weight="duotone" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-foreground/[0.05] bg-foreground/[0.02] mb-3">
+                      <Users className="h-4 w-4 text-foreground/80" weight="duotone" />
                     </div>
-                    <p className="text-[12px] font-bold text-white/90">
+                    <p className="text-[12px] font-bold text-foreground">
                       {search ? "Nenhum membro encontrado" : "Nenhum membro ainda"}
                     </p>
                   </div>

@@ -91,19 +91,19 @@ function DocumentCard({
       transition={{ duration: 0.28, delay: index * 0.03, ease }}
       className={`group flex items-start gap-4 rounded-xl border p-4 transition-all ${
         doc.isActive
-          ? "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.035]"
-          : "border-white/[0.05] bg-white/[0.01] opacity-60"
+          ? "border-border/60 bg-foreground/[0.02] hover:border-border hover:bg-foreground/[0.035]"
+          : "border-foreground/[0.05] bg-foreground/[0.01] opacity-60"
       }`}
     >
-      <div className="h-12 w-12 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center">
+      <div className="h-12 w-12 shrink-0 rounded-xl border border-border/60 bg-foreground/[0.04] flex items-center justify-center">
         <SourceIcon className={`h-5 w-5 ${meta.color}`} weight="duotone" />
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-[13px] font-bold text-white/90 truncate leading-tight">{doc.title}</p>
+          <p className="text-[13px] font-bold text-foreground truncate leading-tight">{doc.title}</p>
           {!doc.isActive && (
-            <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-white/40 bg-white/[0.06] px-1.5 py-0.5 rounded">Inativo</span>
+            <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 bg-foreground/[0.06] px-1.5 py-0.5 rounded">Inativo</span>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1.5">
@@ -111,29 +111,29 @@ function DocumentCard({
             <SourceIcon className="h-3 w-3" weight="fill" />
             {meta.label}
           </span>
-          <span className="flex items-center gap-1 text-[11px] text-white/50">
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground/70">
             <Lightning className="h-3 w-3" weight="fill" />
             {doc._count.chunks} chunk{doc._count.chunks !== 1 ? "s" : ""}
           </span>
           {isFile && doc.fileName && (
-            <span className="text-[10px] text-white/30 truncate max-w-[120px]" title={doc.fileName}>
+            <span className="text-[10px] text-muted-foreground/50 truncate max-w-[120px]" title={doc.fileName}>
               {doc.fileName}
             </span>
           )}
           {isFile && doc.fileSize && (
-            <span className="text-[10px] text-white/30">{formatFileSize(doc.fileSize)}</span>
+            <span className="text-[10px] text-muted-foreground/50">{formatFileSize(doc.fileSize)}</span>
           )}
         </div>
       </div>
 
       <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-        <button onClick={onView} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-all" title="Ver conteúdo">
+        <button onClick={onView} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-all" title="Ver conteúdo">
           <Eye className="h-3.5 w-3.5" />
         </button>
-        <button onClick={toggleActive} disabled={update.isPending} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-all disabled:opacity-50" title={doc.isActive ? "Desativar" : "Ativar"}>
+        <button onClick={toggleActive} disabled={update.isPending} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-all disabled:opacity-50" title={doc.isActive ? "Desativar" : "Ativar"}>
           {doc.isActive ? <EyeSlash className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
         </button>
-        <button onClick={onEdit} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-all" title="Editar">
+        <button onClick={onEdit} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-all" title="Editar">
           <Pencil className="h-3.5 w-3.5" />
         </button>
         <button
@@ -143,7 +143,7 @@ function DocumentCard({
           className={`cursor-pointer flex h-7 items-center justify-center rounded-lg text-[10px] font-bold transition-all disabled:opacity-50 ${
             confirmDelete
               ? "gap-1 px-2 bg-rose-500/15 border border-rose-500/30 text-rose-400 hover:bg-rose-500/25 w-auto"
-              : "w-7 text-white/50 hover:text-rose-400 hover:bg-rose-500/[0.08]"
+              : "w-7 text-muted-foreground/70 hover:text-rose-400 hover:bg-rose-500/[0.08]"
           }`}
           title={confirmDelete ? "Confirmar exclusão" : "Excluir"}
         >
@@ -180,37 +180,37 @@ function CreateModeSelector({ onSelectText, onSelectFile, onClose }: {
         exit={{ scale: 0.96, y: 8 }}
         transition={{ duration: 0.22, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-2xl border border-white/[0.10] bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+        className="w-full max-w-sm rounded-2xl border border-border/80 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
-          <h2 className="text-[14px] font-semibold text-white/90">Adicionar documento</h2>
-          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-colors">
+        <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
+          <h2 className="text-[14px] font-semibold text-foreground">Adicionar documento</h2>
+          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="px-5 py-4 space-y-2">
           <button
             onClick={onSelectText}
-            className="cursor-pointer w-full flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5 hover:border-white/[0.14] hover:bg-white/[0.04] transition-all text-left"
+            className="cursor-pointer w-full flex items-center gap-3 rounded-xl border border-border/60 bg-foreground/[0.02] px-4 py-3.5 hover:border-border hover:bg-foreground/[0.04] transition-all text-left"
           >
             <div className="h-10 w-10 shrink-0 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
               <FileText className="h-5 w-5 text-sky-400" weight="duotone" />
             </div>
             <div>
-              <p className="text-[13px] font-bold text-white/90">Texto ou FAQ</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Escreva conteúdo de texto ou perguntas e respostas</p>
+              <p className="text-[13px] font-bold text-foreground">Texto ou FAQ</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">Escreva conteúdo de texto ou perguntas e respostas</p>
             </div>
           </button>
           <button
             onClick={onSelectFile}
-            className="cursor-pointer w-full flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3.5 hover:border-white/[0.14] hover:bg-white/[0.04] transition-all text-left"
+            className="cursor-pointer w-full flex items-center gap-3 rounded-xl border border-border/60 bg-foreground/[0.02] px-4 py-3.5 hover:border-border hover:bg-foreground/[0.04] transition-all text-left"
           >
             <div className="h-10 w-10 shrink-0 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
               <UploadSimple className="h-5 w-5 text-violet-400" weight="duotone" />
             </div>
             <div>
-              <p className="text-[13px] font-bold text-white/90">Upload de arquivo</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Imagem, PDF, áudio ou vídeo ({ACCEPTED_EXTENSIONS})</p>
+              <p className="text-[13px] font-bold text-foreground">Upload de arquivo</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">Imagem, PDF, áudio ou vídeo ({ACCEPTED_EXTENSIONS})</p>
             </div>
           </button>
         </div>
@@ -276,29 +276,29 @@ function TextEditorModal({
         initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
         transition={{ duration: 0.22, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl border border-white/[0.10] bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden max-h-[90vh] flex flex-col"
+        className="w-full max-w-lg rounded-2xl border border-border/80 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden max-h-[90vh] flex flex-col"
       >
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4 shrink-0">
+        <div className="flex items-center justify-between border-b border-border/50 px-5 py-4 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
               <Books className="h-4 w-4 text-accent" weight="duotone" />
             </div>
-            <h2 className="text-[14px] font-semibold text-white/90">{isNew ? "Novo documento" : "Editar documento"}</h2>
+            <h2 className="text-[14px] font-semibold text-foreground">{isNew ? "Novo documento" : "Editar documento"}</h2>
           </div>
-          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-colors">
+          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4 overflow-y-auto flex-1">
           <div>
-            <label className="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">Título *</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Título *</label>
             <input value={form.title} onChange={set("title")} placeholder="ex: FAQ da Clínica, Procedimentos..." autoFocus
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-white/90 placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all" />
+              className="w-full h-10 rounded-xl border border-border/70 bg-foreground/[0.03] px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all" />
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">Tipo</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Tipo</label>
             <div className="grid grid-cols-2 gap-2">
               {(["TEXT", "FAQ"] as const).map((type) => {
                 const info = SOURCE_META[type]!
@@ -306,7 +306,7 @@ function TextEditorModal({
                 const active = form.sourceType === type
                 return (
                   <button key={type} type="button" onClick={() => setForm((p) => ({ ...p, sourceType: type }))} disabled={!isNew}
-                    className={`cursor-pointer flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 transition-all ${active ? "border-accent/30 bg-accent/8 text-accent" : "border-white/[0.08] bg-white/[0.02] text-white/50 hover:border-white/[0.12] hover:text-white/70"} ${!isNew ? "opacity-60 cursor-not-allowed" : ""}`}>
+                    className={`cursor-pointer flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 transition-all ${active ? "border-accent/30 bg-accent/8 text-accent" : "border-border/60 bg-foreground/[0.02] text-muted-foreground/70 hover:border-border hover:text-muted-foreground"} ${!isNew ? "opacity-60 cursor-not-allowed" : ""}`}>
                     <Icon className="h-4 w-4" weight={active ? "fill" : "regular"} />
                     <div className="text-left">
                       <p className="text-[12px] font-bold">{info.label}</p>
@@ -320,16 +320,16 @@ function TextEditorModal({
 
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[10px] font-bold text-white/60 uppercase tracking-wider">Conteúdo *</label>
-              <span className="text-[10px] text-white/30">~{wordCount} palavras / ~{estimatedChunks} chunk{estimatedChunks !== 1 ? "s" : ""}</span>
+              <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider">Conteúdo *</label>
+              <span className="text-[10px] text-muted-foreground/50">~{wordCount} palavras / ~{estimatedChunks} chunk{estimatedChunks !== 1 ? "s" : ""}</span>
             </div>
             <textarea value={form.content} onChange={set("content")} rows={12}
               placeholder={form.sourceType === "FAQ"
                 ? "P: Qual o endereço da clínica?\nR: Av. Nossa Sra. da Penha, 235 - Santa Helena, Vitória/ES\n\nP: Aceita convênio?\nR: Não, somos apenas particular."
                 : "Escreva o conteúdo que a IA deve usar como referência..."}
-              className="w-full rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white/90 placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-accent/50 resize-none transition-all leading-relaxed font-mono" />
+              className="w-full rounded-xl border border-border/70 bg-foreground/[0.03] px-3.5 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/50 resize-none transition-all leading-relaxed font-mono" />
             {form.sourceType === "FAQ" && (
-              <p className="text-[10px] text-white/30 mt-1.5">Use P: (pergunta) e R: (resposta) para cada par.</p>
+              <p className="text-[10px] text-muted-foreground/50 mt-1.5">Use P: (pergunta) e R: (resposta) para cada par.</p>
             )}
           </div>
 
@@ -344,7 +344,7 @@ function TextEditorModal({
           </AnimatePresence>
 
           <div className="flex items-center gap-2 pt-1">
-            <button type="button" onClick={onClose} className="cursor-pointer flex-1 rounded-xl border border-white/[0.09] py-2 text-[13px] text-white/50 hover:text-white/85 hover:bg-white/[0.04] transition-colors">Cancelar</button>
+            <button type="button" onClick={onClose} className="cursor-pointer flex-1 rounded-xl border border-border/70 py-2 text-[13px] text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.04] transition-colors">Cancelar</button>
             <button type="submit" disabled={isPending}
               className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-60">
               {isPending
@@ -419,16 +419,16 @@ function FileUploadModal({ onClose }: { onClose: () => void }) {
         initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
         transition={{ duration: 0.22, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-white/[0.10] bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden"
+        className="w-full max-w-md rounded-2xl border border-border/80 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 border border-violet-500/20">
               <UploadSimple className="h-4 w-4 text-violet-400" weight="duotone" />
             </div>
-            <h2 className="text-[14px] font-semibold text-white/90">Upload de arquivo</h2>
+            <h2 className="text-[14px] font-semibold text-foreground">Upload de arquivo</h2>
           </div>
-          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-colors">
+          <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -444,8 +444,8 @@ function FileUploadModal({ onClose }: { onClose: () => void }) {
               dragOver
                 ? "border-accent/50 bg-accent/[0.06]"
                 : selectedFile
-                  ? "border-white/[0.12] bg-white/[0.03]"
-                  : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.035]"
+                  ? "border-border bg-foreground/[0.03]"
+                  : "border-border/60 bg-foreground/[0.02] hover:border-border hover:bg-foreground/[0.035]"
             }`}
           >
             <input
@@ -458,38 +458,38 @@ function FileUploadModal({ onClose }: { onClose: () => void }) {
 
             {selectedFile ? (
               <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 shrink-0 rounded-lg ${fileMeta ? `bg-white/[0.04]` : "bg-white/[0.04]"} border border-white/[0.08] flex items-center justify-center`}>
-                  {fileMeta ? <fileMeta.icon className={`h-5 w-5 ${fileMeta.color}`} weight="duotone" /> : <File className="h-5 w-5 text-white/50" weight="duotone" />}
+                <div className={`h-10 w-10 shrink-0 rounded-lg ${fileMeta ? `bg-foreground/[0.04]` : "bg-foreground/[0.04]"} border border-border/60 flex items-center justify-center`}>
+                  {fileMeta ? <fileMeta.icon className={`h-5 w-5 ${fileMeta.color}`} weight="duotone" /> : <File className="h-5 w-5 text-muted-foreground/70" weight="duotone" />}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[12px] font-bold text-white/90 truncate">{selectedFile.name}</p>
-                  <p className="text-[10px] text-white/40">{formatFileSize(selectedFile.size)}</p>
+                  <p className="text-[12px] font-bold text-foreground truncate">{selectedFile.name}</p>
+                  <p className="text-[10px] text-muted-foreground/60">{formatFileSize(selectedFile.size)}</p>
                 </div>
                 <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedFile(null); setTitle("") }}
-                  className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
+                  className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/60 hover:text-muted-foreground hover:bg-foreground/[0.06] transition-all">
                   <X className="h-3 w-3" />
                 </button>
               </div>
             ) : (
               <>
-                <CloudArrowUp className={`h-8 w-8 mb-2 ${dragOver ? "text-accent/70" : "text-white/20"}`} weight="duotone" />
-                <p className="text-[12px] font-semibold text-white/60">Arraste o arquivo aqui ou clique para selecionar</p>
-                <p className="text-[10px] text-white/30 mt-1">{ACCEPTED_EXTENSIONS} (máx. 20MB)</p>
+                <CloudArrowUp className={`h-8 w-8 mb-2 ${dragOver ? "text-accent/70" : "text-muted-foreground/30"}`} weight="duotone" />
+                <p className="text-[12px] font-semibold text-muted-foreground/80">Arraste o arquivo aqui ou clique para selecionar</p>
+                <p className="text-[10px] text-muted-foreground/50 mt-1">{ACCEPTED_EXTENSIONS} (máx. 20MB)</p>
               </>
             )}
           </div>
 
           {/* Title */}
           <div>
-            <label className="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">Título *</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Título *</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nome do documento..."
-              className="w-full h-10 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 text-[13px] text-white/90 placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all" />
+              className="w-full h-10 rounded-xl border border-border/70 bg-foreground/[0.03] px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all" />
           </div>
 
           {/* Info */}
-          <div className="flex items-start gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+          <div className="flex items-start gap-2 rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] px-3 py-2.5">
             <Lightning className="h-3.5 w-3.5 text-accent/50 shrink-0 mt-0.5" weight="fill" />
-            <p className="text-[10px] text-white/40 leading-relaxed">
+            <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
               O conteúdo do arquivo será automaticamente extraído e indexado pela IA.
               PDFs têm o texto extraído, imagens são descritas, e áudios são transcritos.
             </p>
@@ -506,7 +506,7 @@ function FileUploadModal({ onClose }: { onClose: () => void }) {
           </AnimatePresence>
 
           <div className="flex items-center gap-2 pt-1">
-            <button type="button" onClick={onClose} className="cursor-pointer flex-1 rounded-xl border border-white/[0.09] py-2 text-[13px] text-white/50 hover:text-white/85 hover:bg-white/[0.04] transition-colors">Cancelar</button>
+            <button type="button" onClick={onClose} className="cursor-pointer flex-1 rounded-xl border border-border/70 py-2 text-[13px] text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.04] transition-colors">Cancelar</button>
             <button type="submit" disabled={upload.isPending || !selectedFile}
               className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2 text-[13px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-60">
               {upload.isPending
@@ -534,16 +534,16 @@ function ContentViewerModal({ doc, onClose, onEdit }: { doc: KnowledgeDocument; 
         initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
         transition={{ duration: 0.22, ease }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl border border-white/[0.10] bg-[oklch(0.14_0.02_263)] shadow-2xl shadow-black/60 overflow-hidden max-h-[85vh] flex flex-col"
+        className="w-full max-w-lg rounded-2xl border border-border/80 bg-overlay shadow-2xl shadow-foreground/10 overflow-hidden max-h-[85vh] flex flex-col"
       >
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4 shrink-0">
+        <div className="flex items-center justify-between border-b border-border/50 px-5 py-4 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.08]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground/[0.04] border border-border/60">
               <SourceIcon className={`h-4 w-4 ${meta.color}`} weight="duotone" />
             </div>
             <div>
-              <h2 className="text-[14px] font-semibold text-white/90">{doc.title}</h2>
-              <p className="text-[10px] text-white/40 mt-0.5">
+              <h2 className="text-[14px] font-semibold text-foreground">{doc.title}</h2>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">
                 {meta.label} / {doc._count.chunks} chunk{doc._count.chunks !== 1 ? "s" : ""}
                 {doc.fileName && ` / ${doc.fileName}`}
               </p>
@@ -551,23 +551,23 @@ function ContentViewerModal({ doc, onClose, onEdit }: { doc: KnowledgeDocument; 
           </div>
           <div className="flex items-center gap-1">
             {!["IMAGE", "PDF", "AUDIO", "VIDEO"].includes(doc.sourceType) && (
-              <button onClick={onEdit} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-colors" title="Editar">
+              <button onClick={onEdit} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors" title="Editar">
                 <Pencil className="h-3.5 w-3.5" />
               </button>
             )}
-            <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-white/50 hover:text-white/85 hover:bg-white/[0.06] transition-colors">
+            <button onClick={onClose} className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.06] transition-colors">
               <X className="h-4 w-4" />
             </button>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {["IMAGE", "PDF", "AUDIO", "VIDEO"].includes(doc.sourceType) && (
-            <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 mb-3">
+            <div className="flex items-center gap-2 rounded-lg border border-foreground/[0.06] bg-foreground/[0.02] px-3 py-2 mb-3">
               <SourceIcon className={`h-4 w-4 ${meta.color}`} weight="fill" />
-              <p className="text-[11px] text-white/40">Conteúdo extraído automaticamente do arquivo {doc.fileName ? `"${doc.fileName}"` : ""}</p>
+              <p className="text-[11px] text-muted-foreground/60">Conteúdo extraído automaticamente do arquivo {doc.fileName ? `"${doc.fileName}"` : ""}</p>
             </div>
           )}
-          <pre className="text-[12px] text-white/70 whitespace-pre-wrap leading-relaxed font-mono">
+          <pre className="text-[12px] text-muted-foreground whitespace-pre-wrap leading-relaxed font-mono">
             {doc.rawContent || "Sem conteúdo"}
           </pre>
         </div>
@@ -620,8 +620,8 @@ export function KnowledgeTab() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[13px] font-bold text-white/85">Base de Conhecimento</p>
-            <p className="text-[11px] text-white/50 mt-0.5">
+            <p className="text-[13px] font-bold text-foreground/85">Base de Conhecimento</p>
+            <p className="text-[11px] text-muted-foreground/70 mt-0.5">
               {isLoading ? "Carregando..." : `${list.length} documento${list.length !== 1 ? "s" : ""} (${activeCount} ativo${activeCount !== 1 ? "s" : ""})`}
             </p>
           </div>
@@ -635,7 +635,7 @@ export function KnowledgeTab() {
           <Books className="h-5 w-5 text-accent/60 shrink-0 mt-0.5" weight="duotone" />
           <div>
             <p className="text-[12px] font-semibold text-accent/80">Como funciona</p>
-            <p className="text-[11px] text-white/40 mt-0.5 leading-relaxed">
+            <p className="text-[11px] text-muted-foreground/60 mt-0.5 leading-relaxed">
               Adicione textos, FAQs, imagens, PDFs, áudios ou vídeos. A IA indexa tudo automaticamente e usa como referência
               ao responder dúvidas dos pacientes. PDFs têm o texto extraído, imagens são descritas e áudios são transcritos.
             </p>
@@ -645,15 +645,15 @@ export function KnowledgeTab() {
         {isLoading && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 rounded-xl border border-white/[0.06] bg-white/[0.02] animate-pulse" />
+              <div key={i} className="h-24 rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] animate-pulse" />
             ))}
           </div>
         )}
 
         {error && !isLoading && (
-          <div className="flex flex-col items-center justify-center gap-3 py-14 rounded-xl border border-dashed border-white/[0.07]">
+          <div className="flex flex-col items-center justify-center gap-3 py-14 rounded-xl border border-dashed border-border/50">
             <Warning className="h-7 w-7 text-rose-400/40" weight="duotone" />
-            <p className="text-[12px] text-white/50">Erro ao carregar documentos</p>
+            <p className="text-[12px] text-muted-foreground/70">Erro ao carregar documentos</p>
             <button onClick={() => refetch()}
               className="cursor-pointer flex items-center gap-1.5 text-[11px] text-accent/60 hover:text-accent transition-colors">
               <ArrowsClockwise className="h-3.5 w-3.5" /> Tentar novamente
@@ -673,13 +673,13 @@ export function KnowledgeTab() {
               </div>
             ) : (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center py-16 rounded-xl border border-dashed border-white/[0.07] gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.02]">
-                  <Books className="h-5 w-5 text-white/30" weight="duotone" />
+                className="flex flex-col items-center justify-center py-16 rounded-xl border border-dashed border-border/50 gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/50 bg-foreground/[0.02]">
+                  <Books className="h-5 w-5 text-muted-foreground/50" weight="duotone" />
                 </div>
                 <div className="text-center">
-                  <p className="text-[13px] font-bold text-white/90">Nenhum documento na base</p>
-                  <p className="text-[11px] text-white/40 mt-0.5">Adicione FAQs, textos, imagens ou PDFs para a IA usar</p>
+                  <p className="text-[13px] font-bold text-foreground">Nenhum documento na base</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-0.5">Adicione FAQs, textos, imagens ou PDFs para a IA usar</p>
                 </div>
                 <button onClick={() => setModal("select")}
                   className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-3.5 py-2 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all">
