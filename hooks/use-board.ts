@@ -95,32 +95,53 @@ export function useBoard(funnelId: string | null, params?: { search?: string }) 
         setStageMap((prev) => {
           const next: StageMap = {}
 
-          // Remove from all stages first
+          // Find which stage currently holds this contact
+          let currentStageForContact: string | null = null
           for (const [sid, cards] of Object.entries(prev)) {
-            next[sid] = cards.filter((c) => c.id !== raw.id)
+            if (cards.some((c) => c.id === raw.id)) {
+              currentStageForContact = sid
+              break
+            }
           }
 
-          // Re-insert into correct stage if stageId is known in this funnel
-          if (newStageId && newStageId in next) {
-            const existing = prev[newStageId]?.find((c) => c.id === raw.id)
-            const merged: BoardContact = existing
-              ? { ...existing, ...patch }
-              : {
-                  id: patch.id,
-                  phone: patch.phone ?? "",
-                  name: patch.name ?? null,
-                  photoUrl: patch.photoUrl ?? null,
-                  status: patch.status ?? "NEW_LEAD",
-                  stageEnteredAt: null,
-                  lastMessageAt: patch.lastMessageAt ?? null,
-                  lastPaymentStatus: null,
-                  lastDetectedIntent: null,
-                  currentStageId: newStageId,
-                  summary: null,
-                  assignedProfessional: null,
-                  messages: [],
-                }
-            next[newStageId] = [...next[newStageId], merged]
+          const stayedInSameStage = currentStageForContact === newStageId
+
+          if (stayedInSameStage && newStageId) {
+            // Contact stayed in same stage — update in-place without changing position
+            for (const [sid, cards] of Object.entries(prev)) {
+              if (sid === newStageId) {
+                next[sid] = cards.map((c) => c.id === raw.id ? { ...c, ...patch } : c)
+              } else {
+                next[sid] = cards
+              }
+            }
+          } else {
+            // Contact moved stages — remove from old, add to new
+            for (const [sid, cards] of Object.entries(prev)) {
+              next[sid] = cards.filter((c) => c.id !== raw.id)
+            }
+
+            if (newStageId && newStageId in next) {
+              const existing = prev[currentStageForContact ?? ""]?.find((c) => c.id === raw.id)
+              const merged: BoardContact = existing
+                ? { ...existing, ...patch, currentStageId: newStageId }
+                : {
+                    id: patch.id,
+                    phone: patch.phone ?? "",
+                    name: patch.name ?? null,
+                    photoUrl: patch.photoUrl ?? null,
+                    status: patch.status ?? "NEW_LEAD",
+                    stageEnteredAt: null,
+                    lastMessageAt: patch.lastMessageAt ?? null,
+                    lastPaymentStatus: null,
+                    lastDetectedIntent: null,
+                    currentStageId: newStageId,
+                    summary: null,
+                    assignedProfessional: null,
+                    messages: [],
+                  }
+              next[newStageId] = [...next[newStageId], merged]
+            }
           }
 
           return next

@@ -135,6 +135,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [model, setModel] = useState<"HAIKU" | "SONNET">("SONNET")
   const [temperature, setTemperature] = useState(0.4)
   const [voiceId, setVoiceId] = useState<string | null>(null)
+  const [voiceChance, setVoiceChance] = useState(100)
   const [isTerminal, setIsTerminal] = useState(false)
   const [confirmDeleteStage, setConfirmDeleteStage] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -158,6 +159,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setModel(config.model ?? "SONNET")
       setTemperature(config.temperature ?? 0.4)
       setVoiceId(config.voiceId ?? null)
+      setVoiceChance((config as unknown as { voiceChance?: number }).voiceChance ?? 100)
       setIsTerminal(stage?.isTerminal ?? false)
     } else if (open && !isLoading) {
       setStageContext("")
@@ -201,6 +203,7 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
           model,
           temperature,
           voiceId: voiceId || null,
+          voiceChance,
         },
       })
       onClose()
@@ -522,6 +525,31 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                         ))}
                       </select>
                       <p className="text-[10px] text-muted-foreground/90">Responde com áudio no WhatsApp</p>
+                      {voiceId && (
+                        <div className="mt-2 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Chance de áudio</label>
+                            <span className="text-[11px] font-bold text-accent tabular-nums">{voiceChance}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={10}
+                            value={voiceChance}
+                            onChange={(e) => setVoiceChance(Number(e.target.value))}
+                            className="w-full h-1.5 rounded-full appearance-none bg-border/60 accent-accent cursor-pointer [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:appearance-none"
+                          />
+                          <p className="text-[9px] text-muted-foreground/60">
+                            {voiceChance === 100
+                              ? "Sempre responde por áudio"
+                              : voiceChance === 0
+                                ? "Sempre responde por texto"
+                                : `${voiceChance}% áudio, ${100 - voiceChance}% texto — mais natural`
+                            }
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <label className={labelCls}>Etapa final</label>

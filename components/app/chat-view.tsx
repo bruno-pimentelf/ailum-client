@@ -400,6 +400,18 @@ function isMediaPlaceholder(value?: string | null) {
   ].includes(normalized)
 }
 
+// Generate deterministic waveform bars from URL hash
+function generateWaveformBars(url: string, count: number): number[] {
+  let hash = 0
+  for (let i = 0; i < url.length; i++) hash = ((hash << 5) - hash + url.charCodeAt(i)) | 0
+  return Array.from({ length: count }, (_, i) => {
+    const v = Math.abs(Math.sin(hash * (i + 1) * 0.1)) * 0.7 + 0.3
+    return v
+  })
+}
+
+const PLAYBACK_SPEEDS = [1, 1.5, 2] as const
+
 function AudioMessagePlayer({
   url,
   compact,
@@ -410,26 +422,28 @@ function AudioMessagePlayer({
   onOpenFull?: () => void
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const progressRef = useRef<HTMLDivElement | null>(null)
   const [playing, setPlaying] = useState(false)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
+  const [speedIdx, setSpeedIdx] = useState(0)
+  const [seeking, setSeeking] = useState(false)
+
+  const bars = useMemo(() => generateWaveformBars(url, compact ? 28 : 40), [url, compact])
 
   useEffect(() => {
     const el = audioRef.current
     if (!el) return
-
     const onLoaded = () => setDuration(el.duration || 0)
-    const onTime = () => setCurrentTime(el.currentTime || 0)
+    const onTime = () => { if (!seeking) setCurrentTime(el.currentTime || 0) }
     const onEnded = () => setPlaying(false)
     const onPause = () => setPlaying(false)
     const onPlay = () => setPlaying(true)
-
     el.addEventListener("loadedmetadata", onLoaded)
     el.addEventListener("timeupdate", onTime)
     el.addEventListener("ended", onEnded)
     el.addEventListener("pause", onPause)
     el.addEventListener("play", onPlay)
-
     return () => {
       el.removeEventListener("loadedmetadata", onLoaded)
       el.removeEventListener("timeupdate", onTime)
@@ -437,70 +451,99 @@ function AudioMessagePlayer({
       el.removeEventListener("pause", onPause)
       el.removeEventListener("play", onPlay)
     }
-  }, [])
+  }, [seeking])
 
   const togglePlay = async () => {
     const el = audioRef.current
     if (!el) return
-    if (el.paused) {
-      try {
-        await el.play()
-      } catch {
-        // Ignore autoplay/device restrictions in inline player.
-      }
-      return
-    }
+    if (el.paused) { try { await el.play() } catch {} return }
     el.pause()
   }
 
-  const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0
+  const cycleSpeed = () => {
+    const next = (speedIdx + 1) % PLAYBACK_SPEEDS.length
+    setSpeedIdx(next)
+    if (audioRef.current) audioRef.current.playbackRate = PLAYBACK_SPEEDS[next]
+  }
+
+  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = audioRef.current
+    const bar = progressRef.current
+    if (!el || !bar || !duration) return
+    const rect = bar.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    el.currentTime = ratio * duration
+    setCurrentTime(ratio * duration)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!seeking) return
+    seekTo(e)
+  }
+
+  const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0
+  const speed = PLAYBACK_SPEEDS[speedIdx]
 
   return (
-    <div className={`min-w-[190px] rounded-xl border border-border/60 bg-muted/20 p-2.5 ${compact ? "w-[230px]" : "w-full max-w-[300px]"}`}>
+    <div className={`min-w-[200px] rounded-xl border border-border/60 bg-muted/20 p-2.5 ${compact ? "w-[260px]" : "w-full max-w-[320px]"}`}>
       <audio ref={audioRef} src={url} preload="metadata" />
-      <div className="flex items-center gap-2.5">
-        <button
-          type="button"
-          onClick={togglePlay}
-          className="cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/90 text-foreground/85 hover:bg-accent/15 hover:text-accent transition-colors"
-          aria-label={playing ? "Pausar áudio" : "Reproduzir áudio"}
-        >
-          {playing ? <Pause className="h-3.5 w-3.5" weight="fill" /> : <Play className="h-3.5 w-3.5 ml-0.5" weight="fill" />}
+      <div className="flex items-center gap-2">
+        {/* Play/Pause */}
+        <button type="button" onClick={togglePlay}
+          className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/90 text-foreground/85 hover:bg-accent/15 hover:text-accent transition-colors"
+          aria-label={playing ? "Pausar" : "Reproduzir"}>
+          {playing ? <Pause className="h-4 w-4" weight="fill" /> : <Play className="h-4 w-4 ml-0.5" weight="fill" />}
         </button>
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex h-4 items-end gap-0.5">
-            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-              <motion.span
-                key={i}
-                className="w-0.5 rounded-full bg-muted-foreground/45"
-                animate={playing ? { height: ["4px", "11px", "4px"] } : { height: "4px" }}
-                transition={playing ? { duration: 0.9, repeat: Infinity, delay: i * 0.1, ease: "easeInOut" } : { duration: 0.2 }}
-              />
-            ))}
+
+        {/* Waveform + seek */}
+        <div className="flex-1 min-w-0">
+          <div
+            ref={progressRef}
+            className="flex items-end gap-px h-6 cursor-pointer"
+            onClick={seekTo}
+            onMouseDown={(e) => { setSeeking(true); seekTo(e) }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={() => setSeeking(false)}
+            onMouseLeave={() => setSeeking(false)}
+          >
+            {bars.map((h, i) => {
+              const barProgress = i / bars.length
+              const isPast = barProgress < progress
+              return (
+                <div
+                  key={i}
+                  className={`flex-1 rounded-full transition-colors duration-100 ${
+                    isPast ? "bg-accent" : "bg-muted-foreground/25"
+                  }`}
+                  style={{ height: `${h * 100}%`, minHeight: 3 }}
+                />
+              )
+            })}
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/60">
-            <motion.div
-              className="h-full rounded-full bg-accent/80"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.15, ease: "linear" }}
-            />
-          </div>
-          <div className="mt-1 flex items-center justify-between">
-            <span className="text-[10px] font-mono text-muted-foreground/90">{formatAudioTime(currentTime)}</span>
-            <span className="text-[10px] font-mono text-muted-foreground/85">{formatAudioTime(duration)}</span>
+          <div className="mt-0.5 flex items-center justify-between">
+            <span className="text-[10px] font-mono text-muted-foreground/80">{formatAudioTime(currentTime)}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/50">{formatAudioTime(duration)}</span>
           </div>
         </div>
-        {onOpenFull && (
-          <button
-            type="button"
-            onClick={onOpenFull}
-            className="cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground/88 hover:text-foreground hover:bg-muted/50 transition-colors"
-            aria-label="Abrir áudio em destaque"
-            title="Abrir em destaque"
-          >
-            <ArrowsOutSimple className="h-3.5 w-3.5" />
+
+        {/* Speed + expand */}
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          <button type="button" onClick={cycleSpeed}
+            className={`cursor-pointer flex h-6 items-center justify-center rounded-md px-1.5 text-[9px] font-bold transition-colors ${
+              speed !== 1
+                ? "bg-accent/15 text-accent border border-accent/25"
+                : "text-muted-foreground/50 hover:text-muted-foreground/80"
+            }`}>
+            {speed}x
           </button>
-        )}
+          {onOpenFull && (
+            <button type="button" onClick={onOpenFull}
+              className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/40 transition-colors"
+              title="Expandir">
+              <ArrowsOutSimple className="h-3 w-3" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
