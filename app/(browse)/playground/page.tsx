@@ -433,7 +433,7 @@ function MessageBubble({
               content={msg.content}
               metadata={pixMeta ? { qrCodeUrl: pixMeta.qrCodeUrl, pixCopyPaste: pixMeta.pixCopyPaste, amount: pixMeta.amount, description: pixMeta.description } : undefined}
             />
-            {(pixMeta as Record<string, unknown> | undefined)?.pixCopyPaste && (
+            {!!(pixMeta as Record<string, unknown> | undefined)?.pixCopyPaste && (
               <PixCopyButton pixCopyPaste={(pixMeta as Record<string, unknown>).pixCopyPaste as string} />
             )}
           </div>
