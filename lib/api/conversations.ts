@@ -76,6 +76,33 @@ export function summarizeDocument(contactId: string, messageId: string) {
   })
 }
 
+// ─── Follow-ups ──────────────────────────────────────────────────────────────
+
+export interface FollowUpItem {
+  triggerId: string
+  event: string
+  action: string
+  delayMinutes: number
+  maxRepetitions: number
+  executionCount: number
+  exhausted: boolean
+  fired: boolean
+  remainingMs: number
+  firesAt: string
+  messagePreview: string
+}
+
+export function getFollowUps(contactId: string) {
+  return apiFetch<{ followUps: FollowUpItem[]; paused: boolean }>(`/contacts/${contactId}/follow-ups`)
+}
+
+export function toggleFollowUpsPause(contactId: string, paused: boolean) {
+  return apiFetch<{ id: string; followUpsPaused: boolean }>(`/contacts/${contactId}/follow-ups/pause`, {
+    method: "PATCH",
+    body: { paused },
+  })
+}
+
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
 export function generateSummary(contactId: string) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   User,
@@ -26,6 +26,10 @@ import {
   Trash,
   X,
   Warning,
+  CaretDown,
+  Timer,
+  Pause,
+  Play,
 } from "@phosphor-icons/react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -44,7 +48,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { FirestoreContact, FirestoreReminder } from "@/lib/types/firestore"
-import { createReminder, toggleReminder, deleteReminder, generateSummary } from "@/lib/api/conversations"
+import { createReminder, toggleReminder, deleteReminder, generateSummary, getFollowUps, toggleFollowUpsPause, type FollowUpItem } from "@/lib/api/conversations"
 
 // ─── Memory key labels & icons ────────────────────────────────────────────────
 
@@ -486,6 +490,191 @@ function SummarySection({ contactId, summary, summaryUpdatedAt }: {
   )
 }
 
+// ─── Collapsible section ─────────────────────────────────────────────────────
+
+function CollapsibleSection({
+  icon: Icon,
+  title,
+  badge,
+  defaultOpen = true,
+  children,
+}: {
+  icon: React.ElementType
+  title: string
+  badge?: React.ReactNode
+  defaultOpen?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="cursor-pointer flex items-center gap-2 px-0.5 w-full"
+      >
+        <Icon className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" weight="duotone" />
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
+        {badge}
+        <div className="flex-1" />
+        <CaretDown className={`h-3 w-3 text-muted-foreground/50 transition-transform duration-200 ${open ? "" : "-rotate-90"}`} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Follow-ups section ──────────────────────────────────────────────────────
+
+function formatRemaining(ms: number): string {
+  if (ms <= 0) return "agora"
+  const min = Math.floor(ms / 60000)
+  const h = Math.floor(min / 60)
+  const d = Math.floor(h / 24)
+  if (d > 0) return `${d}d ${h % 24}h`
+  if (h > 0) return `${h}h ${min % 60}min`
+  return `${min}min`
+}
+
+function FollowUpsSection({ contactId }: { contactId: string }) {
+  const [data, setData] = useState<{ followUps: FollowUpItem[]; paused: boolean } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [toggling, setToggling] = useState(false)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    getFollowUps(contactId)
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [contactId])
+
+  useEffect(() => { load() }, [load])
+
+  // Refresh remaining times every 30s
+  useEffect(() => {
+    const interval = setInterval(load, 30000)
+    return () => clearInterval(interval)
+  }, [load])
+
+  async function handleTogglePause() {
+    if (!data) return
+    setToggling(true)
+    try {
+      const res = await toggleFollowUpsPause(contactId, !data.paused)
+      setData((prev) => prev ? { ...prev, paused: res.followUpsPaused } : prev)
+    } catch { /* ignore */ }
+    finally { setToggling(false) }
+  }
+
+  if (loading && !data) {
+    return (
+      <CollapsibleSection icon={Timer} title="Follow-ups" defaultOpen={false}>
+        <div className="flex items-center justify-center py-4">
+          <ArrowsClockwise className="h-4 w-4 text-muted-foreground/40 animate-spin" />
+        </div>
+      </CollapsibleSection>
+    )
+  }
+
+  if (!data || data.followUps.length === 0) {
+    return (
+      <CollapsibleSection icon={Timer} title="Follow-ups" defaultOpen={false}>
+        <p className="text-[11px] text-muted-foreground/50 px-1 py-2">Nenhum follow-up configurado para esta etapa.</p>
+      </CollapsibleSection>
+    )
+  }
+
+  const pending = data.followUps.filter((f) => !f.exhausted)
+  const done = data.followUps.filter((f) => f.exhausted)
+
+  return (
+    <CollapsibleSection
+      icon={Timer}
+      title="Follow-ups"
+      badge={
+        pending.length > 0 && !data.paused ? (
+          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent/15 px-1 text-[9px] font-bold text-accent">
+            {pending.length}
+          </span>
+        ) : undefined
+      }
+      defaultOpen={pending.length > 0}
+    >
+      {/* Pause toggle */}
+      <div className="flex items-center justify-between rounded-lg border border-border/30 bg-muted/10 px-3 py-2 mb-2">
+        <div className="flex items-center gap-2">
+          {data.paused ? (
+            <Pause className="h-3.5 w-3.5 text-amber-400" weight="fill" />
+          ) : (
+            <Play className="h-3.5 w-3.5 text-emerald-400" weight="fill" />
+          )}
+          <span className="text-[11px] text-foreground/80">
+            {data.paused ? "Follow-ups pausados" : "Follow-ups ativos"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleTogglePause}
+          disabled={toggling}
+          className={`cursor-pointer relative h-5 w-9 shrink-0 rounded-full border transition-colors disabled:opacity-50 ${
+            data.paused ? "border-border bg-muted/30" : "border-accent/40 bg-accent/20"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-3.5 w-3.5 rounded-full transition-all ${
+              data.paused ? "left-0.5 bg-muted-foreground/50" : "left-[18px] bg-accent"
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Pending follow-ups */}
+      <div className="space-y-1.5">
+        {pending.map((f) => (
+          <div
+            key={f.triggerId}
+            className={`rounded-lg border border-border/30 bg-card/10 px-3 py-2.5 ${data.paused ? "opacity-50" : ""}`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+              <span className="text-[10px] font-semibold text-muted-foreground/80">
+                {f.fired && !data.paused ? "Pronto para disparar" : data.paused ? "Pausado" : `em ${formatRemaining(f.remainingMs)}`}
+              </span>
+              <span className="text-[9px] text-muted-foreground/50 ml-auto">
+                {f.executionCount}/{f.maxRepetitions === 0 ? "∞" : f.maxRepetitions}
+              </span>
+            </div>
+            <p className="text-[11px] text-foreground/70 line-clamp-2">{f.messagePreview}</p>
+          </div>
+        ))}
+
+        {done.map((f) => (
+          <div key={f.triggerId} className="rounded-lg border border-border/20 bg-card/5 px-3 py-2 opacity-50">
+            <div className="flex items-center gap-2">
+              <Check className="h-3 w-3 text-emerald-400/60 shrink-0" />
+              <span className="text-[10px] text-muted-foreground/60">Concluído ({f.executionCount}x)</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground/50 line-clamp-1 mt-0.5">{f.messagePreview}</p>
+          </div>
+        ))}
+      </div>
+    </CollapsibleSection>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 interface ContactInfoPanelProps {
@@ -580,85 +769,79 @@ export function ContactInfoPanel({ contactId, initialContact, onDeleted }: Conta
         {/* Summary */}
         <SummarySection contactId={contactId} summary={contact.summary} summaryUpdatedAt={contact.summaryUpdatedAt} />
 
+        {/* Follow-ups */}
+        <FollowUpsSection contactId={contactId} />
+
         {/* Reminders */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-0.5">
-            <div className="flex items-center gap-2">
-              <BellSimple className="h-3.5 w-3.5 text-muted-foreground/70" weight="duotone" />
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                Lembretes
-              </p>
-              {pendingReminders.length > 0 && (
-                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent/15 px-1 text-[9px] font-bold text-accent">
-                  {pendingReminders.length}
-                </span>
+        <CollapsibleSection
+          icon={BellSimple}
+          title="Lembretes"
+          badge={pendingReminders.length > 0 ? (
+            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent/15 px-1 text-[9px] font-bold text-accent">
+              {pendingReminders.length}
+            </span>
+          ) : undefined}
+        >
+          <div className="space-y-2">
+            <AnimatePresence>
+              {showNewReminder && (
+                <NewReminderForm contactId={contactId} onClose={() => setShowNewReminder(false)} />
               )}
-            </div>
-            {!showNewReminder && (
+            </AnimatePresence>
+
+            {reminders.length > 0 ? (
+              <div className="rounded-xl border border-border/30 bg-card/10 divide-y divide-border/20 overflow-hidden">
+                <AnimatePresence initial={false}>
+                  {pendingReminders.map((r) => (
+                    <ReminderItem key={r.id} reminder={r} contactId={contactId} />
+                  ))}
+                  {doneReminders.map((r) => (
+                    <ReminderItem key={r.id} reminder={r} contactId={contactId} />
+                  ))}
+                </AnimatePresence>
+              </div>
+            ) : !showNewReminder ? (
               <button
                 onClick={() => setShowNewReminder(true)}
-                className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/40 hover:text-accent hover:bg-accent/10 transition-all"
-                title="Novo lembrete"
+                className="cursor-pointer w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border/30 py-4 text-[11px] text-muted-foreground/35 hover:text-muted-foreground/60 hover:border-border/50 transition-all"
               >
-                <Plus className="h-3.5 w-3.5" weight="bold" />
+                <Plus className="h-3 w-3" />
+                Adicionar lembrete
+              </button>
+            ) : null}
+
+            {!showNewReminder && reminders.length > 0 && (
+              <button
+                onClick={() => setShowNewReminder(true)}
+                className="cursor-pointer flex items-center gap-1 text-[10px] text-muted-foreground/40 hover:text-accent transition-colors px-1"
+              >
+                <Plus className="h-3 w-3" weight="bold" /> Novo lembrete
               </button>
             )}
           </div>
-
-          <AnimatePresence>
-            {showNewReminder && (
-              <NewReminderForm contactId={contactId} onClose={() => setShowNewReminder(false)} />
-            )}
-          </AnimatePresence>
-
-          {reminders.length > 0 ? (
-            <div className="rounded-xl border border-border/30 bg-card/10 divide-y divide-border/20 overflow-hidden">
-              <AnimatePresence initial={false}>
-                {pendingReminders.map((r) => (
-                  <ReminderItem key={r.id} reminder={r} contactId={contactId} />
-                ))}
-                {doneReminders.map((r) => (
-                  <ReminderItem key={r.id} reminder={r} contactId={contactId} />
-                ))}
-              </AnimatePresence>
-            </div>
-          ) : !showNewReminder ? (
-            <button
-              onClick={() => setShowNewReminder(true)}
-              className="cursor-pointer w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border/30 py-4 text-[11px] text-muted-foreground/35 hover:text-muted-foreground/60 hover:border-border/50 transition-all"
-            >
-              <Plus className="h-3 w-3" />
-              Adicionar lembrete
-            </button>
-          ) : null}
-        </div>
+        </CollapsibleSection>
 
         {/* Memories */}
-        {filteredMemories.length > 0 ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 px-0.5">
-              <Brain className="h-3.5 w-3.5 text-muted-foreground/70" weight="duotone" />
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                Captado pela IA
-              </p>
-            </div>
+        <CollapsibleSection
+          icon={Brain}
+          title="Captado pela IA"
+          defaultOpen={filteredMemories.length > 0}
+        >
+          {filteredMemories.length > 0 ? (
             <div className="grid grid-cols-1 gap-2">
               {filteredMemories.map(([key, value]) => (
                 <MemoryCard key={key} memKey={key} value={value} label={getLabel(key)} />
               ))}
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-            <Brain className="h-8 w-8 text-muted-foreground/20" weight="duotone" />
-            <p className="text-[12px] text-muted-foreground/60">
-              Nenhuma informação captada ainda
-            </p>
-            <p className="text-[11px] text-muted-foreground/40 max-w-[180px]">
-              A IA vai registrando detalhes à medida que o paciente conversa
-            </p>
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+              <Brain className="h-6 w-6 text-muted-foreground/20" weight="duotone" />
+              <p className="text-[11px] text-muted-foreground/50">
+                A IA vai registrando detalhes à medida que o paciente conversa
+              </p>
+            </div>
+          )}
+        </CollapsibleSection>
 
         {/* Delete contact */}
         <div className="pt-4 border-t border-border/30">
