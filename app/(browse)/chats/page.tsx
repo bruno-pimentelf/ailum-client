@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   MagnifyingGlass,
@@ -16,6 +16,8 @@ import { ChatView } from "@/components/app/chat-view"
 import { useContacts, useWhatsappStatus } from "@/hooks/use-chats"
 import { useAuthStore } from "@/lib/auth-store"
 import { useInstanceStore } from "@/lib/instance-store"
+import { useIntegrations } from "@/hooks/use-integrations"
+import { statusLabel } from "@/lib/contact-utils"
 import type { FirestoreContact } from "@/lib/types/firestore"
 import Link from "next/link"
 
@@ -129,10 +131,12 @@ function ConversationItem({
   contact,
   active,
   onClick,
+  instanceLabel,
 }: {
   contact: FirestoreContact
   active: boolean
   onClick: () => void
+  instanceLabel?: string | null
 }) {
   const displayName = contact.contactName ?? contact.name ?? contact.contactPhone ?? contact.phone ?? "?"
   const displayPhone = contact.contactPhone ?? contact.phone ?? ""
@@ -189,8 +193,13 @@ function ConversationItem({
               <User className="h-3 w-3 text-muted-foreground/90 shrink-0" />
             )}
             <span className="text-[11px] text-muted-foreground/85 truncate">
-              {contact.status?.replace(/_/g, " ") || ""}
+              {statusLabel(contact.status)}
             </span>
+            {instanceLabel && (
+              <span className="text-[9px] text-muted-foreground/60 truncate max-w-[70px]" title={instanceLabel}>
+                · {instanceLabel}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {displayPhone && <PhoneCopy phone={displayPhone} />}
@@ -216,6 +225,18 @@ export default function ChatsPage() {
   const tenantId = useAuthStore((s) => s.tenantId)
   const { contacts, loading } = useContacts(tenantId)
   const { whatsappConnected, whatsappError } = useWhatsappStatus(tenantId)
+  const { data: integrations } = useIntegrations()
+
+  const instanceMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const i of integrations ?? []) {
+      if (i.provider === "zapi" && i.instanceId && i.isActive) {
+        map.set(i.instanceId, i.label || i.instanceId.slice(0, 8))
+      }
+    }
+    return map
+  }, [integrations])
+  const showInstanceHint = instanceMap.size > 1
   const selectedInstanceId = useInstanceStore((s) => s.selectedInstanceId)
 
   const filtered = contacts.filter((c) => {
@@ -299,6 +320,7 @@ export default function ChatsPage() {
                     contact={contact}
                     active={selected?.id === contact.id}
                     onClick={() => setSelected(contact)}
+                    instanceLabel={showInstanceHint && contact.zapiInstanceId ? instanceMap.get(contact.zapiInstanceId) : null}
                   />
                 ))}
               </AnimatePresence>

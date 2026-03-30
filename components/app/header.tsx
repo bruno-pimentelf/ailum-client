@@ -207,11 +207,11 @@ export function AppHeader() {
             href={`/${selectedClinic.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] text-muted-foreground hover:text-accent hover:bg-muted/40 transition-colors font-mono"
-            title="Abrir perfil público em nova aba"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] text-muted-foreground hover:text-accent hover:bg-muted/40 transition-colors font-mono max-w-[200px]"
+            title={`/${selectedClinic.slug}`}
           >
-            <LinkSimple className="h-3.5 w-3.5" />
-            /{selectedClinic.slug}
+            <LinkSimple className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">/{selectedClinic.slug}</span>
           </a>
         )}
 

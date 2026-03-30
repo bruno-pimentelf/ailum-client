@@ -17,6 +17,7 @@ import {
   Check,
   ChatCircleText,
   UserCircle,
+  Plus,
 } from "@phosphor-icons/react"
 import {
   ResizablePanelGroup,
@@ -26,8 +27,11 @@ import {
 import { ChatView } from "@/components/app/chat-view"
 import { ContactInfoPanel } from "@/components/app/contact-info-panel"
 import { ContactImportModal } from "@/components/app/contact-import-modal"
+import { NewContactModal } from "@/components/app/new-contact-modal"
 import { useContactsList } from "@/hooks/use-contacts-list"
 import { useAuthStore } from "@/lib/auth-store"
+import { useIntegrations } from "@/hooks/use-integrations"
+import { statusLabel } from "@/lib/contact-utils"
 import { useInstanceStore } from "@/lib/instance-store"
 import type { ApiContact } from "@/lib/api/contacts"
 import type { FirestoreContact } from "@/lib/types/firestore"
@@ -184,7 +188,7 @@ function StagePill({ stage }: { stage: { name: string; color: string } }) {
 
 // ─── Table row ────────────────────────────────────────────────────────────────
 
-function ContactRow({ contact, active, onClick }: { contact: ApiContact; active: boolean; onClick: () => void }) {
+function ContactRow({ contact, active, onClick, instanceLabel }: { contact: ApiContact; active: boolean; onClick: () => void; instanceLabel?: string | null }) {
   const name = contact.name ?? contact.phone
   return (
     <motion.tr
@@ -230,9 +234,16 @@ function ContactRow({ contact, active, onClick }: { contact: ApiContact; active:
 
       {/* Status */}
       <td className="py-2.5 px-3 hidden lg:table-cell">
-        <span className="text-[11px] text-muted-foreground/85">
-          {contact.status.replace(/_/g, " ")}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[11px] text-muted-foreground/85">
+            {statusLabel(contact.status)}
+          </span>
+          {instanceLabel && (
+            <span className="text-[10px] text-muted-foreground/60 truncate max-w-[100px]" title={instanceLabel}>
+              via {instanceLabel}
+            </span>
+          )}
+        </div>
       </td>
 
       {/* Last */}
@@ -266,6 +277,8 @@ function ContactsTablePanel({
   onPage,
   onRetry,
   onOpenImport,
+  onOpenNewContact,
+  instanceMap,
 }: {
   search: string
   setSearch: (v: string) => void
@@ -280,6 +293,8 @@ function ContactsTablePanel({
   onPage: (p: number) => void
   onRetry: () => void
   onOpenImport: () => void
+  onOpenNewContact: () => void
+  instanceMap: Map<string, string>
 }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -301,10 +316,17 @@ function ContactsTablePanel({
         </div>
         <button
           onClick={onOpenImport}
-          className="cursor-pointer inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/10 px-3 text-[12px] font-semibold text-accent hover:bg-accent/15 transition-colors"
+          className="cursor-pointer inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border/50 px-3 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
         >
           <UploadSimple className="h-3.5 w-3.5" />
-          Importar CSV
+          Importar
+        </button>
+        <button
+          onClick={onOpenNewContact}
+          className="cursor-pointer inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 text-[12px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" weight="bold" />
+          Novo contato
         </button>
         {total > 0 && (
           <span className="text-[11px] text-muted-foreground/90 shrink-0">{total} contatos</span>
@@ -360,6 +382,7 @@ function ContactsTablePanel({
                       contact={c}
                       active={selected?.id === c.id}
                       onClick={() => onSelect(selected?.id === c.id ? null : c)}
+                      instanceLabel={instanceMap.size > 1 && c.zapiInstanceId ? instanceMap.get(c.zapiInstanceId) : null}
                     />
                   ))}
                 </AnimatePresence>
@@ -416,6 +439,7 @@ export default function ContactsPage() {
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<ApiContact | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [newContactOpen, setNewContactOpen] = useState(false)
   const [rightTab, setRightTab] = useState<RightTab>("chat")
 
   const tenantId = useAuthStore((s) => s.tenantId)
@@ -437,6 +461,17 @@ export default function ContactsPage() {
   })
 
   const selectedInstanceId = useInstanceStore((s) => s.selectedInstanceId)
+  const { data: integrations } = useIntegrations()
+  const instanceMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const i of integrations ?? []) {
+      if (i.provider === "zapi" && i.instanceId && i.isActive) {
+        map.set(i.instanceId, i.label || i.instanceId.slice(0, 8))
+      }
+    }
+    return map
+  }, [integrations])
+
   const contacts = (data?.data ?? []).filter(
     (c) => !selectedInstanceId || !c.zapiInstanceId || c.zapiInstanceId === selectedInstanceId,
   )
@@ -458,6 +493,10 @@ export default function ContactsPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
+      <NewContactModal
+        open={newContactOpen}
+        onClose={() => { setNewContactOpen(false); refetch() }}
+      />
       <ContactImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
@@ -484,6 +523,8 @@ export default function ContactsPage() {
               onPage={setPage}
               onRetry={refetch}
               onOpenImport={() => setImportOpen(true)}
+              onOpenNewContact={() => setNewContactOpen(true)}
+              instanceMap={instanceMap}
             />
           </ResizablePanel>
           <ResizableHandle withHandle className="bg-border/60 hover:bg-border transition-colors data-[resize-handle-state=drag]:bg-accent/30" />
@@ -528,6 +569,7 @@ export default function ContactsPage() {
                   key={`info-${selected.id}`}
                   contactId={selected.id}
                   initialContact={firestoreContact}
+                  onDeleted={() => setSelected(null)}
                 />
               )}
             </AnimatePresence>
@@ -549,6 +591,8 @@ export default function ContactsPage() {
             onPage={setPage}
             onRetry={refetch}
             onOpenImport={() => setImportOpen(true)}
+            onOpenNewContact={() => setNewContactOpen(true)}
+            instanceMap={instanceMap}
           />
         </div>
       )}

@@ -46,3 +46,15 @@ export function useContactsImportCommit() {
     },
   })
 }
+
+export function useDeleteContact() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (contactId: string) => contactsApi.delete(contactId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contacts-list"] })
+      qc.invalidateQueries({ queryKey: ["contacts"] })
+      qc.invalidateQueries({ queryKey: ["board"] })
+    },
+  })
+}

@@ -56,6 +56,8 @@ import "prismjs/themes/prism-tomorrow.css"
 import { funnelsApi } from "@/lib/api/funnels"
 import type { BoardContact, BoardStage, FunnelListItem } from "@/lib/api/funnels"
 import { formatMessagePreview } from "@/components/app/message-preview"
+import { useIntegrations } from "@/hooks/use-integrations"
+import { statusLabel } from "@/lib/contact-utils"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -179,12 +181,14 @@ function KanbanCard({
   isDragging = false,
   overlay = false,
   onMoveToOtherFunnel,
+  instanceLabel,
 }: {
   contact: BoardContact
   stageColor: string
   isDragging?: boolean
   overlay?: boolean
   onMoveToOtherFunnel?: () => void
+  instanceLabel?: string | null
 }) {
   const name = contact.name ?? contact.phone
   const lastMsg = contact.messages[0]
@@ -257,8 +261,13 @@ function KanbanCard({
             color: stageColor,
           }}
         >
-          {contact.status.replace(/_/g, " ")}
+          {statusLabel(contact.status)}
         </span>
+        {instanceLabel && (
+          <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 text-[10px] text-muted-foreground/60" title={instanceLabel}>
+            {instanceLabel}
+          </span>
+        )}
         {contact.assignedProfessional && (
           <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 text-[10px] text-muted-foreground/90">
             {contact.assignedProfessional.fullName.split(" ")[0]}
@@ -312,10 +321,12 @@ function DraggableCard({
   contact,
   stageColor,
   onMoveToOtherFunnel,
+  instanceLabel,
 }: {
   contact: BoardContact
   stageColor: string
   onMoveToOtherFunnel?: () => void
+  instanceLabel?: string | null
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: contact.id })
 
@@ -326,6 +337,7 @@ function DraggableCard({
         stageColor={stageColor}
         isDragging={isDragging}
         onMoveToOtherFunnel={onMoveToOtherFunnel}
+        instanceLabel={instanceLabel}
       />
     </div>
   )
@@ -343,6 +355,7 @@ function KanbanColumn({
   onOpenConfig,
   onMoveToOtherFunnel,
   canEdit,
+  instanceMap,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
@@ -353,6 +366,7 @@ function KanbanColumn({
   onOpenConfig: (stage: BoardStage) => void
   onMoveToOtherFunnel?: (contact: BoardContact) => void
   canEdit?: boolean
+  instanceMap: Map<string, string>
 }) {
   const { setNodeRef } = useDroppable({ id: stage.id })
   const style = stageStyle(stage.color)
@@ -497,6 +511,7 @@ function KanbanColumn({
                       ? () => onMoveToOtherFunnel(contact)
                       : undefined
                   }
+                  instanceLabel={instanceMap.size > 1 && contact.zapiInstanceId ? instanceMap.get(contact.zapiInstanceId) : null}
                 />
               </motion.div>
             ))}
@@ -546,6 +561,7 @@ function MobileColumn({
   onUpdateStageName,
   onOpenConfig,
   onMoveToOtherFunnel,
+  instanceMap,
 }: {
   stage: BoardStage
   contacts: BoardContact[]
@@ -555,6 +571,7 @@ function MobileColumn({
   onUpdateStageName?: (stage: BoardStage, name: string) => void
   onOpenConfig: (stage: BoardStage) => void
   onMoveToOtherFunnel?: (contact: BoardContact) => void
+  instanceMap: Map<string, string>
 }) {
   const [open, setOpen] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -685,6 +702,7 @@ function MobileColumn({
                         ? () => onMoveToOtherFunnel(c)
                         : undefined
                     }
+                    instanceLabel={instanceMap.size > 1 && c.zapiInstanceId ? instanceMap.get(c.zapiInstanceId) : null}
                   />
                 ))
               )}
@@ -728,6 +746,16 @@ export default function BoardsPage() {
   const canEditFunnels = me?.role === "ADMIN" || me?.role === "SECRETARY"
 
   const selectedInstanceId = useInstanceStore((s) => s.selectedInstanceId)
+  const { data: integrations } = useIntegrations()
+  const instanceMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const i of integrations ?? []) {
+      if (i.provider === "zapi" && i.instanceId && i.isActive) {
+        map.set(i.instanceId, i.label || i.instanceId.slice(0, 8))
+      }
+    }
+    return map
+  }, [integrations])
   const funnels = useMemo(
     () =>
       allFunnels?.filter(
@@ -1259,6 +1287,7 @@ export default function BoardsPage() {
                           currentStageId: stage.id,
                         })
                       }
+                      instanceMap={instanceMap}
                     />
                   ))}
                 </div>
@@ -1292,6 +1321,7 @@ export default function BoardsPage() {
                               (c) => c.id === overId && overId !== activeContact?.id,
                             )
                           }
+                          instanceMap={instanceMap}
                         />
                       </div>
                     </div>

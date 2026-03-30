@@ -17,6 +17,7 @@ export interface BoardContact {
   name: string | null
   photoUrl: string | null
   status: ContactStatus
+  zapiInstanceId: string | null
   stageEnteredAt: string | null
   lastMessageAt: string | null
   lastPaymentStatus: string | null

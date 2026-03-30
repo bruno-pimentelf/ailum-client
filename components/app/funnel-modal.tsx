@@ -179,7 +179,7 @@ export function FunnelModal({ open, onClose, funnel }: FunnelModalProps) {
   const [zapiInstanceId, setZapiInstanceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const { data: integrations } = useIntegrations()
-  const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId && i.isActive)
+  const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId)
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)

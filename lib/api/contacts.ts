@@ -149,6 +149,9 @@ export const contactsApi = {
       body: { enabled },
     }),
 
+  delete: (contactId: string) =>
+    apiFetch<{ ok: boolean }>(`/contacts/${contactId}`, { method: "DELETE" }),
+
   downloadImportTemplate: async () => {
     const res = await fetch(`${API_BASE}/contacts/import-template.csv`, {
       credentials: "include",

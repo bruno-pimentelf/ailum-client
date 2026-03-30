@@ -31,6 +31,16 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useContactDoc } from "@/hooks/use-contact-doc"
 import { useTenant } from "@/hooks/use-tenant"
+import { useDeleteContact } from "@/hooks/use-contacts-list"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { FirestoreContact, FirestoreReminder } from "@/lib/types/firestore"
@@ -481,13 +491,17 @@ function SummarySection({ contactId, summary, summaryUpdatedAt }: {
 interface ContactInfoPanelProps {
   contactId: string
   initialContact: FirestoreContact
+  onDeleted?: () => void
 }
 
-export function ContactInfoPanel({ contactId, initialContact }: ContactInfoPanelProps) {
+export function ContactInfoPanel({ contactId, initialContact, onDeleted }: ContactInfoPanelProps) {
   const liveContact = useContactDoc(contactId)
   const contact = liveContact ?? initialContact
   const { data: tenant } = useTenant()
   const [showNewReminder, setShowNewReminder] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const deleteContact = useDeleteContact()
 
   // Build label lookup for custom keys (stored as "Label::description for AI")
   const customLabelMap = new Map<string, string>()
@@ -645,6 +659,51 @@ export function ContactInfoPanel({ contactId, initialContact }: ContactInfoPanel
             </p>
           </div>
         )}
+
+        {/* Delete contact */}
+        <div className="pt-4 border-t border-border/30">
+          <button
+            onClick={() => { setDeleteOpen(true); setDeleteConfirm("") }}
+            className="cursor-pointer flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-[12px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <Trash className="h-3.5 w-3.5" weight="regular" />
+            Excluir contato
+          </button>
+        </div>
+
+        <AlertDialog open={deleteOpen} onOpenChange={(v) => { setDeleteOpen(v); if (!v) setDeleteConfirm("") }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir contato permanentemente</AlertDialogTitle>
+              <AlertDialogDescription>
+                Isso vai apagar <strong>{displayName}</strong> e todos os dados associados: mensagens, agendamentos, cobranças, memórias e logs.
+                <br /><br />
+                Essa ação é <strong>irreversível</strong>. Digite <strong>confirmar</strong> para prosseguir.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder='Digite "confirmar"'
+              className="h-9 w-full rounded-lg border border-border bg-muted/30 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-destructive/30"
+              autoFocus
+            />
+            <AlertDialogFooter className="grid grid-cols-2 gap-2 sm:flex-none">
+              <AlertDialogCancel className="w-full">Cancelar</AlertDialogCancel>
+              <button
+                disabled={deleteConfirm.toLowerCase().trim() !== "confirmar" || deleteContact.isPending}
+                onClick={async () => {
+                  await deleteContact.mutateAsync(contactId)
+                  setDeleteOpen(false)
+                  onDeleted?.()
+                }}
+                className="inline-flex h-9 w-full items-center justify-center rounded-md bg-destructive px-4 text-[13px] font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+              >
+                {deleteContact.isPending ? "Excluindo..." : "Excluir"}
+              </button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </motion.div>
   )

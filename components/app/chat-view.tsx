@@ -32,12 +32,14 @@ import {
   NoteBlank,
   NotePencil,
   Flask,
+  Eye,
+  ArrowsClockwise,
 } from "@phosphor-icons/react"
 import { PixChargeBlock } from "./pix-charge-block"
 import { useMessages, useTypingStatus } from "@/hooks/use-chats"
 import { useIntegrations } from "@/hooks/use-integrations"
 import type { Integration } from "@/lib/api/integrations"
-import { sendMessage, markAsRead, createNote } from "@/lib/api/conversations"
+import { sendMessage, markAsRead, createNote, describeImage, summarizeDocument } from "@/lib/api/conversations"
 import { ContactInfoPanel } from "@/components/app/contact-info-panel"
 import { contactsApi } from "@/lib/api/contacts"
 import { useMutation } from "@tanstack/react-query"
@@ -199,19 +201,25 @@ function formatWhatsAppText(text: string): React.ReactNode[] {
   return result
 }
 
+const MSG_COLLAPSE_THRESHOLD = 700
+
 function LinkifiedText({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const shouldCollapse = text.length > MSG_COLLAPSE_THRESHOLD
+  const displayText = shouldCollapse && !expanded ? text.slice(0, MSG_COLLAPSE_THRESHOLD) : text
+
   // Build segments by walking LINK_REGEX matches
   const segments: { text: string; isLink: boolean; isEmail: boolean }[] = []
   let lastIdx = 0
   LINK_REGEX.lastIndex = 0
   let m: RegExpExecArray | null
-  while ((m = LINK_REGEX.exec(text)) !== null) {
-    if (m.index > lastIdx) segments.push({ text: text.slice(lastIdx, m.index), isLink: false, isEmail: false })
+  while ((m = LINK_REGEX.exec(displayText)) !== null) {
+    if (m.index > lastIdx) segments.push({ text: displayText.slice(lastIdx, m.index), isLink: false, isEmail: false })
     const isEmail = /^[^@]+@/.test(m[0])
     segments.push({ text: m[0], isLink: true, isEmail })
     lastIdx = m.index + m[0].length
   }
-  if (lastIdx < text.length) segments.push({ text: text.slice(lastIdx), isLink: false, isEmail: false })
+  if (lastIdx < displayText.length) segments.push({ text: displayText.slice(lastIdx), isLink: false, isEmail: false })
 
   return (
     <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
@@ -229,6 +237,30 @@ function LinkifiedText({ text }: { text: string }) {
         ) : (
           <span key={i}>{formatWhatsAppText(seg.text)}</span>
         )
+      )}
+      {shouldCollapse && !expanded && (
+        <>
+          {"... "}
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="inline text-accent hover:text-accent/80 font-medium cursor-pointer"
+          >
+            Ver mais
+          </button>
+        </>
+      )}
+      {shouldCollapse && expanded && (
+        <>
+          {" "}
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="inline text-accent hover:text-accent/80 font-medium cursor-pointer"
+          >
+            Ver menos
+          </button>
+        </>
       )}
     </p>
   )
@@ -575,6 +607,144 @@ function AudioTranscription({ text }: { text: string }) {
   )
 }
 
+function ImageDescription({
+  contactId,
+  messageId,
+  cachedDescription,
+}: {
+  contactId: string
+  messageId: string
+  cachedDescription: string | null
+}) {
+  const [description, setDescription] = useState<string | null>(cachedDescription)
+  const [loading, setLoading] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [error, setError] = useState(false)
+
+  async function handleDescribe() {
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await describeImage(contactId, messageId)
+      setDescription(res.description)
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!description) {
+    return (
+      <button
+        type="button"
+        onClick={handleDescribe}
+        disabled={loading}
+        className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/10 px-2.5 py-1.5 text-[10px] text-muted-foreground/70 hover:text-foreground hover:bg-muted/20 transition-colors disabled:opacity-50"
+      >
+        {loading ? (
+          <ArrowsClockwise className="h-3 w-3 animate-spin" />
+        ) : (
+          <Eye className="h-3 w-3" />
+        )}
+        {loading ? "Descrevendo..." : error ? "Tentar novamente" : "Descrever imagem"}
+      </button>
+    )
+  }
+
+  const isLong = description.length > 120
+
+  return (
+    <div className="rounded-lg border border-border/40 bg-muted/10 px-3 py-2 max-w-[260px]">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Eye className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50">Descrição</span>
+      </div>
+      <p className={`text-[11px] text-foreground/70 leading-relaxed ${!expanded && isLong ? "line-clamp-3" : ""}`}>
+        {description}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="cursor-pointer mt-1 text-[10px] font-semibold text-accent/70 hover:text-accent transition-colors"
+        >
+          {expanded ? "Ver menos" : "Ver mais"}
+        </button>
+      )}
+    </div>
+  )
+}
+
+function DocumentSummary({
+  contactId,
+  messageId,
+  cachedSummary,
+}: {
+  contactId: string
+  messageId: string
+  cachedSummary: string | null
+}) {
+  const [summary, setSummary] = useState<string | null>(cachedSummary)
+  const [loading, setLoading] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [error, setError] = useState(false)
+
+  async function handleSummarize() {
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await summarizeDocument(contactId, messageId)
+      setSummary(res.summary)
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!summary) {
+    return (
+      <button
+        type="button"
+        onClick={handleSummarize}
+        disabled={loading}
+        className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/10 px-2.5 py-1.5 text-[10px] text-muted-foreground/70 hover:text-foreground hover:bg-muted/20 transition-colors disabled:opacity-50"
+      >
+        {loading ? (
+          <ArrowsClockwise className="h-3 w-3 animate-spin" />
+        ) : (
+          <FileDoc className="h-3 w-3" />
+        )}
+        {loading ? "Resumindo..." : error ? "Tentar novamente" : "Resumir documento"}
+      </button>
+    )
+  }
+
+  const isLong = summary.length > 150
+
+  return (
+    <div className="rounded-lg border border-border/40 bg-muted/10 px-3 py-2 max-w-[260px]">
+      <div className="flex items-center gap-1.5 mb-1">
+        <FileDoc className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/50">Resumo</span>
+      </div>
+      <p className={`text-[11px] text-foreground/70 leading-relaxed ${!expanded && isLong ? "line-clamp-4" : ""}`}>
+        {summary}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="cursor-pointer mt-1 text-[10px] font-semibold text-accent/70 hover:text-accent transition-colors"
+        >
+          {expanded ? "Ver menos" : "Ver mais"}
+        </button>
+      )}
+    </div>
+  )
+}
+
 function MediaViewerModal({
   media,
   onClose,
@@ -663,6 +833,7 @@ function MediaViewerModal({
 
 function MessageBubble({
   msg,
+  contactId,
   animate,
   quotedText,
   onReply,
@@ -670,6 +841,7 @@ function MessageBubble({
   onOpenMedia,
 }: {
   msg: AnyMessage
+  contactId: string
   animate?: boolean
   quotedText?: string | null
   onReply?: (m: FirestoreMessage) => void
@@ -758,6 +930,7 @@ function MessageBubble({
       const caption = (m?.caption && !isMediaPlaceholder(m.caption))
         ? m.caption
         : (!isMediaPlaceholder(msg.content) ? msg.content : null)
+      const cachedImageDesc = ((m as Record<string, unknown>)?.imageDescription as string) || null
 
       if (m?.imageUrl) {
         return (
@@ -779,6 +952,7 @@ function MessageBubble({
               </span>
             </button>
             {caption && <p className="text-[12px] text-foreground/80">{caption}</p>}
+            <ImageDescription contactId={contactId} messageId={msg.id} cachedDescription={cachedImageDesc} />
           </div>
         )
       }
@@ -843,23 +1017,37 @@ function MessageBubble({
       }
 
       const fileName = m?.fileName || msg.content || "Documento"
+      const fName = (fileName as string).toLowerCase()
+      const mimeStr = ((m?.mimeType as string) ?? "").toLowerCase()
+      const canSummarize = m?.documentUrl && (
+        mimeStr.includes("pdf") || fName.endsWith(".pdf") ||
+        mimeStr.includes("wordprocessingml") || mimeStr.includes("msword") ||
+        fName.endsWith(".docx") || fName.endsWith(".doc")
+      )
+      const cachedDocSummary = ((m as Record<string, unknown>)?.documentSummary as string) || null
+
       if (m?.documentUrl) {
         return (
-          <button
-            type="button"
-            onClick={() => onOpenMedia?.({ type: "document", url: m.documentUrl as string, fileName })}
-            className="flex items-center gap-2.5 group"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/30 group-hover:bg-accent/10 transition-colors">
-              <FileDoc className="h-4 w-4 text-muted-foreground/90 group-hover:text-accent transition-colors" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[12px] font-medium truncate max-w-[180px] group-hover:text-accent transition-colors">
-                {fileName}
-              </p>
-              <p className="text-[10px] text-muted-foreground/90">Toque para visualizar</p>
-            </div>
-          </button>
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => onOpenMedia?.({ type: "document", url: m.documentUrl as string, fileName })}
+              className="flex items-center gap-2.5 group"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-muted/30 group-hover:bg-accent/10 transition-colors">
+                <FileDoc className="h-4 w-4 text-muted-foreground/90 group-hover:text-accent transition-colors" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[12px] font-medium truncate max-w-[180px] group-hover:text-accent transition-colors">
+                  {fileName}
+                </p>
+                <p className="text-[10px] text-muted-foreground/90">Toque para visualizar</p>
+              </div>
+            </button>
+            {canSummarize && (
+              <DocumentSummary contactId={contactId} messageId={msg.id} cachedSummary={cachedDocSummary} />
+            )}
+          </div>
         )
       }
 
@@ -1418,11 +1606,19 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     return m.content || "Mensagem"
   }, [])
 
-  // Mark as read when chat is opened
+  // Mark as read when chat is opened or new messages arrive while viewing
+  const markReadTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    if ((contact.unreadCount ?? 0) > 0 && contact.id) markAsRead(contact.id).catch(() => {})
+    if (!contact.id) return
+    // Small debounce to batch rapid unreadCount changes
+    if (markReadTimer.current) clearTimeout(markReadTimer.current)
+    markReadTimer.current = setTimeout(() => {
+      markAsRead(contact.id!).catch(() => {})
+    }, 300)
+    return () => { if (markReadTimer.current) clearTimeout(markReadTimer.current) }
+    // Re-run whenever unreadCount changes (new messages while chat is open)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contact.id])
+  }, [contact.id, contact.unreadCount])
 
   // Scroll to bottom on new messages — only when 1 new message (not load-more batch)
   const prevLenRef = useRef(allMessages.length)
@@ -1961,6 +2157,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
               )}
               <MessageBubble
                 msg={msg}
+                contactId={contact.id!}
                 animate={i >= allMessages.length - 1}
                 quotedText={previewText(refMsg)}
                 onReply={handleReplyMessage}

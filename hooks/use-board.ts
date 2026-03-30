@@ -136,6 +136,7 @@ export function useBoard(funnelId: string | null, params?: { search?: string }) 
                     lastPaymentStatus: null,
                     lastDetectedIntent: null,
                     currentStageId: newStageId,
+                    zapiInstanceId: patch.zapiInstanceId ?? null,
                     summary: null,
                     assignedProfessional: null,
                     messages: [],

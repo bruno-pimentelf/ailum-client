@@ -62,6 +62,20 @@ export function deleteReminder(contactId: string, reminderId: string) {
   })
 }
 
+// ─── Image Description ───────────────────────────────────────────────────────
+
+export function describeImage(contactId: string, messageId: string) {
+  return apiFetch<{ description: string }>(`/conversations/${contactId}/messages/${messageId}/describe-image`, {
+    method: "POST",
+  })
+}
+
+export function summarizeDocument(contactId: string, messageId: string) {
+  return apiFetch<{ summary: string }>(`/conversations/${contactId}/messages/${messageId}/summarize-document`, {
+    method: "POST",
+  })
+}
+
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
 export function generateSummary(contactId: string) {

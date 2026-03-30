@@ -18,18 +18,22 @@ import { uploadTenantLogo } from "@/lib/firebase"
 
 const inputCls = "w-full h-10 rounded-lg border border-border bg-muted/20 px-3 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/40 transition-colors disabled:opacity-50"
 const labelCls = "block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
-const NOTIFICATION_TYPE_OPTIONS = [
-  "integration.whatsapp.disconnected",
-  "trigger.failed",
-  "guardrail.violation",
-  "payment.paid",
-  "payment.overdue",
-  "appointment.created",
-  "appointment.cancelled",
-  "appointment.rescheduled",
-  "slot_recall.sent",
+const NOTIFICATION_TYPE_OPTIONS: Array<{ id: string; label: string; group: string }> = [
+  { id: "integration.whatsapp.disconnected", label: "WhatsApp desconectado", group: "Integrações" },
+  { id: "trigger.failed", label: "Automação falhou", group: "Automações" },
+  { id: "guardrail.violation", label: "Violação de guardrail", group: "Automações" },
+  { id: "payment.paid", label: "Pagamento confirmado", group: "Pagamentos" },
+  { id: "payment.overdue", label: "Pagamento vencido", group: "Pagamentos" },
+  { id: "appointment.created", label: "Consulta agendada", group: "Agenda" },
+  { id: "appointment.cancelled", label: "Consulta cancelada", group: "Agenda" },
+  { id: "appointment.rescheduled", label: "Consulta reagendada", group: "Agenda" },
+  { id: "slot_recall.sent", label: "Recall de vaga enviado", group: "Agenda" },
 ]
-const ROLE_OPTIONS = ["ADMIN", "SECRETARY", "PROFESSIONAL"]
+const ROLE_OPTIONS: Array<{ id: string; label: string }> = [
+  { id: "ADMIN", label: "Administrador" },
+  { id: "SECRETARY", label: "Secretária" },
+  { id: "PROFESSIONAL", label: "Profissional" },
+]
 
 export function GeralTab() {
   const { data: tenant, isLoading, error } = useTenant()
@@ -293,8 +297,8 @@ export function GeralTab() {
 
           <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/15 px-3 py-2.5">
             <div>
-              <p className="text-[12px] font-medium text-foreground">Ativar notificações do tenant</p>
-              <p className="text-[11px] text-muted-foreground/90">Controla bell, feed e toasts em tempo real</p>
+              <p className="text-[12px] font-medium text-foreground">Ativar notificações</p>
+              <p className="text-[11px] text-muted-foreground/90">Alertas em tempo real no sino e toasts</p>
             </div>
             <button
               type="button"
@@ -315,31 +319,43 @@ export function GeralTab() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Tipos habilitados</label>
-              <div className="space-y-1.5 rounded-lg border border-border/40 bg-muted/10 p-2.5 max-h-52 overflow-y-auto">
-                {NOTIFICATION_TYPE_OPTIONS.map((type) => {
-                  const checked = form.notificationTypes.includes(type)
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => toggleArray("notificationTypes", type)}
-                      className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] transition-colors cursor-pointer ${
-                        checked
-                          ? "bg-accent/15 text-accent"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  )
-                })}
+              <label className={labelCls}>Tipos de notificação</label>
+              <div className="rounded-lg border border-border/40 bg-muted/10 p-2.5 max-h-64 overflow-y-auto space-y-3">
+                {Array.from(new Set(NOTIFICATION_TYPE_OPTIONS.map((t) => t.group))).map((group) => (
+                  <div key={group}>
+                    <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1 px-1">{group}</p>
+                    <div className="space-y-0.5">
+                      {NOTIFICATION_TYPE_OPTIONS.filter((t) => t.group === group).map((type) => {
+                        const checked = form.notificationTypes.includes(type.id)
+                        return (
+                          <button
+                            key={type.id}
+                            type="button"
+                            onClick={() => toggleArray("notificationTypes", type.id)}
+                            className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] transition-colors cursor-pointer ${
+                              checked
+                                ? "bg-accent/15 text-accent"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
+                            }`}
+                          >
+                            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                              checked ? "border-accent bg-accent text-accent-foreground" : "border-border/60 bg-muted/20"
+                            }`}>
+                              {checked && <Check className="h-2.5 w-2.5" weight="bold" />}
+                            </span>
+                            {type.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className={labelCls}>Digest (minutos)</label>
+                <label className={labelCls}>Intervalo entre notificações iguais (minutos)</label>
                 <input
                   type="number"
                   min={1}
@@ -349,24 +365,30 @@ export function GeralTab() {
                   }
                   className={inputCls}
                 />
+                <p className="text-[10px] text-muted-foreground/60 mt-1">Evita notificações repetidas em sequência</p>
               </div>
               <div>
-                <label className={labelCls}>Roles (preparação)</label>
-                <div className="space-y-1.5 rounded-lg border border-border/40 bg-muted/10 p-2.5">
+                <label className={labelCls}>Quem recebe notificações</label>
+                <div className="space-y-0.5 rounded-lg border border-border/40 bg-muted/10 p-2.5">
                   {ROLE_OPTIONS.map((role) => {
-                    const checked = form.notificationRoles.includes(role)
+                    const checked = form.notificationRoles.includes(role.id)
                     return (
                       <button
-                        key={role}
+                        key={role.id}
                         type="button"
-                        onClick={() => toggleArray("notificationRoles", role)}
-                        className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] transition-colors cursor-pointer ${
+                        onClick={() => toggleArray("notificationRoles", role.id)}
+                        className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] transition-colors cursor-pointer ${
                           checked
                             ? "bg-accent/15 text-accent"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted/20"
                         }`}
                       >
-                        {role}
+                        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                          checked ? "border-accent bg-accent text-accent-foreground" : "border-border/60 bg-muted/20"
+                        }`}>
+                          {checked && <Check className="h-2.5 w-2.5" weight="bold" />}
+                        </span>
+                        {role.label}
                       </button>
                     )
                   })}
