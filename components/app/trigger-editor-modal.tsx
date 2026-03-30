@@ -455,6 +455,7 @@ export function TriggerEditorModal({
                 </div>
               )}
 
+              {action !== "GENERATE_SUMMARY" && (<>
               {/* Aviso anti-ban */}
               {(event === "STALE_IN_STAGE" || action === "WAIT_AND_REPEAT") && (
                 <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/8 px-3 py-2.5">
@@ -537,6 +538,7 @@ export function TriggerEditorModal({
                   </div>
                 </div>
               </div>
+              </>)}
               </div>
 
               <div className="shrink-0 border-t border-border/50 px-5 py-3 space-y-3">
