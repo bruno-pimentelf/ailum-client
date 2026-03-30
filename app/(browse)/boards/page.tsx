@@ -33,6 +33,8 @@ import {
   Copy,
   FloppyDisk,
   Sparkle,
+  ChatCircleText,
+  X,
 } from "@phosphor-icons/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useFunnels, useBoard, useFunnelMutations } from "@/hooks/use-board"
@@ -56,8 +58,11 @@ import "prismjs/themes/prism-tomorrow.css"
 import { funnelsApi } from "@/lib/api/funnels"
 import type { BoardContact, BoardStage, FunnelListItem } from "@/lib/api/funnels"
 import { formatMessagePreview } from "@/components/app/message-preview"
+import { ChatView } from "@/components/app/chat-view"
 import { useIntegrations } from "@/hooks/use-integrations"
+import { useAuthStore } from "@/lib/auth-store"
 import { statusLabel } from "@/lib/contact-utils"
+import type { FirestoreContact } from "@/lib/types/firestore"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -181,6 +186,7 @@ function KanbanCard({
   isDragging = false,
   overlay = false,
   onMoveToOtherFunnel,
+  onOpenChat,
   instanceLabel,
 }: {
   contact: BoardContact
@@ -188,6 +194,7 @@ function KanbanCard({
   isDragging?: boolean
   overlay?: boolean
   onMoveToOtherFunnel?: () => void
+  onOpenChat?: () => void
   instanceLabel?: string | null
 }) {
   const name = contact.name ?? contact.phone
@@ -207,36 +214,48 @@ function KanbanCard({
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <Avatar name={name} photoUrl={contact.photoUrl} />
-          <div className="min-w-0">
-            <p className="text-[13px] font-medium text-foreground truncate leading-tight">{name}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-medium text-foreground truncate leading-tight max-w-[140px]">{name}</p>
             <p className="text-[10px] text-muted-foreground/90 font-mono">{contact.phone}</p>
           </div>
         </div>
-        {overlay ? (
-          <div className="h-6 w-6 shrink-0" />
-        ) : onMoveToOtherFunnel ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="opacity-0 group-hover:opacity-100 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/85 hover:text-foreground hover:bg-muted/50 transition-all duration-150 cursor-pointer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DotsThree className="h-3.5 w-3.5" weight="bold" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={4} className="min-w-[180px]">
-              <DropdownMenuItem onClick={(e) => { e.preventDefault(); onMoveToOtherFunnel() }} className="cursor-pointer">
-                <FlowArrow className="h-3.5 w-3.5" />
-                Mover para outro funil
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <div className="h-6 w-6 shrink-0" />
-        )}
+        <div className="flex items-center gap-0.5 shrink-0">
+          {!overlay && onOpenChat && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onOpenChat() }}
+              className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/60 hover:text-accent hover:bg-accent/10 transition-all duration-150 cursor-pointer"
+              title="Abrir conversa"
+            >
+              <ChatCircleText className="h-3.5 w-3.5" weight="fill" />
+            </button>
+          )}
+          {overlay ? (
+            <div className="h-6 w-6" />
+          ) : onMoveToOtherFunnel ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/85 hover:text-foreground hover:bg-muted/50 transition-all duration-150 cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DotsThree className="h-3.5 w-3.5" weight="bold" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={4} className="min-w-[180px]">
+                <DropdownMenuItem onClick={(e) => { e.preventDefault(); onMoveToOtherFunnel() }} className="cursor-pointer">
+                  <FlowArrow className="h-3.5 w-3.5" />
+                  Mover para outro funil
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="h-6 w-6" />
+          )}
+        </div>
       </div>
 
       {/* Last message preview */}
@@ -321,11 +340,13 @@ function DraggableCard({
   contact,
   stageColor,
   onMoveToOtherFunnel,
+  onOpenChat,
   instanceLabel,
 }: {
   contact: BoardContact
   stageColor: string
   onMoveToOtherFunnel?: () => void
+  onOpenChat?: () => void
   instanceLabel?: string | null
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: contact.id })
@@ -337,6 +358,7 @@ function DraggableCard({
         stageColor={stageColor}
         isDragging={isDragging}
         onMoveToOtherFunnel={onMoveToOtherFunnel}
+        onOpenChat={onOpenChat}
         instanceLabel={instanceLabel}
       />
     </div>
@@ -354,6 +376,7 @@ function KanbanColumn({
   onUpdateStageName,
   onOpenConfig,
   onMoveToOtherFunnel,
+  onOpenChat,
   canEdit,
   instanceMap,
 }: {
@@ -365,6 +388,7 @@ function KanbanColumn({
   onUpdateStageName: (stage: BoardStage, name: string) => void
   onOpenConfig: (stage: BoardStage) => void
   onMoveToOtherFunnel?: (contact: BoardContact) => void
+  onOpenChat?: (contact: BoardContact) => void
   canEdit?: boolean
   instanceMap: Map<string, string>
 }) {
@@ -511,6 +535,7 @@ function KanbanColumn({
                       ? () => onMoveToOtherFunnel(contact)
                       : undefined
                   }
+                  onOpenChat={onOpenChat ? () => onOpenChat(contact) : undefined}
                   instanceLabel={instanceMap.size > 1 && contact.zapiInstanceId ? instanceMap.get(contact.zapiInstanceId) : null}
                 />
               </motion.div>
@@ -561,6 +586,7 @@ function MobileColumn({
   onUpdateStageName,
   onOpenConfig,
   onMoveToOtherFunnel,
+  onOpenChat,
   instanceMap,
 }: {
   stage: BoardStage
@@ -571,6 +597,7 @@ function MobileColumn({
   onUpdateStageName?: (stage: BoardStage, name: string) => void
   onOpenConfig: (stage: BoardStage) => void
   onMoveToOtherFunnel?: (contact: BoardContact) => void
+  onOpenChat?: (contact: BoardContact) => void
   instanceMap: Map<string, string>
 }) {
   const [open, setOpen] = useState(true)
@@ -702,6 +729,7 @@ function MobileColumn({
                         ? () => onMoveToOtherFunnel(c)
                         : undefined
                     }
+                    onOpenChat={onOpenChat ? () => onOpenChat(c) : undefined}
                     instanceLabel={instanceMap.size > 1 && c.zapiInstanceId ? instanceMap.get(c.zapiInstanceId) : null}
                   />
                 ))
@@ -732,6 +760,8 @@ export default function BoardsPage() {
     currentFunnelId: string
     currentStageId: string
   } | null>(null)
+  const [chatContact, setChatContact] = useState<BoardContact | null>(null)
+  const tenantId = useAuthStore((s) => s.tenantId)
   const [devMode, setDevMode] = useState(false)
   const [devJson, setDevJson] = useState("")
   const [devLoading, setDevLoading] = useState(false)
@@ -1287,6 +1317,7 @@ export default function BoardsPage() {
                           currentStageId: stage.id,
                         })
                       }
+                      onOpenChat={setChatContact}
                       instanceMap={instanceMap}
                     />
                   ))}
@@ -1321,6 +1352,7 @@ export default function BoardsPage() {
                               (c) => c.id === overId && overId !== activeContact?.id,
                             )
                           }
+                          onOpenChat={setChatContact}
                           instanceMap={instanceMap}
                         />
                       </div>
@@ -1351,6 +1383,50 @@ export default function BoardsPage() {
       </div>
       )}
     </div>
+    {/* Chat modal */}
+    <AnimatePresence>
+      {chatContact && tenantId && (
+        <motion.div
+          key="chat-modal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-8"
+          onClick={() => setChatContact(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.2, ease }}
+            className="relative w-full max-w-5xl h-full rounded-2xl border border-border/60 bg-background shadow-2xl overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button floating top-right */}
+            <button
+              onClick={() => setChatContact(null)}
+              className="cursor-pointer absolute top-3 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-background/80 backdrop-blur text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex-1 min-h-0 flex flex-col">
+              <ChatView
+                contact={{
+                  id: chatContact.id,
+                  phone: chatContact.phone,
+                  name: chatContact.name,
+                  status: chatContact.status,
+                  photoUrl: chatContact.photoUrl,
+                  updatedAt: { toDate: () => new Date() },
+                } as FirestoreContact}
+                tenantId={tenantId}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     </>
   )
 }

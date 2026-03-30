@@ -23,6 +23,24 @@ import Link from "next/link"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
+// ─── Z-API error translation ─────────────────────────────────────────────────
+
+const ZAPI_ERROR_MAP: Array<[RegExp, string]> = [
+  [/not possible to restore a session/i, "Não foi possível restaurar a sessão. Reconecte o WhatsApp."],
+  [/please login again/i, "Faça login novamente no WhatsApp."],
+  [/qr code not read/i, "QR code não foi lido. Escaneie novamente."],
+  [/disconnected/i, "Conexão perdida. Reconecte nas configurações."],
+  [/timeout/i, "Tempo de conexão esgotado. Tente novamente."],
+  [/unauthorized/i, "Token inválido. Verifique as credenciais da instância."],
+]
+
+function translateZapiError(msg: string): string {
+  for (const [pattern, translation] of ZAPI_ERROR_MAP) {
+    if (pattern.test(msg)) return translation
+  }
+  return msg
+}
+
 // ─── Avatar with photo support ────────────────────────────────────────────────
 
 function Avatar({
@@ -265,18 +283,18 @@ export default function ChatsPage() {
             transition={{ duration: 0.25, ease }}
             className="overflow-hidden shrink-0"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-amber-500/20 bg-amber-500/[0.06] px-4 py-2.5">
+            <div className="flex items-center justify-between gap-3 border-b border-amber-600/20 dark:border-amber-500/20 bg-amber-500/[0.08] dark:bg-amber-500/[0.06] px-4 py-2.5">
               <div className="flex items-center gap-2 min-w-0">
-                <WifiSlash className="h-4 w-4 text-amber-400 shrink-0" />
-                <p className="text-[12px] text-amber-400/90 font-medium truncate">
+                <WifiSlash className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <p className="text-[12px] text-amber-700 dark:text-amber-400/90 font-medium truncate">
                   {whatsappError
-                    ? `WhatsApp desconectado — ${whatsappError}`
+                    ? `WhatsApp desconectado — ${translateZapiError(whatsappError)}`
                     : "WhatsApp desconectado — novas mensagens não serão entregues"}
                 </p>
               </div>
               <Link
                 href="/settings?tab=conexoes"
-                className="cursor-pointer shrink-0 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-400 hover:bg-amber-500/15 transition-colors"
+                className="cursor-pointer shrink-0 rounded-lg border border-amber-600/25 dark:border-amber-500/25 bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-500/15 transition-colors"
               >
                 Reconectar
               </Link>

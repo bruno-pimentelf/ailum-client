@@ -52,32 +52,32 @@ const CATEGORY_META: Record<
   stage: {
     label: "Etapas",
     icon: FlowArrow,
-    chipCls: "bg-violet-500/20 text-violet-300",
-    tagColor: "text-violet-400",
+    chipCls: "bg-violet-500/20 text-violet-700 dark:text-violet-300",
+    tagColor: "text-violet-600 dark:text-violet-400",
   },
   professional: {
     label: "Profissionais",
     icon: UserCircle,
-    chipCls: "bg-sky-500/20 text-sky-300",
-    tagColor: "text-sky-400",
+    chipCls: "bg-sky-500/20 text-sky-700 dark:text-sky-300",
+    tagColor: "text-sky-600 dark:text-sky-400",
   },
   service: {
     label: "Serviços",
     icon: Stethoscope,
-    chipCls: "bg-emerald-500/20 text-emerald-300",
-    tagColor: "text-emerald-400",
+    chipCls: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300",
+    tagColor: "text-emerald-600 dark:text-emerald-400",
   },
   tool: {
     label: "Ferramentas",
     icon: Wrench,
-    chipCls: "bg-amber-500/20 text-amber-300",
-    tagColor: "text-amber-400",
+    chipCls: "bg-amber-500/20 text-amber-700 dark:text-amber-300",
+    tagColor: "text-amber-600 dark:text-amber-400",
   },
   template: {
     label: "Modelos de mensagem",
     icon: EnvelopeSimple,
-    chipCls: "bg-violet-500/20 text-violet-300",
-    tagColor: "text-violet-400",
+    chipCls: "bg-violet-500/20 text-violet-700 dark:text-violet-300",
+    tagColor: "text-violet-600 dark:text-violet-400",
   },
 }
 
@@ -755,7 +755,7 @@ export function InstructionTextarea({
                       className={`rounded-[3px] ${
                         seg.resolved && meta
                           ? meta.chipCls
-                          : "bg-rose-500/20 text-rose-400 underline decoration-wavy decoration-rose-400/50"
+                          : "bg-rose-500/20 text-rose-700 dark:text-rose-400 underline decoration-wavy decoration-rose-500/50 dark:decoration-rose-400/50"
                       }`}
                     >
                       {seg.value}
@@ -780,7 +780,7 @@ export function InstructionTextarea({
           className="relative z-[2] w-full h-full resize-none bg-transparent px-4 py-3 text-[14px] leading-[1.625] outline-none selection:bg-accent/30"
           style={{
             color: "transparent",
-            caretColor: "rgb(255 255 255 / 0.9)",
+            caretColor: "var(--color-foreground)",
           }}
         />
       </div>
