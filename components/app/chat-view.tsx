@@ -2407,9 +2407,9 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           animate={{ width: 320, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
-          className="shrink-0 border-l border-border overflow-hidden"
+          className="shrink-0 border-l border-border overflow-hidden h-full"
         >
-          <div className="w-[320px] h-full">
+          <div className="w-[320px] h-full flex flex-col min-h-0">
             <ContactInfoPanel
               contactId={contact.id}
               initialContact={contact}
