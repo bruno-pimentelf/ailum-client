@@ -1932,6 +1932,23 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
     }
   }
 
+  // ── Paste image from clipboard ──────────────────────────────────────────────
+
+  function handlePaste(e: React.ClipboardEvent) {
+    const items = e.clipboardData?.items
+    if (!items) return
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault()
+        const file = item.getAsFile()
+        if (!file) return
+        const preview = URL.createObjectURL(file)
+        setAttachment({ kind: "image", file, preview })
+        return
+      }
+    }
+  }
+
   // ── File attachment ─────────────────────────────────────────────────────────
 
   const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2326,6 +2343,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
                   value={inputValue}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
                   onBlur={() => { setTimeout(() => setTemplatePickerOpen(false), 150) }}
                   placeholder={attachment ? "Adicionar legenda (opcional)..." : noteMode ? "Escrever nota interna..." : "/ para templates — ou digite uma mensagem..."}
                   className={`w-full h-9 rounded-xl border px-4 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none transition-all duration-300 ${
