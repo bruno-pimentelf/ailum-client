@@ -6,12 +6,20 @@ import { MotionConfig } from "framer-motion"
 export function LandingShell({ children }: { children: ReactNode }) {
   const [isMobile, setIsMobile] = useState(false)
 
-  // Force dark theme on landing page regardless of user preference
+  // Force dark theme on landing page — runs before ThemeProvider can override
   useEffect(() => {
     const root = document.documentElement
-    const wasDark = root.classList.contains("dark")
+    const prev = root.classList.contains("dark")
     root.classList.add("dark")
-    return () => { if (!wasDark) root.classList.remove("dark") }
+    // Re-apply on any mutation (ThemeProvider may remove it)
+    const observer = new MutationObserver(() => {
+      if (!root.classList.contains("dark")) root.classList.add("dark")
+    })
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] })
+    return () => {
+      observer.disconnect()
+      if (!prev) root.classList.remove("dark")
+    }
   }, [])
 
   useEffect(() => {
