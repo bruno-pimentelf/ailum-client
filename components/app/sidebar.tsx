@@ -22,9 +22,11 @@ import {
   Globe,
   CaretUpDown,
   Check,
+  ShieldCheck,
 } from "@phosphor-icons/react"
 import { useIntegrations } from "@/hooks/use-integrations"
 import { useInstanceStore } from "@/lib/instance-store"
+import { useMe } from "@/hooks/use-me"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -237,8 +239,25 @@ interface SidebarProps {
   accountManagerPhone?: string
 }
 
-function getNavigation(): NavEntry[] {
-  return [...baseNavigation]
+function getNavigation(isSuperAdmin?: boolean): NavEntry[] {
+  const nav = [...baseNavigation]
+  if (isSuperAdmin) {
+    // Insert "Admin" before "Configurações" (last item)
+    const settingsIdx = nav.findIndex(
+      (e) => !isGroup(e) && (e as NavItem).href === "/settings"
+    )
+    const adminItem: NavItem = {
+      label: "Admin",
+      href: "/admin",
+      icon: ShieldCheck,
+    }
+    if (settingsIdx >= 0) {
+      nav.splice(settingsIdx, 0, adminItem)
+    } else {
+      nav.push(adminItem)
+    }
+  }
+  return nav
 }
 
 export function AppSidebar({
@@ -249,8 +268,9 @@ export function AppSidebar({
 }: SidebarProps) {
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<string[]>(["Atendimento"])
+  const { data: me } = useMe()
 
-  const navigation = getNavigation()
+  const navigation = getNavigation(me?.isSuperAdmin)
 
   const toggleGroup = (label: string) => {
     setOpenGroups((prev) =>

@@ -1,0 +1,86 @@
+import { apiFetch } from "@/lib/api"
+
+export interface TenantListItem {
+  id: string
+  name: string
+  slug: string | null
+  isActive: boolean
+  createdAt: string
+  _count: { contacts: number; tenantMembers: number; funnels: number }
+}
+
+export interface TenantDetail extends TenantListItem {
+  agentBasePrompt: string | null
+  notificationsEnabled: boolean
+}
+
+export interface GlobalStats {
+  totalTenants: number
+  totalContacts: number
+  totalMessages: number
+  totalAgentJobs: number
+}
+
+export interface FunnelDuplicateInput {
+  sourceTenantId: string
+  sourceFunnelId: string
+  targetTenantId: string
+  newName?: string
+}
+
+export interface FunnelTransferInput {
+  sourceTenantId: string
+  funnelId: string
+  targetTenantId: string
+}
+
+export interface TenantFunnel {
+  id: string
+  name: string
+  description: string | null
+  isActive: boolean
+  stages: Array<{ id: string; name: string }>
+}
+
+export const superAdminApi = {
+  listTenants: (params?: { search?: string; page?: number }) => {
+    const qs = new URLSearchParams()
+    if (params?.search) qs.set("search", params.search)
+    if (params?.page) qs.set("page", String(params.page))
+    const q = qs.toString()
+    return apiFetch<{
+      tenants: TenantListItem[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>(`/super-admin/tenants${q ? `?${q}` : ""}`)
+  },
+
+  getTenant: (tenantId: string) =>
+    apiFetch<TenantDetail>(`/super-admin/tenants/${tenantId}`),
+
+  updateTenant: (tenantId: string, body: Partial<TenantDetail>) =>
+    apiFetch<TenantDetail>(`/super-admin/tenants/${tenantId}`, {
+      method: "PATCH",
+      body,
+    }),
+
+  getOverviewStats: () =>
+    apiFetch<GlobalStats>("/super-admin/stats/overview"),
+
+  getTenantFunnels: (tenantId: string) =>
+    apiFetch<TenantFunnel[]>(`/super-admin/tenants/${tenantId}/funnels`),
+
+  duplicateFunnel: (body: FunnelDuplicateInput) =>
+    apiFetch<{ funnelId: string }>("/super-admin/funnels/duplicate", {
+      method: "POST",
+      body,
+    }),
+
+  transferFunnel: (body: FunnelTransferInput) =>
+    apiFetch<{ ok: boolean }>("/super-admin/funnels/transfer", {
+      method: "POST",
+      body,
+    }),
+}

@@ -9,6 +9,7 @@ export interface MeResponse {
   memberId: string
   role: "ADMIN" | "PROFESSIONAL" | "SECRETARY"
   professionalId: string | null
+  isSuperAdmin?: boolean
   tenant: {
     id: string
     name: string
