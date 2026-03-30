@@ -31,5 +31,10 @@ export const tenantNotificationsApi = {
       method: "PATCH",
       body,
     }),
+
+  clearAll: () =>
+    apiFetch<{ deleted: number }>("/tenant/notifications/clear", {
+      method: "DELETE",
+    }),
 }
 

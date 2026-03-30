@@ -52,6 +52,8 @@ export function AppHeader() {
     markAsRead,
     markAllAsRead,
     markAllPending,
+    clearAll,
+    clearPending,
     readPendingIds,
   } = useNotifications()
 
@@ -378,6 +380,14 @@ export function AppHeader() {
                       className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
                     >
                       {markAllPending ? "Marcando..." : "Marcar todas"}
+                    </button>
+                    <span className="text-border">·</span>
+                    <button
+                      onClick={() => void clearAll()}
+                      disabled={clearPending || effectiveItems.length === 0}
+                      className="text-[11px] text-muted-foreground hover:text-destructive transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                    >
+                      {clearPending ? "Limpando..." : "Limpar"}
                     </button>
                     <button
                       onClick={() => setNotificationsOpen(false)}

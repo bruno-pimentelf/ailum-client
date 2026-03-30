@@ -172,6 +172,20 @@ export function useNotifications() {
     }
   }, [items, tenantId])
 
+  const [clearPending, setClearPending] = useState(false)
+
+  const clearAll = useCallback(async () => {
+    if (!tenantId) return null
+    setClearPending(true)
+    try {
+      const res = await tenantNotificationsApi.clearAll()
+      setItems([])
+      return res
+    } finally {
+      setClearPending(false)
+    }
+  }, [tenantId])
+
   // Optional helper if caller wants server-side unread query later.
   const getUnreadQuery = useCallback(() => {
     if (!tenantId) return null
@@ -192,6 +206,8 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     markAllPending,
+    clearAll,
+    clearPending,
     readPendingIds,
     getUnreadQuery,
   }
