@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -9,6 +9,7 @@ import { ArrowRight, Eye, EyeSlash, Sparkle } from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
 import { AilumLoader } from "@/components/ui/ailum-loader"
+import { useMe } from "@/hooks/use-me"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -24,6 +25,16 @@ function SignUpContent() {
   const searchParams = useSearchParams()
   const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"))
   const emailFromUrl = searchParams.get("email") ?? ""
+  const { data: me, isLoading: meLoading } = useMe()
+
+  // Block direct access: only super admins or invite flows (callbackUrl) can reach sign-up
+  const isInviteFlow = !!callbackUrl
+  useEffect(() => {
+    if (meLoading) return
+    if (!isInviteFlow && !me?.isSuperAdmin) {
+      router.replace("/login")
+    }
+  }, [meLoading, me?.isSuperAdmin, isInviteFlow, router])
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState(emailFromUrl)
