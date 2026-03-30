@@ -10,6 +10,7 @@ import {
   AddressBook,
   ChatCircleText,
   Robot,
+  CreditCard,
   ArrowRight,
   Warning,
   ArrowsClockwise,
@@ -166,6 +167,12 @@ export default function AdminPage() {
           label="Funis"
           description="Duplicar e transferir funis entre tenants"
           icon={Funnel}
+        />
+        <QuickLink
+          href="/admin/plans"
+          label="Planos"
+          description="Gerenciar planos e assinaturas"
+          icon={CreditCard}
         />
       </div>
     </div>

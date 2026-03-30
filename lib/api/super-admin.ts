@@ -42,6 +42,40 @@ export interface TenantFunnel {
   stages: Array<{ id: string; name: string }>
 }
 
+export interface PlanItem {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  maxConversationsPerMonth: number // -1 = unlimited
+  maxAudioMinutesPerMonth: number // -1 = unlimited
+  price: string // decimal as string
+  isActive: boolean
+  displayOrder: number
+}
+
+export interface TenantSubscriptionDetail {
+  id: string
+  tenantId: string
+  planId: string
+  plan: PlanItem
+  periodStart: string
+  periodEnd: string
+  conversationsUsed: number
+  audioMinutesUsed: number
+  lastResetAt: string
+}
+
+export interface PlanCreateInput {
+  name: string
+  slug: string
+  description?: string
+  maxConversationsPerMonth: number
+  maxAudioMinutesPerMonth: number
+  price: number
+  displayOrder?: number
+}
+
 export const superAdminApi = {
   listTenants: (params?: { search?: string; page?: number }) => {
     const qs = new URLSearchParams()
@@ -83,4 +117,35 @@ export const superAdminApi = {
       method: "POST",
       body,
     }),
+
+  listPlans: () => apiFetch<PlanItem[]>("/super-admin/plans"),
+
+  createPlan: (body: PlanCreateInput) =>
+    apiFetch<PlanItem>("/super-admin/plans", { method: "POST", body }),
+
+  updatePlan: (planId: string, body: Partial<PlanCreateInput>) =>
+    apiFetch<PlanItem>(`/super-admin/plans/${planId}`, {
+      method: "PATCH",
+      body,
+    }),
+
+  deletePlan: (planId: string) =>
+    apiFetch<void>(`/super-admin/plans/${planId}`, { method: "DELETE" }),
+
+  getTenantSubscription: (tenantId: string) =>
+    apiFetch<TenantSubscriptionDetail | null>(
+      `/super-admin/tenants/${tenantId}/subscription`
+    ),
+
+  assignPlan: (tenantId: string, planId: string) =>
+    apiFetch<TenantSubscriptionDetail>(
+      `/super-admin/tenants/${tenantId}/subscription`,
+      { method: "POST", body: { planId } }
+    ),
+
+  resetUsage: (tenantId: string) =>
+    apiFetch<TenantSubscriptionDetail>(
+      `/super-admin/tenants/${tenantId}/subscription/reset`,
+      { method: "POST" }
+    ),
 }
