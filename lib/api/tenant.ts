@@ -24,7 +24,9 @@ export interface Tenant {
   isAgentTestMode?: boolean
   agentTestPhones?: string[]
   isSlotRecallEnabled?: boolean
+  reminder48hEnabled?: boolean
   reminder24hEnabled?: boolean
+  reminder2hEnabled?: boolean
   reminder1hEnabled?: boolean
   customMemoryKeys?: Array<{ key: string; description: string }> | null
   notificationsEnabled?: boolean
@@ -57,7 +59,9 @@ export type TenantUpdateInput = Partial<
     | "isAgentTestMode"
     | "agentTestPhones"
     | "isSlotRecallEnabled"
+    | "reminder48hEnabled"
     | "reminder24hEnabled"
+    | "reminder2hEnabled"
     | "reminder1hEnabled"
     | "customMemoryKeys"
     | "notificationsEnabled"
