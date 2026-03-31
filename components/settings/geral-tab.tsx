@@ -52,6 +52,8 @@ export function GeralTab() {
     notificationTypes: [] as string[],
     notificationDigestMinutes: 15,
     notificationRoles: [] as string[],
+    reminder24hEnabled: true,
+    reminder1hEnabled: true,
   })
 
   useEffect(() => {
@@ -74,6 +76,8 @@ export function GeralTab() {
       notificationTypes: tenant.notificationTypes ?? [],
       notificationDigestMinutes: tenant.notificationDigestMinutes ?? 15,
       notificationRoles: tenant.notificationRoles ?? [],
+      reminder24hEnabled: tenant.reminder24hEnabled ?? true,
+      reminder1hEnabled: tenant.reminder1hEnabled ?? true,
     })
   }, [tenant])
 
@@ -136,6 +140,8 @@ export function GeralTab() {
         notificationTypes: form.notificationTypes,
         notificationDigestMinutes: Math.max(1, Number(form.notificationDigestMinutes) || 15),
         notificationRoles: form.notificationRoles,
+        reminder24hEnabled: form.reminder24hEnabled,
+        reminder1hEnabled: form.reminder1hEnabled,
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
@@ -394,6 +400,59 @@ export function GeralTab() {
                   })}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lembretes automáticos */}
+        <div className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-muted-foreground" weight="duotone" />
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Lembretes de consulta</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground/70">
+            Mensagens enviadas automaticamente antes de consultas confirmadas. Os textos podem ser editados nos templates com as chaves <code className="text-[10px] bg-muted/30 px-1 py-0.5 rounded">reminder_24h</code> e <code className="text-[10px] bg-muted/30 px-1 py-0.5 rounded">reminder_1h</code>.
+          </p>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/15 px-3 py-2.5">
+              <div>
+                <p className="text-[12px] font-medium text-foreground">Lembrete 24h antes</p>
+                <p className="text-[10px] text-muted-foreground/70">Enviado ~24h antes da consulta</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.reminder24hEnabled}
+                onClick={() => setForm((p) => ({ ...p, reminder24hEnabled: !p.reminder24hEnabled }))}
+                className={`relative h-6 w-10 shrink-0 rounded-full border-2 transition-colors cursor-pointer ${
+                  form.reminder24hEnabled ? "border-accent bg-accent/20" : "border-border bg-muted/30"
+                }`}
+              >
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${
+                  form.reminder24hEnabled ? "left-5 bg-accent" : "left-0.5 bg-muted-foreground/50"
+                }`} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/15 px-3 py-2.5">
+              <div>
+                <p className="text-[12px] font-medium text-foreground">Lembrete 1h antes</p>
+                <p className="text-[10px] text-muted-foreground/70">Enviado ~1h antes da consulta</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={form.reminder1hEnabled}
+                onClick={() => setForm((p) => ({ ...p, reminder1hEnabled: !p.reminder1hEnabled }))}
+                className={`relative h-6 w-10 shrink-0 rounded-full border-2 transition-colors cursor-pointer ${
+                  form.reminder1hEnabled ? "border-accent bg-accent/20" : "border-border bg-muted/30"
+                }`}
+              >
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${
+                  form.reminder1hEnabled ? "left-5 bg-accent" : "left-0.5 bg-muted-foreground/50"
+                }`} />
+              </button>
             </div>
           </div>
         </div>

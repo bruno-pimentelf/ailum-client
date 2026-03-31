@@ -171,6 +171,7 @@ export type ActionConfig =
 export interface ConditionConfig {
   path?: string[]
   equals?: string
+  hoursBeforeAppointment?: number
 }
 
 export interface Trigger {

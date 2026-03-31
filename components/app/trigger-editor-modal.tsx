@@ -170,6 +170,7 @@ export function TriggerEditorModal({
   const [delayMinutes, setDelayMinutes] = useState(0)
   const [cooldownSeconds, setCooldownSeconds] = useState(MIN_COOLDOWN_SECONDS)
   const [maxRepetitions, setMaxRepetitions] = useState(1)
+  const [hoursBeforeAppointment, setHoursBeforeAppointment] = useState(24)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -195,6 +196,8 @@ export function TriggerEditorModal({
       setMoveStageId((ac?.stageId as string) ?? "")
       setAmount(String((ac?.amount as number) ?? ""))
       setDescription((ac?.description as string) ?? "")
+      const cc = (trigger as unknown as { conditionConfig?: Record<string, unknown> }).conditionConfig
+      setHoursBeforeAppointment((cc?.hoursBeforeAppointment as number) ?? 24)
     } else if (open) {
       setEvent("STAGE_ENTERED")
       setAction("SEND_MESSAGE")
@@ -255,9 +258,10 @@ export function TriggerEditorModal({
         event,
         action,
         actionConfig: buildActionConfig(),
-        delayMinutes,
-        cooldownSeconds,
-        maxRepetitions,
+        conditionConfig: event === "APPOINTMENT_APPROACHING" ? { hoursBeforeAppointment } : undefined,
+        delayMinutes: event === "APPOINTMENT_APPROACHING" ? 0 : delayMinutes,
+        cooldownSeconds: event === "APPOINTMENT_APPROACHING" ? 86400 : cooldownSeconds,
+        maxRepetitions: event === "APPOINTMENT_APPROACHING" ? 1 : maxRepetitions,
       })
       onClose()
     } catch (err) {
@@ -455,7 +459,33 @@ export function TriggerEditorModal({
                 </div>
               )}
 
-              {action !== "GENERATE_SUMMARY" && (<>
+              {/* APPOINTMENT_APPROACHING: specific "hours before" config */}
+              {event === "APPOINTMENT_APPROACHING" && (
+                <div className="space-y-2">
+                  <label className={labelCls}>Quanto tempo antes da consulta</label>
+                  <p className="text-[10px] text-muted-foreground/70 mb-1.5">
+                    A mensagem será enviada esse tempo antes do horário agendado
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[1, 2, 6, 12, 24, 48].map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => setHoursBeforeAppointment(h)}
+                        className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-all ${
+                          hoursBeforeAppointment === h
+                            ? "border-accent/40 bg-accent/15 text-accent"
+                            : "border-border/50 bg-muted/20 text-muted-foreground/70 hover:text-foreground hover:bg-muted/40"
+                        }`}
+                      >
+                        {h < 24 ? `${h}h antes` : `${h / 24}d antes`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {action !== "GENERATE_SUMMARY" && event !== "APPOINTMENT_APPROACHING" && (<>
               {/* Aviso anti-ban */}
               {(event === "STALE_IN_STAGE" || action === "WAIT_AND_REPEAT") && (
                 <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/8 px-3 py-2.5">
