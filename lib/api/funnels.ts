@@ -108,6 +108,8 @@ export interface StageAgentConfig {
   allowedProfessionalIds?: string[]
   requirePaymentBeforeConfirm?: boolean
   model: "HAIKU" | "SONNET"
+  llmProvider?: string | null
+  llmModel?: string | null
   temperature: number
   voiceId?: string | null
 }
@@ -119,6 +121,8 @@ export interface StageAgentConfigInput {
   allowedProfessionalIds?: string[]
   requirePaymentBeforeConfirm?: boolean
   model?: "HAIKU" | "SONNET"
+  llmProvider?: string | null
+  llmModel?: string | null
   temperature?: number
   voiceId?: string | null
   voiceChance?: number
@@ -281,4 +285,10 @@ export const funnelsApi = {
       method: "PATCH",
       body: funnelId ? { stageId, funnelId } : { stageId },
     }),
+
+  llmModels: () =>
+    apiFetch<{
+      providers: Record<string, string>
+      models: Record<string, Array<{ id: string; label: string; tier: string }>>
+    }>("/funnels/llm-models"),
 }

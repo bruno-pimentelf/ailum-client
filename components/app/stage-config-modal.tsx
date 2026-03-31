@@ -22,6 +22,7 @@ import { useProfessionals } from "@/hooks/use-professionals"
 import { voicesApi } from "@/lib/api/voices"
 import { useQuery } from "@tanstack/react-query"
 import { SpeakerHigh } from "@phosphor-icons/react"
+import { funnelsApi } from "@/lib/api/funnels"
 import type { BoardStage } from "@/lib/api/funnels"
 import type { AllowedTool, Trigger } from "@/lib/api/funnels"
 import { TriggerEditorModal } from "./trigger-editor-modal"
@@ -45,9 +46,9 @@ const ALLOWED_TOOLS: { value: AllowedTool; label: string }[] = [
   { value: "collect_info", label: "Coletar dados do paciente" },
 ]
 
-const MODELS = [
-  { value: "HAIKU" as const, label: "Haiku" },
-  { value: "SONNET" as const, label: "Sonnet" },
+const FALLBACK_MODELS = [
+  { value: "HAIKU" as const, label: "Haiku (rápido)" },
+  { value: "SONNET" as const, label: "Sonnet (inteligente)" },
 ]
 
 const EVENT_LABELS: Record<string, string> = {
@@ -133,7 +134,11 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
   const [allowedProfessionalIds, setAllowedProfessionalIds] = useState<string[]>([])
   const [requirePaymentBeforeConfirm, setRequirePaymentBeforeConfirm] = useState(false)
   const [model, setModel] = useState<"HAIKU" | "SONNET">("SONNET")
+  const [llmProvider, setLlmProvider] = useState<string | null>(null)
+  const [llmModel, setLlmModel] = useState<string | null>(null)
   const [temperature, setTemperature] = useState(0.4)
+  const llmModelsQuery = useQuery({ queryKey: ["llm-models"], queryFn: funnelsApi.llmModels, staleTime: 300_000 })
+  const llmData = llmModelsQuery.data
   const [voiceId, setVoiceId] = useState<string | null>(null)
   const [voiceChance, setVoiceChance] = useState(100)
   const [isTerminal, setIsTerminal] = useState(false)
@@ -157,6 +162,8 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setAllowedProfessionalIds(config.allowedProfessionalIds ?? [])
       setRequirePaymentBeforeConfirm(config.requirePaymentBeforeConfirm ?? false)
       setModel(config.model ?? "SONNET")
+      setLlmProvider(config.llmProvider ?? null)
+      setLlmModel(config.llmModel ?? null)
       setTemperature(config.temperature ?? 0.4)
       setVoiceId(config.voiceId ?? null)
       setVoiceChance((config as unknown as { voiceChance?: number }).voiceChance ?? 100)
@@ -168,6 +175,8 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
       setAllowedProfessionalIds([])
       setRequirePaymentBeforeConfirm(false)
       setModel("SONNET")
+      setLlmProvider(null)
+      setLlmModel(null)
       setTemperature(0.4)
       setVoiceId(null)
       setIsTerminal(stage?.isTerminal ?? false)
@@ -201,6 +210,8 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
           allowedProfessionalIds: allowedProfessionalIds.length > 0 ? allowedProfessionalIds : [],
           requirePaymentBeforeConfirm: requirePaymentBeforeConfirm || undefined,
           model,
+          llmProvider: llmProvider || null,
+          llmModel: llmModel || null,
           temperature,
           voiceId: voiceId || null,
           voiceChance,
@@ -484,18 +495,59 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                 <div className="flex-1 min-h-0 flex flex-col px-6 sm:px-8 pt-5 gap-4 overflow-hidden">
                   {/* Row 1: Model + Temperature + Voice */}
                   <div className="shrink-0 flex items-end gap-4 flex-wrap">
-                    <div className="space-y-1.5 w-[150px]">
-                      <label className={labelCls}>Modelo</label>
-                      <select
-                        value={model}
-                        onChange={(e) => setModel(e.target.value as "HAIKU" | "SONNET")}
-                        className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer"
-                      >
-                        {MODELS.map((m) => (
-                          <option key={m.value} value={m.value}>{m.label}</option>
-                        ))}
-                      </select>
-                    </div>
+                    {llmData ? (
+                      <>
+                        <div className="space-y-1.5 w-[170px]">
+                          <label className={labelCls}>Provider</label>
+                          <select
+                            value={llmProvider ?? ""}
+                            onChange={(e) => {
+                              const p = e.target.value || null
+                              setLlmProvider(p)
+                              // Auto-select first model of this provider
+                              if (p && llmData.models[p]?.[0]) {
+                                setLlmModel(llmData.models[p][0].id)
+                              } else {
+                                setLlmModel(null)
+                              }
+                            }}
+                            className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer"
+                          >
+                            <option value="">Padrão do sistema</option>
+                            {Object.entries(llmData.providers).map(([key, label]) => (
+                              <option key={key} value={key}>{label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1.5 w-[190px]">
+                          <label className={labelCls}>Modelo</label>
+                          <select
+                            value={llmModel ?? ""}
+                            onChange={(e) => setLlmModel(e.target.value || null)}
+                            disabled={!llmProvider}
+                            className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer disabled:opacity-50"
+                          >
+                            {!llmProvider && <option value="">Padrão</option>}
+                            {llmProvider && (llmData.models[llmProvider] ?? []).map((m) => (
+                              <option key={m.id} value={m.id}>{m.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-1.5 w-[150px]">
+                        <label className={labelCls}>Modelo</label>
+                        <select
+                          value={model}
+                          onChange={(e) => setModel(e.target.value as "HAIKU" | "SONNET")}
+                          className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer"
+                        >
+                          {FALLBACK_MODELS.map((m) => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div className="space-y-1.5 sm:w-[120px]">
                       <label className={labelCls}>Temp. ({temperature.toFixed(1)})</label>
                       <input
