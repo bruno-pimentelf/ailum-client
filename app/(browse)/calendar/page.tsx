@@ -643,10 +643,10 @@ export default function CalendarPage() {
   const doctorsList = useMemo(() => {
     if (!professionals) return []
     if (professionals.length === 0) {
-      return [{ id: "all", name: "Todos", color: "text-foreground" }]
+      return [{ id: "all", name: "Selecionar profissional", color: "text-foreground" }]
     }
     return [
-      { id: "all", name: "Todos", color: "text-foreground" },
+      { id: "all", name: "Selecionar profissional", color: "text-foreground" },
       ...professionals.map((p, i) => ({
         id: p.id,
         name: p.fullName,

@@ -1389,7 +1389,8 @@ export function ProfessionalCalendar({
 
         {/* Professional switcher strip (admin with multiple professionals) */}
         {allProfessionals && allProfessionals.length > 1 && onSwitchProfessional && (
-          <div className="flex items-center gap-1 px-6 pb-3 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 px-6 pb-3 overflow-x-auto no-scrollbar">
+            <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider shrink-0 mr-1">Profissionais</span>
             {allProfessionals.map((p) => {
               const active = p.id === professionalId
               return (
