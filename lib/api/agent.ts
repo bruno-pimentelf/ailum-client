@@ -117,6 +117,11 @@ export interface AgentAuditEntry {
   stageAgentToolCalls?: number
   totalInputTokens?: number
   totalOutputTokens?: number
+  llmProvider?: string | null
+  llmModel?: string | null
+  estimatedCostUsd?: number | null
+  contactSentiment?: string | null
+  contactResponseTimeSec?: number | null
   durationMs?: number
   error: string | null
   auditDetails: AuditDetail[]

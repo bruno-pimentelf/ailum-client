@@ -361,18 +361,71 @@ function AuditEntryCard({ entry }: { entry: AgentAuditEntry }) {
             className="overflow-hidden"
           >
             <div className="px-3.5 pb-3.5 pt-2 flex flex-col gap-2 border-t border-border/40">
-              {entry.durationMs != null && (
-                <div className="flex justify-between text-[11px] text-muted-foreground/85">
-                  <span>Duração</span>
-                  <span>{entry.durationMs}ms</span>
-                </div>
-              )}
-              {(entry.totalInputTokens ?? 0) + (entry.totalOutputTokens ?? 0) > 0 && (
-                <div className="flex justify-between text-[11px] text-muted-foreground/85">
-                  <span>Tokens</span>
-                  <span>{(entry.totalInputTokens ?? 0) + (entry.totalOutputTokens ?? 0)} total</span>
-                </div>
-              )}
+              {/* Status + Provider badge */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                  entry.status === "REPLIED" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    : entry.status === "ERROR" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                    : entry.status === "ESCALATED" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    : "bg-muted/30 text-muted-foreground border border-border/40"
+                }`}>
+                  {entry.status}
+                </span>
+                {entry.llmProvider && (
+                  <span className="inline-flex items-center rounded-md bg-accent/10 border border-accent/20 px-1.5 py-0.5 text-[9px] font-medium text-accent">
+                    {entry.llmProvider}{entry.llmModel ? ` / ${entry.llmModel}` : ""}
+                  </span>
+                )}
+                {entry.contactSentiment && (
+                  <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-medium border ${
+                    entry.contactSentiment === "positive" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                      : entry.contactSentiment === "negative" || entry.contactSentiment === "frustrated" ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                      : "bg-muted/20 text-muted-foreground border-border/40"
+                  }`}>
+                    {entry.contactSentiment === "positive" ? "😊" : entry.contactSentiment === "negative" ? "😞" : entry.contactSentiment === "frustrated" ? "😤" : "😐"} {entry.contactSentiment}
+                  </span>
+                )}
+              </div>
+
+              {/* Metrics grid */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                {entry.durationMs != null && (
+                  <div className="flex justify-between text-[11px] text-muted-foreground/85">
+                    <span>Duração</span>
+                    <span>{entry.durationMs}ms</span>
+                  </div>
+                )}
+                {(entry.totalInputTokens ?? 0) > 0 && (
+                  <div className="flex justify-between text-[11px] text-muted-foreground/85">
+                    <span>Input</span>
+                    <span>{(entry.totalInputTokens ?? 0).toLocaleString("pt-BR")} tk</span>
+                  </div>
+                )}
+                {(entry.totalOutputTokens ?? 0) > 0 && (
+                  <div className="flex justify-between text-[11px] text-muted-foreground/85">
+                    <span>Output</span>
+                    <span>{(entry.totalOutputTokens ?? 0).toLocaleString("pt-BR")} tk</span>
+                  </div>
+                )}
+                {entry.estimatedCostUsd != null && entry.estimatedCostUsd > 0 && (
+                  <div className="flex justify-between text-[11px] text-muted-foreground/85">
+                    <span>Custo</span>
+                    <span>${entry.estimatedCostUsd.toFixed(4)}</span>
+                  </div>
+                )}
+                {entry.contactResponseTimeSec != null && (
+                  <div className="flex justify-between text-[11px] text-muted-foreground/85">
+                    <span>Resp. contato</span>
+                    <span>{entry.contactResponseTimeSec < 60 ? `${entry.contactResponseTimeSec}s` : `${Math.round(entry.contactResponseTimeSec / 60)}min`}</span>
+                  </div>
+                )}
+                {entry.routerIntent && (
+                  <div className="flex justify-between text-[11px] text-muted-foreground/85">
+                    <span>Router</span>
+                    <span>{entry.routerIntent} ({entry.routerConfidence != null ? `${Math.round(entry.routerConfidence * 100)}%` : "?"})</span>
+                  </div>
+                )}
+              </div>
               {entry.auditDetails && entry.auditDetails.length > 0 && (
                 <div className="flex flex-col gap-3">
                   {entry.auditDetails.map((d) => (
