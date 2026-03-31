@@ -1180,6 +1180,7 @@ export function ProfessionalCalendar({
     currentMin: number
   } | null>(null)
   const dragRef = useRef<{ startX: number; startY: number; colWidth: number } | null>(null)
+  const justDraggedRef = useRef(false)
   const [eventPopover, setEventPopover] = useState<{
     event: CalendarEvent
     x: number
@@ -1580,6 +1581,11 @@ export function ProfessionalCalendar({
                       onClick={
                         canEdit && !dayAvail.blocked
                           ? (e) => {
+                              // Suppress click if we just finished a drag
+                              if (justDraggedRef.current) {
+                                justDraggedRef.current = false
+                                return
+                              }
                               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
                               const localY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
                               const clickedMin = snapTo15(pxToMinutes(localY))
@@ -1741,15 +1747,17 @@ export function ProfessionalCalendar({
                                 })
                               }
 
-                              const onUp = async () => {
+                              const onUp = () => {
                                 window.removeEventListener("mousemove", onMove)
                                 window.removeEventListener("mouseup", onUp)
                                 dragRef.current = null
 
-                                const drag = draggingEvent
-                                // Read from latest state via a trick — we use the state at cleanup time
                                 setDraggingEvent((prev) => {
                                   if (prev && (prev.currentCol !== prev.originCol || prev.currentMin !== prev.originMin)) {
+                                    // Flag to suppress the grid click handler
+                                    justDraggedRef.current = true
+                                    setTimeout(() => { justDraggedRef.current = false }, 100)
+
                                     const newDate = weekDays[prev.currentCol]
                                     const dateStr = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, "0")}-${String(newDate.getDate()).padStart(2, "0")}`
                                     const durMin = timeToMinutes(prev.event.endTime) - timeToMinutes(prev.event.startTime)
@@ -1821,12 +1829,15 @@ export function ProfessionalCalendar({
                         const colIdx = weekDays.findIndex((wd) => wd.getDate() === colDate.getDate() && wd.getMonth() === colDate.getMonth())
                         if (colIdx !== draggingEvent.currentCol) return null
                         const durMin = timeToMinutes(draggingEvent.event.endTime) - timeToMinutes(draggingEvent.event.startTime)
+                        const ghostStart = minutesToHHMM(draggingEvent.currentMin)
+                        const ghostEnd = minutesToHHMM(draggingEvent.currentMin + durMin)
+                        const ghostH = Math.max(20, durationToPx(durMin) - 4)
                         return (
                           <div
-                            className="absolute left-1 right-1 rounded-md px-1.5 py-1 pointer-events-none z-[5] opacity-70"
+                            className="absolute left-1 right-1 rounded-md px-1.5 py-1 pointer-events-none z-[5]"
                             style={{
                               top: minutesToPx(draggingEvent.currentMin),
-                              height: Math.max(20, durationToPx(durMin) - 4),
+                              height: ghostH,
                               backgroundColor: `${draggingEvent.event.color}25`,
                               borderLeft: `3px solid ${draggingEvent.event.color}`,
                               border: `2px solid ${draggingEvent.event.color}60`,
@@ -1836,6 +1847,9 @@ export function ProfessionalCalendar({
                             <span className="text-[9px] font-bold truncate" style={{ color: draggingEvent.event.color }}>
                               {draggingEvent.event.title}
                             </span>
+                            <p className="text-[8px] font-bold mt-0.5" style={{ color: draggingEvent.event.color }}>
+                              {ghostStart} – {ghostEnd}
+                            </p>
                           </div>
                         )
                       })()}
