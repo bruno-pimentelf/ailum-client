@@ -17,7 +17,7 @@ import {
   Stethoscope,
   NotePencil,
 } from "@phosphor-icons/react"
-import { useUpdateAppointment } from "@/hooks/use-appointments"
+import { useUpdateAppointment, useDeleteAppointmentPermanent } from "@/hooks/use-appointments"
 import { useAuthStore } from "@/lib/auth-store"
 import { ChatView } from "@/components/app/chat-view"
 import type { AppointmentStatus } from "@/lib/api/scheduling"
@@ -138,7 +138,10 @@ export function AppointmentStatusModal({
 }: AppointmentStatusModalProps) {
   const [cancelledReason, setCancelledReason] = useState("")
   const [showCancelInput, setShowCancelInput] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const [showDeleteInput, setShowDeleteInput] = useState(false)
   const updateMutation = useUpdateAppointment()
+  const deleteMutation = useDeleteAppointmentPermanent()
   const tenantId = useAuthStore((s) => s.tenantId)
 
   const firestoreContact = useMemo<FirestoreContact>(() => ({
@@ -352,6 +355,59 @@ export function AppointmentStatusModal({
                 <p className="text-[12px] text-muted-foreground/50">Esta consulta foi cancelada</p>
               </div>
             )}
+          </div>
+
+          {/* Delete permanently */}
+          <div className="pt-2 border-t border-border/30">
+            <AnimatePresence mode="wait">
+              {!showDeleteInput ? (
+                <button
+                  onClick={() => { setShowDeleteInput(true); setDeleteConfirm("") }}
+                  className="w-full flex items-center justify-center gap-1.5 h-8 rounded-lg text-[10px] text-muted-foreground/40 hover:text-destructive hover:bg-destructive/5 transition-all cursor-pointer"
+                >
+                  Excluir permanentemente
+                </button>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 space-y-2">
+                    <p className="text-[11px] text-destructive/80">
+                      Isso vai apagar o agendamento permanentemente. Digite <strong>confirmar</strong> para prosseguir.
+                    </p>
+                    <input
+                      type="text"
+                      value={deleteConfirm}
+                      onChange={(e) => setDeleteConfirm(e.target.value)}
+                      placeholder='Digite "confirmar"'
+                      autoFocus
+                      className="w-full h-8 rounded-lg border border-border bg-muted/30 px-3 text-[12px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-destructive/30"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setShowDeleteInput(false); setDeleteConfirm("") }}
+                        className="flex-1 h-8 rounded-lg text-[11px] text-muted-foreground/60 hover:text-muted-foreground/80 transition-colors cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await deleteMutation.mutateAsync(appointment.id)
+                          onClose()
+                        }}
+                        disabled={deleteConfirm.toLowerCase().trim() !== "confirmar" || deleteMutation.isPending}
+                        className="flex-1 h-8 rounded-lg bg-destructive text-[11px] font-medium text-destructive-foreground hover:bg-destructive/90 transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                      >
+                        {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

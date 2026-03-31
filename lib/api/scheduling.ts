@@ -79,4 +79,6 @@ export const schedulingApi = {
     apiFetch<Appointment>(`/scheduling/${id}`, { method: "PATCH", body }),
 
   delete: (id: string) => apiFetch<void>(`/scheduling/${id}`, { method: "DELETE" }),
+
+  deletePermanent: (id: string) => apiFetch<{ ok: boolean }>(`/scheduling/${id}/permanent`, { method: "DELETE" }),
 }

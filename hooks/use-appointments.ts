@@ -47,3 +47,14 @@ export function useDeleteAppointment() {
     },
   })
 }
+
+export function useDeleteAppointmentPermanent() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => schedulingApi.deletePermanent(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["appointments"] })
+      qc.invalidateQueries({ queryKey: ["contact-appointments"] })
+    },
+  })
+}
