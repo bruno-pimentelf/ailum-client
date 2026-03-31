@@ -62,7 +62,7 @@ function PatientField({
     return () => clearTimeout(t)
   }, [search])
 
-  const { data: contactsData } = useContactsList({ search: debounced || undefined })
+  const { data: contactsData, isLoading: contactsLoading } = useContactsList({ search: debounced || undefined, limit: 8 })
   const contacts = contactsData?.data ?? []
   const showResults = (focused || search.length > 0) && mode === "search"
 
@@ -160,34 +160,45 @@ function PatientField({
         />
       </div>
       {showResults && (
-        <div className="rounded-xl border border-foreground/[0.06] divide-y divide-white/[0.04] overflow-hidden">
-          {contacts.length === 0 ? (
-            <div className="px-3 py-3 flex items-center justify-between">
-              <span className="text-[12px] text-foreground/85">Nenhum contato encontrado</span>
-              <button
-                type="button"
-                onClick={() => { setNewName(search); setMode("create") }}
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-accent hover:text-accent/80 transition-colors"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                Novo paciente
-              </button>
+        <div className="rounded-xl border border-foreground/[0.06] divide-y divide-white/[0.04] overflow-hidden max-h-[280px] overflow-y-auto">
+          {contactsLoading && debounced ? (
+            <div className="px-3 py-4 flex items-center justify-center">
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }} className="h-4 w-4 rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground/60" />
+            </div>
+          ) : contacts.length === 0 ? (
+            <div className="px-3 py-3 flex flex-col items-center gap-2">
+              <span className="text-[12px] text-muted-foreground/70">{debounced ? "Nenhum contato encontrado" : "Digite para buscar..."}</span>
+              {debounced && (
+                <button
+                  type="button"
+                  onClick={() => { setNewName(search); setMode("create") }}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold text-accent hover:text-accent/80 transition-colors"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Cadastrar "{search}"
+                </button>
+              )}
             </div>
           ) : (
             <>
-              {contacts.slice(0, 5).map((c) => (
+              {contacts.map((c) => (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => { onSelect(c); setSearch("") }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-foreground/[0.04] transition-colors"
                 >
-                  <div className="h-8 w-8 shrink-0 rounded-full bg-foreground/[0.08] flex items-center justify-center text-[10px] font-bold text-foreground">
-                    {(c.name ?? c.phone ?? "?").slice(0, 2).toUpperCase()}
-                  </div>
+                  {c.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.photoUrl} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-8 w-8 shrink-0 rounded-full bg-accent/10 flex items-center justify-center text-[10px] font-bold text-accent">
+                      {(c.name ?? c.phone ?? "?").split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-foreground truncate">{c.name ?? c.phone}</p>
-                    <p className="text-[11px] text-foreground/85 truncate">{c.phone}</p>
+                    <p className="text-[13px] font-medium text-foreground truncate">{c.name ?? "Sem nome"}</p>
+                    <p className="text-[10px] text-muted-foreground/70 font-mono truncate">{c.phone}</p>
                   </div>
                 </button>
               ))}

@@ -1153,9 +1153,14 @@ export function ProfessionalCalendar({
   const [toast, setToast] = useState<{ msg: string; variant: "error" | "info" } | null>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null)
   // Calendar events state
-  type CalendarMode = "agendamento" | "evento"
-  const [calendarMode, setCalendarMode] = useState<CalendarMode>("agendamento")
   const updateEventMut = useUpdateCalendarEvent()
+  // Action picker: shown on grid click to choose between agenda/event
+  const [actionPicker, setActionPicker] = useState<{
+    date: Date
+    time: string
+    x: number
+    y: number
+  } | null>(null)
   const [inlineEvent, setInlineEvent] = useState<{
     date: Date
     time: string
@@ -1181,6 +1186,8 @@ export function ProfessionalCalendar({
   } | null>(null)
   const dragRef = useRef<{ startX: number; startY: number; colWidth: number } | null>(null)
   const justDraggedRef = useRef(false)
+  // Optimistic override: event ID → { date, startTime, endTime } applied immediately on drop
+  const [optimisticMoves, setOptimisticMoves] = useState<Map<string, { date: string; startTime: string; endTime: string }>>(new Map())
   const [eventPopover, setEventPopover] = useState<{
     event: CalendarEvent
     x: number
@@ -1356,36 +1363,6 @@ export function ProfessionalCalendar({
               ))}
             </div>
 
-            {/* Calendar mode toggle */}
-            {canEdit && viewMode === "week" && (
-              <div className="flex items-center rounded-lg border border-border/60 bg-foreground/[0.02] p-0.5">
-                {(["agendamento", "evento"] as CalendarMode[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setCalendarMode(m)}
-                    className={`relative px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer ${
-                      calendarMode === m ? "text-foreground" : "text-foreground/85 hover:text-foreground/85"
-                    }`}
-                  >
-                    {calendarMode === m && (
-                      <motion.div
-                        layoutId="mode-pill-pro"
-                        className="absolute inset-0 bg-foreground/[0.07] rounded-md"
-                        transition={{ duration: 0.25, ease }}
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center gap-1">
-                      {m === "agendamento" ? (
-                        <><CalendarBlank className="h-3 w-3" /> Agenda</>
-                      ) : (
-                        <><Clock className="h-3 w-3" /> Evento</>
-                      )}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -1405,9 +1382,7 @@ export function ProfessionalCalendar({
         {canEdit && (
           <div className="px-6 pb-3 text-[10px]">
             <span className="text-muted-foreground/60">
-              {calendarMode === "evento"
-                ? "Clique no horário para criar evento"
-                : "Clique no horário para agendar"}
+              Clique no horário para agendar ou criar evento
             </span>
           </div>
         )}
@@ -1566,10 +1541,17 @@ export function ProfessionalCalendar({
                       a.year === d.getFullYear()
                   )
                   const dYMD = toYMD(d)
-                  const dayEvents = calendarEvents.filter((ev) => {
-                    const evDate = ev.occurrenceDate ?? (typeof ev.date === "string" ? ev.date.slice(0, 10) : "")
-                    return evDate === dYMD
-                  })
+                  const dayEvents = calendarEvents
+                    .map((ev) => {
+                      const evKey = `${ev.id}-${ev.occurrenceDate ?? ""}`
+                      const opt = optimisticMoves.get(evKey)
+                      if (opt) return { ...ev, date: opt.date, startTime: opt.startTime, endTime: opt.endTime, occurrenceDate: opt.date }
+                      return ev
+                    })
+                    .filter((ev) => {
+                      const evDate = ev.occurrenceDate ?? (typeof ev.date === "string" ? ev.date.slice(0, 10) : "")
+                      return evDate === dYMD
+                    })
                   return (
                     <div
                       key={d.toISOString()}
@@ -1581,7 +1563,6 @@ export function ProfessionalCalendar({
                       onClick={
                         canEdit && !dayAvail.blocked
                           ? (e) => {
-                              // Suppress click if we just finished a drag
                               if (justDraggedRef.current) {
                                 justDraggedRef.current = false
                                 return
@@ -1590,21 +1571,7 @@ export function ProfessionalCalendar({
                               const localY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
                               const clickedMin = snapTo15(pxToMinutes(localY))
                               const time = minutesToHHMM(clickedMin)
-                              if (calendarMode === "evento") {
-                                setInlineEvent({
-                                  date: d,
-                                  time,
-                                  x: e.clientX,
-                                  y: e.clientY,
-                                })
-                              } else {
-                                setQuickSchedule({
-                                  date: d,
-                                  time,
-                                  x: e.clientX,
-                                  y: e.clientY,
-                                })
-                              }
+                              setActionPicker({ date: d, time, x: e.clientX, y: e.clientY })
                             }
                           : undefined
                       }
@@ -1754,7 +1721,6 @@ export function ProfessionalCalendar({
 
                                 setDraggingEvent((prev) => {
                                   if (prev && (prev.currentCol !== prev.originCol || prev.currentMin !== prev.originMin)) {
-                                    // Flag to suppress the grid click handler
                                     justDraggedRef.current = true
                                     setTimeout(() => { justDraggedRef.current = false }, 100)
 
@@ -1763,10 +1729,15 @@ export function ProfessionalCalendar({
                                     const durMin = timeToMinutes(prev.event.endTime) - timeToMinutes(prev.event.startTime)
                                     const newStart = minutesToHHMM(prev.currentMin)
                                     const newEnd = minutesToHHMM(prev.currentMin + durMin)
-                                    updateEventMut.mutate({
-                                      id: prev.event.id,
-                                      body: { date: dateStr, startTime: newStart, endTime: newEnd },
-                                    })
+
+                                    // Optimistic: move event instantly in UI
+                                    const evKey = `${prev.event.id}-${prev.event.occurrenceDate ?? ""}`
+                                    setOptimisticMoves((m) => { const n = new Map(m); n.set(evKey, { date: dateStr, startTime: newStart, endTime: newEnd }); return n })
+
+                                    updateEventMut.mutate(
+                                      { id: prev.event.id, body: { date: dateStr, startTime: newStart, endTime: newEnd } },
+                                      { onSettled: () => setOptimisticMoves((m) => { const n = new Map(m); n.delete(evKey); return n }) },
+                                    )
                                   }
                                   return null
                                 })
@@ -2046,6 +2017,54 @@ export function ProfessionalCalendar({
             }}
             onClose={() => setQuickSchedule(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Action picker — choose between appointment or event */}
+      <AnimatePresence>
+        {actionPicker && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setActionPicker(null)} aria-hidden />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: -4 }}
+              transition={{ duration: 0.15, ease: [0.32, 0.72, 0, 1] }}
+              className="fixed z-50 flex gap-2 p-1.5 rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/30"
+              style={{
+                left: Math.min(actionPicker.x - 90, window.innerWidth - 200),
+                top: Math.max(8, actionPicker.y - 50),
+              }}
+            >
+              <button
+                onClick={() => {
+                  const ap = actionPicker
+                  setActionPicker(null)
+                  setQuickSchedule({ date: ap.date, time: ap.time, x: ap.x, y: ap.y })
+                }}
+                className="flex flex-col items-center gap-1.5 rounded-lg px-4 py-3 hover:bg-accent/10 transition-all cursor-pointer group"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                  <CalendarBlank className="h-4 w-4 text-accent" weight="duotone" />
+                </div>
+                <span className="text-[11px] font-semibold text-foreground/85 group-hover:text-foreground">Agendar</span>
+              </button>
+              <div className="w-px bg-border/40 my-1" />
+              <button
+                onClick={() => {
+                  const ap = actionPicker
+                  setActionPicker(null)
+                  setInlineEvent({ date: ap.date, time: ap.time, x: ap.x, y: ap.y })
+                }}
+                className="flex flex-col items-center gap-1.5 rounded-lg px-4 py-3 hover:bg-accent/10 transition-all cursor-pointer group"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 group-hover:bg-violet-500/20 transition-colors">
+                  <Clock className="h-4 w-4 text-violet-400" weight="duotone" />
+                </div>
+                <span className="text-[11px] font-semibold text-foreground/85 group-hover:text-foreground">Evento</span>
+              </button>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
