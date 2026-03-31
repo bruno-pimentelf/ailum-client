@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   User,
@@ -49,6 +49,8 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { FirestoreContact, FirestoreReminder } from "@/lib/types/firestore"
 import { createReminder, toggleReminder, deleteReminder, generateSummary, getFollowUps, toggleFollowUpsPause, type FollowUpItem } from "@/lib/api/conversations"
+import { schedulingApi, type Appointment } from "@/lib/api/scheduling"
+import { useQuery } from "@tanstack/react-query"
 
 // ─── Memory key labels & icons ────────────────────────────────────────────────
 
@@ -675,6 +677,100 @@ function FollowUpsSection({ contactId }: { contactId: string }) {
   )
 }
 
+// ─── Appointments section ────────────────────────────────────────────────────
+
+const APPOINTMENT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  PENDING: { label: "Pendente", color: "text-amber-500 dark:text-amber-400" },
+  CONFIRMED: { label: "Confirmado", color: "text-blue-500 dark:text-blue-400" },
+  COMPLETED: { label: "Compareceu", color: "text-emerald-500 dark:text-emerald-400" },
+  CANCELLED: { label: "Cancelado", color: "text-muted-foreground/60" },
+  NO_SHOW: { label: "Não compareceu", color: "text-rose-500 dark:text-rose-400" },
+}
+
+function formatAppointmentDate(iso: string): string {
+  try {
+    const d = new Date(iso)
+    const date = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" })
+    const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })
+    return `${date} às ${time}`
+  } catch { return "—" }
+}
+
+function AppointmentsSection({ contactId }: { contactId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["contact-appointments", contactId],
+    queryFn: () => schedulingApi.list({
+      contactId,
+      from: "2020-01-01",
+      to: new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10),
+      limit: 20,
+    }),
+    staleTime: 30_000,
+  })
+
+  const appointments = data?.data ?? []
+  const upcoming = appointments.filter((a) => a.status === "PENDING" || a.status === "CONFIRMED")
+  const past = appointments.filter((a) => a.status !== "PENDING" && a.status !== "CONFIRMED")
+
+  if (isLoading) {
+    return (
+      <CollapsibleSection icon={CalendarBlank} title="Agendamentos" defaultOpen={false}>
+        <div className="flex items-center justify-center py-4">
+          <ArrowsClockwise className="h-4 w-4 text-muted-foreground/40 animate-spin" />
+        </div>
+      </CollapsibleSection>
+    )
+  }
+
+  return (
+    <CollapsibleSection
+      icon={CalendarBlank}
+      title="Agendamentos"
+      badge={upcoming.length > 0 ? (
+        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent/15 px-1 text-[9px] font-bold text-accent">
+          {upcoming.length}
+        </span>
+      ) : undefined}
+      defaultOpen={upcoming.length > 0}
+    >
+      {appointments.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground/50 px-1 py-2">Nenhum agendamento registrado.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {[...upcoming, ...past].map((appt) => {
+            const st = APPOINTMENT_STATUS_LABELS[appt.status] ?? { label: appt.status, color: "text-muted-foreground" }
+            const isPast = appt.status !== "PENDING" && appt.status !== "CONFIRMED"
+            return (
+              <div
+                key={appt.id}
+                className={`rounded-lg border border-border/30 bg-card/10 px-3 py-2.5 ${isPast ? "opacity-60" : ""}`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[11px] font-medium text-foreground/85 truncate">
+                    {formatAppointmentDate(appt.scheduledAt)}
+                  </span>
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${st.color}`}>
+                    {st.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                  {appt.professional && <span>{appt.professional.fullName.split(" ")[0]}</span>}
+                  {appt.professional && appt.service && <span>·</span>}
+                  {appt.service && <span>{appt.service.name}</span>}
+                  {appt.durationMin && <span>· {appt.durationMin}min</span>}
+                </div>
+                {(appt as unknown as { cancelledReason?: string }).cancelledReason && (
+                  <p className="text-[10px] text-muted-foreground/50 mt-1 italic">{(appt as unknown as { cancelledReason?: string }).cancelledReason}</p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </CollapsibleSection>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 interface ContactInfoPanelProps {
@@ -771,6 +867,9 @@ export function ContactInfoPanel({ contactId, initialContact, onDeleted }: Conta
 
         {/* Follow-ups */}
         <FollowUpsSection contactId={contactId} />
+
+        {/* Appointments */}
+        <AppointmentsSection contactId={contactId} />
 
         {/* Reminders */}
         <CollapsibleSection
