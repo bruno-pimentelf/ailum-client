@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useCallback } from "react"
 import {
   CaretLeft,
   CaretRight,
@@ -19,6 +20,9 @@ import {
   Warning,
   X,
   MagnifyingGlass,
+  Repeat,
+  Pencil,
+  Trash,
 } from "@phosphor-icons/react"
 // useQueryClient no longer needed — availability editing removed from calendar
 import {
@@ -27,6 +31,14 @@ import {
   useProfessionalOverrides,
 } from "@/hooks/use-professionals"
 import { useAppointments, useCreateAppointment } from "@/hooks/use-appointments"
+import {
+  useCalendarEvents,
+  useCreateCalendarEvent,
+  useUpdateCalendarEvent,
+  useDeleteCalendarEvent,
+  useDeleteCalendarEventOccurrence,
+} from "@/hooks/use-calendar-events"
+import type { CalendarEvent } from "@/lib/api/calendar-events"
 import { useContactsList } from "@/hooks/use-contacts-list"
 import { useServices } from "@/hooks/use-services"
 import { NovoAgendamentoModal } from "@/components/calendar/novo-agendamento-modal"
@@ -590,6 +602,380 @@ function InlineScheduleForm({
   )
 }
 
+// ─── Calendar Event Colors ───────────────────────────────────────────────────
+
+const EVENT_COLORS = [
+  { name: "Indigo", value: "#6366f1" },
+  { name: "Emerald", value: "#10b981" },
+  { name: "Amber", value: "#f59e0b" },
+  { name: "Rose", value: "#f43f5e" },
+  { name: "Sky", value: "#0ea5e9" },
+]
+
+// ─── Inline Event Card (create/edit calendar event) ─────────────────────────
+
+function InlineEventCard({
+  date,
+  time,
+  x,
+  y,
+  professionalId,
+  existingEvent,
+  onClose,
+}: {
+  date: Date
+  time: string
+  x: number
+  y: number
+  professionalId: string
+  existingEvent?: CalendarEvent | null
+  onClose: () => void
+}) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ left: x, top: y })
+  const [title, setTitle] = useState(existingEvent?.title ?? "")
+  const [startTime, setStartTime] = useState(existingEvent?.startTime ?? time)
+  const endDefault = (() => {
+    if (existingEvent?.endTime) return existingEvent.endTime
+    const [h, m] = time.split(":").map(Number)
+    const endMin = (h ?? 0) * 60 + (m ?? 0) + 60
+    const eh = Math.floor(endMin / 60) % 24
+    const em = endMin % 60
+    return `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`
+  })()
+  const [endTime, setEndTime] = useState(endDefault)
+  const [color, setColor] = useState(existingEvent?.color ?? "#6366f1")
+  const [recurrence, setRecurrence] = useState<string | null>(existingEvent?.recurrence ?? null)
+  const [error, setError] = useState<string | null>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
+
+  const createEvent = useCreateCalendarEvent()
+  const updateEvent = useUpdateCalendarEvent()
+
+  useEffect(() => {
+    titleRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
+    const adjust = () => {
+      if (!cardRef.current) return
+      const rect = cardRef.current.getBoundingClientRect()
+      const pad = 12
+      let left = x + 12
+      let top = y - 20
+      if (left + rect.width + pad > window.innerWidth) left = x - rect.width - 12
+      if (top + rect.height + pad > window.innerHeight) top = window.innerHeight - rect.height - pad
+      if (left < pad) left = pad
+      if (top < pad) top = pad
+      setPos({ left, top })
+    }
+    adjust()
+    const raf = requestAnimationFrame(adjust)
+    return () => cancelAnimationFrame(raf)
+  }, [x, y])
+
+  const dayLabel = `${WEEKDAYS_FULL[date.getDay()]}, ${date.getDate()} de ${MONTHS_FULL[date.getMonth()]}`
+
+  const handleSave = async () => {
+    setError(null)
+    if (!title.trim()) {
+      setError("Insira um título para o evento.")
+      return
+    }
+    try {
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+      if (existingEvent) {
+        await updateEvent.mutateAsync({
+          id: existingEvent.id,
+          body: { title: title.trim(), startTime, endTime, color, recurrence, date: dateStr },
+        })
+      } else {
+        await createEvent.mutateAsync({
+          professionalId,
+          title: title.trim(),
+          date: dateStr,
+          startTime,
+          endTime,
+          color,
+          recurrence,
+        })
+      }
+      onClose()
+    } catch {
+      setError("Erro ao salvar evento.")
+    }
+  }
+
+  const isPending = createEvent.isPending || updateEvent.isPending
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -4, scale: 0.97 }}
+        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+        className="fixed z-50 w-[280px] rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/40"
+        style={{ left: pos.left, top: pos.top }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-2">
+          <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+            {existingEvent ? "Editar evento" : "Novo evento"}
+          </p>
+          <button onClick={onClose} className="text-muted-foreground/50 hover:text-muted-foreground">
+            <X className="h-3.5 w-3.5" weight="bold" />
+          </button>
+        </div>
+
+        <div className="px-4 pb-4 space-y-3">
+          {/* Title */}
+          <input
+            ref={titleRef}
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Reuniao, Almoco, Curso..."
+            onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
+            className="w-full h-9 rounded-lg border border-border/60 bg-foreground/[0.03] px-3 text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/40"
+          />
+
+          {/* Date label */}
+          <p className="text-[11px] text-muted-foreground/50">{dayLabel}</p>
+
+          {/* Time */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <label className="block text-[9px] font-bold text-muted-foreground/50 uppercase mb-0.5">Inicio</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full h-8 rounded-lg border border-border/60 bg-foreground/[0.03] px-2 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/40"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-[9px] font-bold text-muted-foreground/50 uppercase mb-0.5">Fim</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full h-8 rounded-lg border border-border/60 bg-foreground/[0.03] px-2 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/40"
+              />
+            </div>
+          </div>
+
+          {/* Color picker */}
+          <div className="flex items-center gap-1.5">
+            {EVENT_COLORS.map((c) => (
+              <button
+                key={c.value}
+                onClick={() => setColor(c.value)}
+                className={`h-5 w-5 rounded-full transition-all ${
+                  color === c.value ? "ring-2 ring-offset-1 ring-offset-background" : "hover:scale-110"
+                }`}
+                style={{
+                  backgroundColor: c.value,
+                  ...(color === c.value ? { ringColor: c.value } : {}),
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Recurrence toggle */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setRecurrence(null)}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all ${
+                recurrence === null
+                  ? "bg-foreground/[0.08] border border-border text-foreground"
+                  : "border border-border/40 text-muted-foreground/60 hover:text-muted-foreground"
+              }`}
+            >
+              Uma vez
+            </button>
+            <button
+              onClick={() => setRecurrence("weekly")}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all ${
+                recurrence === "weekly"
+                  ? "bg-foreground/[0.08] border border-border text-foreground"
+                  : "border border-border/40 text-muted-foreground/60 hover:text-muted-foreground"
+              }`}
+            >
+              <Repeat className="h-3 w-3" />
+              Toda semana
+            </button>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <p className="text-[11px] text-rose-400 bg-rose-500/[0.08] border border-rose-500/20 rounded-lg px-2.5 py-1.5">
+              {error}
+            </p>
+          )}
+
+          {/* Save */}
+          <button
+            onClick={handleSave}
+            disabled={isPending || !title.trim()}
+            className="w-full flex items-center justify-center gap-2 rounded-lg py-2 text-[12px] font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ backgroundColor: color }}
+          >
+            {isPending ? "Salvando..." : existingEvent ? "Salvar" : "Criar evento"}
+          </button>
+        </div>
+      </motion.div>
+    </>
+  )
+}
+
+// ─── Event Popover (view/edit/delete) ────────────────────────────────────────
+
+function EventPopover({
+  event,
+  x,
+  y,
+  onEdit,
+  onDelete,
+  onClose,
+}: {
+  event: CalendarEvent
+  x: number
+  y: number
+  onEdit: () => void
+  onDelete: () => void
+  onClose: () => void
+}) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ left: x, top: y })
+  const [deleteMode, setDeleteMode] = useState<null | "pick" | "all">(null)
+  const deleteEvent = useDeleteCalendarEvent()
+  const deleteOccurrence = useDeleteCalendarEventOccurrence()
+  const isRecurring = event.recurrence === "weekly"
+
+  useEffect(() => {
+    const adjust = () => {
+      if (!cardRef.current) return
+      const rect = cardRef.current.getBoundingClientRect()
+      const pad = 12
+      let left = x + 12
+      let top = y - 20
+      if (left + rect.width + pad > window.innerWidth) left = x - rect.width - 12
+      if (top + rect.height + pad > window.innerHeight) top = window.innerHeight - rect.height - pad
+      if (left < pad) left = pad
+      if (top < pad) top = pad
+      setPos({ left, top })
+    }
+    adjust()
+    const raf = requestAnimationFrame(adjust)
+    return () => cancelAnimationFrame(raf)
+  }, [x, y])
+
+  const handleDeleteAll = async () => {
+    if (deleteMode !== "all") { setDeleteMode("all"); return }
+    await deleteEvent.mutateAsync(event.id)
+    onClose()
+  }
+
+  const handleDeleteOccurrence = async () => {
+    const dateStr = event.occurrenceDate ?? (typeof event.date === "string" ? event.date.slice(0, 10) : new Date(event.date).toISOString().slice(0, 10))
+    await deleteOccurrence.mutateAsync({ id: event.id, date: dateStr })
+    onClose()
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
+      <motion.div
+        ref={cardRef}
+        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -4, scale: 0.97 }}
+        transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
+        className="fixed z-50 w-[220px] rounded-xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/40 overflow-hidden"
+        style={{ left: pos.left, top: pos.top }}
+      >
+        {/* Colored top bar */}
+        <div className="h-1" style={{ backgroundColor: event.color }} />
+
+        <div className="p-3 space-y-2">
+          <p className="text-[13px] font-bold text-foreground">{event.title}</p>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+            <Clock className="h-3 w-3" />
+            <span>{event.startTime} – {event.endTime}</span>
+          </div>
+          {event.recurrence === "weekly" && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+              <Repeat className="h-3 w-3" />
+              <span>Toda semana</span>
+            </div>
+          )}
+          {event.description && (
+            <p className="text-[11px] text-muted-foreground/60">{event.description}</p>
+          )}
+
+          <div className="flex flex-col gap-1.5 pt-1">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onEdit}
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium border border-border/60 text-foreground hover:bg-foreground/[0.04] transition-colors"
+              >
+                <Pencil className="h-3 w-3" />
+                Editar
+              </button>
+              {!isRecurring && (
+                <button
+                  onClick={handleDeleteAll}
+                  disabled={deleteEvent.isPending}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium border transition-colors ${
+                    deleteMode === "all"
+                      ? "border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
+                      : "border-border/60 text-foreground hover:bg-foreground/[0.04]"
+                  }`}
+                >
+                  <Trash className="h-3 w-3" />
+                  {deleteEvent.isPending ? "..." : deleteMode === "all" ? "Confirmar" : "Excluir"}
+                </button>
+              )}
+            </div>
+            {isRecurring && deleteMode === null && (
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={handleDeleteOccurrence}
+                  disabled={deleteOccurrence.isPending}
+                  className="w-full flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium border border-border/60 text-foreground hover:bg-foreground/[0.04] transition-colors"
+                >
+                  <Trash className="h-3 w-3" />
+                  {deleteOccurrence.isPending ? "..." : "Somente esta ocorrência"}
+                </button>
+                <button
+                  onClick={() => setDeleteMode("all")}
+                  className="w-full flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium border border-border/60 text-foreground hover:bg-foreground/[0.04] transition-colors"
+                >
+                  <Trash className="h-3 w-3" />
+                  Todas as ocorrências
+                </button>
+              </div>
+            )}
+            {isRecurring && deleteMode === "all" && (
+              <button
+                onClick={handleDeleteAll}
+                disabled={deleteEvent.isPending}
+                className="w-full flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium border border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+              >
+                <Trash className="h-3 w-3" />
+                {deleteEvent.isPending ? "..." : "Confirmar exclusão total"}
+              </button>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </>
+  )
+}
+
 // ─── Hover time indicator (shows time on mouse position) ─────────────────────
 
 function useHoverTime(containerRef: React.RefObject<HTMLDivElement | null>, enabled: boolean) {
@@ -757,6 +1143,21 @@ export function ProfessionalCalendar({
   } | null>(null)
   const [toast, setToast] = useState<{ msg: string; variant: "error" | "info" } | null>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<CalendarAppointment | null>(null)
+  // Calendar events state
+  type CalendarMode = "agendamento" | "evento"
+  const [calendarMode, setCalendarMode] = useState<CalendarMode>("agendamento")
+  const [inlineEvent, setInlineEvent] = useState<{
+    date: Date
+    time: string
+    x: number
+    y: number
+    existingEvent?: CalendarEvent | null
+  } | null>(null)
+  const [eventPopover, setEventPopover] = useState<{
+    event: CalendarEvent
+    x: number
+    y: number
+  } | null>(null)
   const gridScrollRef = useRef<HTMLDivElement>(null)
   const hoverTime = useHoverTime(gridScrollRef, canEdit && viewMode === "week")
 
@@ -820,6 +1221,20 @@ export function ProfessionalCalendar({
   const appointments = useMemo(
     () => (appointmentsData?.data ?? []).map(toCalendarAppointment),
     [appointmentsData]
+  )
+
+  const calendarEventsParams = useMemo(
+    () => ({
+      professionalId,
+      from: toYMD(fromDate),
+      to: toYMD(toDate),
+    }),
+    [professionalId, fromDate, toDate]
+  )
+  const { data: calendarEventsData } = useCalendarEvents(calendarEventsParams)
+  const calendarEvents = useMemo(
+    () => calendarEventsData?.data ?? [],
+    [calendarEventsData]
   )
 
   const weekDays = useMemo(() => {
@@ -913,6 +1328,36 @@ export function ProfessionalCalendar({
               ))}
             </div>
 
+            {/* Calendar mode toggle */}
+            {canEdit && viewMode === "week" && (
+              <div className="flex items-center rounded-lg border border-border/60 bg-foreground/[0.02] p-0.5">
+                {(["agendamento", "evento"] as CalendarMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setCalendarMode(m)}
+                    className={`relative px-2.5 py-1 text-[11px] font-bold rounded-md ${
+                      calendarMode === m ? "text-foreground" : "text-foreground/85 hover:text-foreground/85"
+                    }`}
+                  >
+                    {calendarMode === m && (
+                      <motion.div
+                        layoutId="mode-pill-pro"
+                        className="absolute inset-0 bg-foreground/[0.07] rounded-md"
+                        transition={{ duration: 0.25, ease }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1">
+                      {m === "agendamento" ? (
+                        <><CalendarBlank className="h-3 w-3" /> Agenda</>
+                      ) : (
+                        <><Clock className="h-3 w-3" /> Evento</>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -931,7 +1376,11 @@ export function ProfessionalCalendar({
         {/* Edit hint */}
         {canEdit && (
           <div className="px-6 pb-3 text-[10px]">
-            <span className="text-muted-foreground/60">Clique no horário para agendar</span>
+            <span className="text-muted-foreground/60">
+              {calendarMode === "evento"
+                ? "Clique no horário para criar evento"
+                : "Clique no horário para agendar"}
+            </span>
           </div>
         )}
 
@@ -994,6 +1443,10 @@ export function ProfessionalCalendar({
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-sm bg-blue-500/50 border border-blue-500/60" />
               Consulta
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm bg-indigo-500/30 border-l-2 border-indigo-500" />
+              Evento
             </span>
           </div>
 
@@ -1084,6 +1537,11 @@ export function ProfessionalCalendar({
                       a.month === d.getMonth() &&
                       a.year === d.getFullYear()
                   )
+                  const dYMD = toYMD(d)
+                  const dayEvents = calendarEvents.filter((ev) => {
+                    const evDate = ev.occurrenceDate ?? (typeof ev.date === "string" ? ev.date.slice(0, 10) : "")
+                    return evDate === dYMD
+                  })
                   return (
                     <div
                       key={d.toISOString()}
@@ -1099,12 +1557,21 @@ export function ProfessionalCalendar({
                               const localY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
                               const clickedMin = snapTo15(pxToMinutes(localY))
                               const time = minutesToHHMM(clickedMin)
-                              setQuickSchedule({
-                                date: d,
-                                time,
-                                x: e.clientX,
-                                y: e.clientY,
-                              })
+                              if (calendarMode === "evento") {
+                                setInlineEvent({
+                                  date: d,
+                                  time,
+                                  x: e.clientX,
+                                  y: e.clientY,
+                                })
+                              } else {
+                                setQuickSchedule({
+                                  date: d,
+                                  time,
+                                  x: e.clientX,
+                                  y: e.clientY,
+                                })
+                              }
                             }
                           : undefined
                       }
@@ -1192,6 +1659,52 @@ export function ProfessionalCalendar({
                             </div>
                             {showService && (
                               <p className="text-[8px] font-medium opacity-50 truncate mt-0.5 pl-[22px]">{apt.type}</p>
+                            )}
+                          </button>
+                        )
+                      })}
+
+                      {/* Calendar events */}
+                      {dayEvents.map((ev) => {
+                        const evTop = timeToTop(ev.startTime)
+                        const evStartMin = timeToMinutes(ev.startTime)
+                        const evEndMin = timeToMinutes(ev.endTime)
+                        const evH = Math.max(20, durationToPx(evEndMin - evStartMin) - 4)
+                        const showTime = evH >= 32
+                        return (
+                          <button
+                            key={`ev-${ev.id}-${ev.occurrenceDate ?? ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEventPopover({
+                                event: ev,
+                                x: e.clientX,
+                                y: e.clientY,
+                              })
+                            }}
+                            className="absolute left-1 right-1 rounded-md px-1.5 py-1 text-left cursor-pointer hover:ring-2 hover:ring-white/20 transition-all overflow-hidden z-[3]"
+                            style={{
+                              top: evTop,
+                              height: evH,
+                              backgroundColor: `${ev.color}20`,
+                              borderLeft: `3px solid ${ev.color}`,
+                              borderTop: `1px solid ${ev.color}30`,
+                              borderRight: `1px solid ${ev.color}30`,
+                              borderBottom: `1px solid ${ev.color}30`,
+                            }}
+                          >
+                            <div className="flex items-center gap-1 min-w-0">
+                              <span className="text-[9px] font-bold truncate" style={{ color: ev.color }}>
+                                {ev.title}
+                              </span>
+                              {ev.recurrence === "weekly" && (
+                                <Repeat className="h-2.5 w-2.5 shrink-0 opacity-60" style={{ color: ev.color }} />
+                              )}
+                            </div>
+                            {showTime && (
+                              <p className="text-[8px] font-medium opacity-60 mt-0.5" style={{ color: ev.color }}>
+                                {ev.startTime} – {ev.endTime}
+                              </p>
                             )}
                           </button>
                         )
@@ -1388,6 +1901,46 @@ export function ProfessionalCalendar({
               setBlockDayModal(quickSchedule.date)
             }}
             onClose={() => setQuickSchedule(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {inlineEvent && (
+          <InlineEventCard
+            date={inlineEvent.date}
+            time={inlineEvent.time}
+            x={inlineEvent.x}
+            y={inlineEvent.y}
+            professionalId={professionalId}
+            existingEvent={inlineEvent.existingEvent}
+            onClose={() => setInlineEvent(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {eventPopover && (
+          <EventPopover
+            event={eventPopover.event}
+            x={eventPopover.x}
+            y={eventPopover.y}
+            onEdit={() => {
+              const ev = eventPopover.event
+              const evDate = ev.occurrenceDate
+                ? new Date(ev.occurrenceDate + "T12:00:00")
+                : new Date(typeof ev.date === "string" ? ev.date.slice(0, 10) + "T12:00:00" : ev.date)
+              setEventPopover(null)
+              setInlineEvent({
+                date: evDate,
+                time: ev.startTime,
+                x: eventPopover.x,
+                y: eventPopover.y,
+                existingEvent: ev,
+              })
+            }}
+            onDelete={() => setEventPopover(null)}
+            onClose={() => setEventPopover(null)}
           />
         )}
       </AnimatePresence>
