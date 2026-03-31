@@ -28,6 +28,12 @@ import { AppointmentStatusModal } from "@/components/calendar/appointment-status
 import { AvailabilityDrawer } from "@/components/calendar/availability-drawer"
 import type { Appointment as ApiAppointment } from "@/lib/api/scheduling"
 import { toYMD, formatTimeLocal } from "@/lib/date-utils"
+import {
+  HOUR_HEIGHT,
+  timeToTop,
+  durationToPx,
+  minutesToPx,
+} from "@/lib/availability-utils"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -105,46 +111,128 @@ const TODAY_DAY = TODAY.getDate()
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 const MONTHS_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 7)
+const HOURS = Array.from({ length: 14 }, (_, i) => i + 7) // 7–20
+const DAY_HEIGHT = HOURS.length * HOUR_HEIGHT // 14 * 64 = 896px
 
-type AptColorStyle = {
+// ─── Professional color palette ──────────────────────────────────────────────
+
+const PRO_COLORS = [
+  "#3b82f6", // blue
+  "#10b981", // emerald
+  "#f59e0b", // amber
+  "#ef4444", // rose
+  "#8b5cf6", // violet
+  "#06b6d4", // cyan
+  "#ec4899", // pink
+  "#14b8a6", // teal
+]
+
+type ProColorInfo = {
+  hex: string
   bg: string
   border: string
   dot: string
   text: string
 }
 
-// Appointment color styles — fallbacks when professional has no calendarColor
-const DEFAULT_PRO_COLORS: AptColorStyle[] = [
-  { bg: "bg-foreground/[0.05]", border: "border-border/80", dot: "bg-foreground/50", text: "text-foreground" },
-  { bg: "bg-foreground/[0.06]", border: "border-border", dot: "bg-foreground/30", text: "text-foreground" },
-]
-
 function buildProfessionalColorMap(
   professionals: { id: string }[] | undefined
-): Record<string, AptColorStyle> {
-  const map: Record<string, AptColorStyle> = {}
+): Record<string, ProColorInfo> {
+  const map: Record<string, ProColorInfo> = {}
   if (!professionals) return map
   professionals.forEach((p, i) => {
-    map[p.id] = DEFAULT_PRO_COLORS[i % DEFAULT_PRO_COLORS.length]
+    const hex = PRO_COLORS[i % PRO_COLORS.length]
+    map[p.id] = {
+      hex,
+      bg: `rgba(${hexToRgb(hex)}, 0.10)`,
+      border: `rgba(${hexToRgb(hex)}, 0.30)`,
+      dot: hex,
+      text: hex,
+    }
   })
   return map
 }
 
-function getAptColorStyle(
-  professionalId: string,
-  professionalColorMap: Record<string, AptColorStyle>
-): AptColorStyle {
-  const style = professionalColorMap[professionalId]
-  if (style) return style
-  const idx = Math.abs(hashCode(professionalId)) % DEFAULT_PRO_COLORS.length
-  return DEFAULT_PRO_COLORS[idx] ?? DEFAULT_PRO_COLORS[0]
+function hexToRgb(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `${r},${g},${b}`
 }
 
 function hashCode(str: string): number {
   let h = 0
   for (let i = 0; i < str.length; i++) h = (h << 5) - h + str.charCodeAt(i)
   return h
+}
+
+function getProColor(
+  professionalId: string,
+  colorMap: Record<string, ProColorInfo>
+): ProColorInfo {
+  const c = colorMap[professionalId]
+  if (c) return c
+  const idx = Math.abs(hashCode(professionalId)) % PRO_COLORS.length
+  const hex = PRO_COLORS[idx]
+  return {
+    hex,
+    bg: `rgba(${hexToRgb(hex)}, 0.10)`,
+    border: `rgba(${hexToRgb(hex)}, 0.30)`,
+    dot: hex,
+    text: hex,
+  }
+}
+
+// ─── Overlap layout ──────────────────────────────────────────────────────────
+
+function computeOverlapLayout(apts: CalendarAppointment[]): Map<string, { col: number; totalCols: number }> {
+  const result = new Map<string, { col: number; totalCols: number }>()
+  if (apts.length === 0) return result
+
+  const sorted = [...apts].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time))
+  const groups: CalendarAppointment[][] = []
+
+  for (const apt of sorted) {
+    const start = timeToMinutes(apt.time)
+    const end = start + apt.duration
+    let placed = false
+    for (const group of groups) {
+      const groupEnd = Math.max(...group.map(a => timeToMinutes(a.time) + a.duration))
+      if (start < groupEnd) {
+        group.push(apt)
+        placed = true
+        break
+      }
+    }
+    if (!placed) groups.push([apt])
+  }
+
+  for (const group of groups) {
+    // Assign columns within the group
+    const columns: CalendarAppointment[][] = []
+    for (const apt of group) {
+      const start = timeToMinutes(apt.time)
+      let placed = false
+      for (let c = 0; c < columns.length; c++) {
+        const lastInCol = columns[c][columns[c].length - 1]
+        const lastEnd = timeToMinutes(lastInCol.time) + lastInCol.duration
+        if (start >= lastEnd) {
+          columns[c].push(apt)
+          placed = true
+          break
+        }
+      }
+      if (!placed) columns.push([apt])
+    }
+    const totalCols = columns.length
+    columns.forEach((col, colIdx) => {
+      col.forEach((apt) => {
+        result.set(apt.id, { col: colIdx, totalCols })
+      })
+    })
+  }
+
+  return result
 }
 
 const STATUS_CONFIG: Record<AppointmentStatus, { label: string; badge: string }> = {
@@ -191,19 +279,20 @@ function MiniApt({
   onClick,
 }: {
   apt: CalendarAppointment
-  colorMap: Record<string, AptColorStyle>
+  colorMap: Record<string, ProColorInfo>
   onClick?: () => void
 }) {
-  const c = getAptColorStyle(apt.color, colorMap)
+  const c = getProColor(apt.color, colorMap)
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onClick?.() }}
-      className={`w-full text-left flex items-center gap-1 rounded px-1 py-0.5 text-[8px] font-bold truncate border cursor-pointer hover:ring-1 hover:ring-accent/40 transition-all ${c.bg} ${c.border}
+      className={`w-full text-left flex items-center gap-1 rounded px-1 py-0.5 text-[8px] font-bold truncate cursor-pointer hover:ring-1 hover:ring-accent/40 transition-all
         ${apt.status === "done" ? "opacity-30" : ""}
         ${apt.status === "cancelled" ? "opacity-15 line-through" : ""}`}
+      style={{ backgroundColor: c.bg, borderLeft: `2px solid ${c.dot}` }}
     >
-      <span className={`h-1 w-1 rounded-full shrink-0 ${c.dot}`} />
-      <span className={`flex-1 truncate ${c.text}`}>{apt.time} {apt.patientName.split(" ")[0]}</span>
+      <span className="h-1 w-1 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
+      <span className="flex-1 truncate text-foreground">{apt.time} {apt.patientName.split(" ")[0]}</span>
       <span className={`h-1 w-1 rounded-full shrink-0 ${apt.paid ? "bg-white/40" : "bg-foreground/10"}`} title={apt.paid ? "Pago" : "Pendente"} />
     </button>
   )
@@ -215,17 +304,22 @@ function DayAptCard({
   apt,
   index,
   colorMap,
+  layout,
   onClick,
 }: {
   apt: CalendarAppointment
   index: number
-  colorMap: Record<string, AptColorStyle>
+  colorMap: Record<string, ProColorInfo>
+  layout?: { col: number; totalCols: number }
   onClick?: () => void
 }) {
-  const c = getAptColorStyle(apt.color, colorMap)
-  const startMin = timeToMinutes(apt.time) - 7 * 60
-  const top = (startMin / 60) * 64
-  const height = Math.max((apt.duration / 60) * 64 - 4, 32)
+  const c = getProColor(apt.color, colorMap)
+  const top = timeToTop(apt.time)
+  const height = Math.max(durationToPx(apt.duration) - 4, 32)
+  const col = layout?.col ?? 0
+  const totalCols = layout?.totalCols ?? 1
+  const widthPct = 100 / totalCols
+  const leftPct = col * widthPct
 
   return (
     <motion.div
@@ -233,32 +327,44 @@ function DayAptCard({
       animate={{ opacity: 1, x: 0, scale: 1 }}
       transition={{ duration: 0.35, delay: index * 0.05, ease }}
       onClick={onClick}
-      className={`absolute left-0 right-0 mx-1 rounded-lg border px-2.5 py-1.5 cursor-pointer group
-        hover:bg-foreground/[0.07] hover:ring-2 hover:ring-accent/40 transition-all duration-200 ${c.bg} ${c.border}
+      className={`absolute rounded-lg px-2.5 py-1.5 cursor-pointer group
+        hover:brightness-110 hover:ring-2 hover:ring-accent/40 transition-all duration-200 overflow-hidden
         ${apt.status === "done" ? "opacity-40" : ""}
-        ${apt.status === "cancelled" ? "opacity-20" : ""}`}
-      style={{ top, height }}
+        ${apt.status === "cancelled" ? "opacity-20 line-through" : ""}`}
+      style={{
+        top,
+        height,
+        left: `calc(${leftPct}% + 4px)`,
+        width: `calc(${widthPct}% - 8px)`,
+        backgroundColor: c.bg,
+        borderLeft: `3px solid ${c.dot}`,
+        border: `1px solid ${c.border}`,
+        borderLeftWidth: 3,
+        borderLeftColor: c.dot,
+      }}
     >
       <div className="flex items-start justify-between gap-1 h-full">
         <div className="min-w-0 flex flex-col justify-center gap-0.5">
           <div className="flex items-center gap-1.5">
-            <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.dot}`} />
             <span className="text-[11px] font-bold text-foreground truncate">{apt.patientName}</span>
           </div>
           {height > 38 && (
-            <div className="flex items-center gap-1.5 pl-3">
-              <span className="text-[10px] text-foreground">{apt.type}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-foreground/85">{apt.type}</span>
               <span className="text-foreground/80">·</span>
-              <span className="text-[10px] text-foreground/85">{apt.doctorName}</span>
+              <span className="text-[10px] font-medium" style={{ color: c.dot }}>{apt.doctorName}</span>
+            </div>
+          )}
+          {height > 56 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] text-foreground/60">{apt.duration}min</span>
+              <PaidBadge paid={apt.paid} />
             </div>
           )}
         </div>
-        <div className="flex flex-col items-end justify-between h-full">
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-[9px] text-foreground/85 font-mono shrink-0">{apt.time}</span>
-            <PaidBadge paid={apt.paid} />
-          </div>
-          <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-0.5 rounded hover:bg-foreground/5">
+        <div className="flex flex-col items-end justify-between h-full shrink-0">
+          <span className="text-[9px] text-foreground/85 font-mono">{apt.time}</span>
+          <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-0.5 rounded hover:bg-foreground/5 cursor-pointer">
             <DotsThree className="h-3 w-3 text-foreground/85" />
           </button>
         </div>
@@ -278,7 +384,7 @@ function SidePanel({
 }: {
   appointments: CalendarAppointment[]
   selectedDate: Date
-  colorMap: Record<string, AptColorStyle>
+  colorMap: Record<string, ProColorInfo>
   onOpenNewAppointment: () => void
   onAppointmentClick: (apt: CalendarAppointment) => void
 }) {
@@ -333,7 +439,7 @@ function SidePanel({
             </motion.div>
           ) : (
             dayApts.map((apt, i) => {
-              const c = getAptColorStyle(apt.color, colorMap)
+              const c = getProColor(apt.color, colorMap)
               const cfg = STATUS_CONFIG[apt.status]
               return (
                 <motion.div
@@ -344,14 +450,20 @@ function SidePanel({
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.3, delay: i * 0.04, ease }}
                   onClick={() => onAppointmentClick(apt)}
-                  className={`rounded-xl border p-3 cursor-pointer hover:bg-foreground/[0.06] hover:ring-1 hover:ring-accent/30 transition-all duration-200 ${c.bg} ${c.border}
+                  className={`rounded-xl p-3 cursor-pointer hover:brightness-110 hover:ring-1 hover:ring-accent/30 transition-all duration-200
                     ${apt.status === "done" ? "opacity-40" : ""}
                     ${apt.status === "cancelled" ? "opacity-20" : ""}`}
+                  style={{
+                    backgroundColor: c.bg,
+                    border: `1px solid ${c.border}`,
+                    borderLeftWidth: 3,
+                    borderLeftColor: c.dot,
+                  }}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.dot}`} />
+                        <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
                         <span className="text-[12px] font-bold text-foreground truncate">{apt.patientName}</span>
                       </div>
                       <div className="flex items-center gap-1.5 pl-3">
@@ -362,7 +474,7 @@ function SidePanel({
                       </div>
                       <div className="flex items-center gap-1.5 pl-3">
                         <User className="h-2.5 w-2.5 text-foreground" />
-                        <span className="text-[10px] text-foreground/85 truncate">{apt.doctorName}</span>
+                        <span className="text-[10px] font-medium truncate" style={{ color: c.dot }}>{apt.doctorName}</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
@@ -370,7 +482,7 @@ function SidePanel({
                       <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${cfg.badge}`}>
                         {cfg.label}
                       </span>
-                      <button className="p-0.5 rounded hover:bg-foreground/5 transition-colors">
+                      <button className="p-0.5 rounded hover:bg-foreground/5 transition-colors cursor-pointer">
                         <WhatsappLogo className="h-3 w-3 text-foreground hover:text-foreground/85 transition-colors" />
                       </button>
                     </div>
@@ -403,7 +515,7 @@ type ViewMode = "month" | "week" | "day"
 export default function CalendarPage() {
   const { data: me } = useMe()
   const { data: professionals, isLoading: loadingProfessionals } = useProfessionals()
-  const [viewMode, setViewMode] = useState<ViewMode>("month")
+  const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [currentDate, setCurrentDate] = useState(new Date(THIS_YEAR, THIS_MONTH, 1))
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [activeDoctor, setActiveDoctor] = useState("all")
@@ -415,6 +527,8 @@ export default function CalendarPage() {
   const [doctorDropdownOpen, setDoctorDropdownOpen] = useState(false)
   const [doctorSearch, setDoctorSearch] = useState("")
   const doctorDropdownRef = useRef<HTMLDivElement>(null)
+  const weekGridRef = useRef<HTMLDivElement>(null)
+  const dayGridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -425,6 +539,18 @@ export default function CalendarPage() {
     if (doctorDropdownOpen) document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [doctorDropdownOpen])
+
+  // Scroll to current time on mount / view change
+  useEffect(() => {
+    const ref = viewMode === "week" ? weekGridRef.current : viewMode === "day" ? dayGridRef.current : null
+    if (!ref) return
+    const now = new Date()
+    const nowMin = now.getHours() * 60 + now.getMinutes()
+    const scrollTop = Math.max(0, minutesToPx(nowMin) - 200)
+    requestAnimationFrame(() => {
+      ref.scrollTo({ top: scrollTop, behavior: "smooth" })
+    })
+  }, [viewMode])
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -838,7 +964,13 @@ export default function CalendarPage() {
                     return (
                       <motion.div
                         key={idx}
-                        onClick={() => day && setSelectedDate(new Date(year, month, day))}
+                        onClick={() => {
+                          if (!day) return
+                          const d = new Date(year, month, day)
+                          setSelectedDate(d)
+                          setViewMode("day")
+                          setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1))
+                        }}
                         className={`relative border-b border-r border-border p-1.5 flex flex-col gap-1 min-h-[90px] ${
                           day ? "cursor-pointer hover:bg-foreground/[0.05]" : ""
                         } ${selected && !today ? "bg-foreground/[0.05]" : ""} ${
@@ -886,14 +1018,14 @@ export default function CalendarPage() {
                               <div className="mt-auto pt-1.5 flex flex-col gap-1">
                                 {occ.byProfessional.length > 1 ? (
                                   occ.byProfessional.map((pb) => {
-                                    const style = getAptColorStyle(pb.professionalId, professionalColorMap)
+                                    const style = getProColor(pb.professionalId, professionalColorMap)
                                     const pct = pb.capacity > 0 ? Math.min(100, (pb.total / pb.capacity) * 100) : 0
                                     return (
                                       <div key={pb.professionalId} className="flex items-center gap-1.5">
                                         <div className="flex-1 h-[5px] rounded-full bg-foreground/[0.12] overflow-hidden">
                                           <div
-                                            className={`h-full rounded-full transition-all duration-300 ${style.dot}`}
-                                            style={{ width: `${pct}%` }}
+                                            className="h-full rounded-full transition-all duration-300"
+                                            style={{ width: `${pct}%`, backgroundColor: style.dot }}
                                           />
                                         </div>
                                         <span className="text-[9px] font-bold font-mono text-muted-foreground shrink-0 tabular-nums">
@@ -934,9 +1066,9 @@ export default function CalendarPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3, ease }}
-                className="flex flex-col"
+                className="flex flex-col h-full"
               >
-                <div className="flex items-center justify-between px-6 py-3 border-b border-border/70">
+                <div className="flex items-center justify-between px-6 py-3 border-b border-border/70 shrink-0">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setSelectedDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1))}
@@ -962,60 +1094,91 @@ export default function CalendarPage() {
                   </span>
                 </div>
 
-                <div className="relative">
-                  {HOURS.map((hour) => (
-                    <div
-                      key={hour}
-                      className="flex border-b border-border group/hour cursor-pointer"
-                      style={{ height: 64 }}
-                      onClick={() => {
-                        setNovoAgendamentoDefaultDate(selectedDate)
-                        setNovoAgendamentoDefaultTime(`${String(hour).padStart(2, "0")}:00`)
-                        setNovoAgendamentoOpen(true)
-                      }}
-                    >
-                      <div className="w-16 shrink-0 flex items-start justify-end pr-3 pt-1">
-                        <span className="text-[10px] font-bold text-foreground font-mono tabular-nums">
-                          {String(hour).padStart(2, "0")}:00
-                        </span>
-                      </div>
-                      <div className="flex-1 relative border-l border-border/80 hover:bg-accent/[0.03] transition-colors duration-100">
-                        <div className="absolute top-1/2 left-0 right-0 border-t border-dashed border-foreground/[0.06]" />
-                        <Plus className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3.5 w-3.5 text-accent/50 opacity-0 group-hover/hour:opacity-100 transition-opacity duration-100" />
-                      </div>
+                <div ref={dayGridRef} className="flex-1 overflow-y-auto relative">
+                  <div className="flex" style={{ minHeight: DAY_HEIGHT }}>
+                    {/* Hour labels */}
+                    <div className="w-16 shrink-0 flex flex-col">
+                      {HOURS.map((hour) => (
+                        <div
+                          key={hour}
+                          className="flex items-start justify-end pr-3 pt-0.5 -mt-[1px]"
+                          style={{ height: HOUR_HEIGHT }}
+                        >
+                          <span className="text-[10px] font-bold text-foreground font-mono tabular-nums">
+                            {String(hour).padStart(2, "0")}:00
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
 
-                  <div className="absolute left-16 right-0 top-0 bottom-0 pointer-events-none">
-                    <div className="relative h-full pointer-events-auto">
-                      <AnimatePresence>
-                        {dayViewApts.map((apt, i) => (
-                          <DayAptCard
-                            key={apt.id}
-                            apt={apt}
-                            index={i}
-                            colorMap={professionalColorMap}
-                            onClick={() => setSelectedAppointment(apt)}
+                    {/* Day column */}
+                    <div className="flex-1 relative border-l border-border/80" style={{ minHeight: DAY_HEIGHT }}>
+                      {/* Hour + half-hour lines */}
+                      {HOURS.slice(0, -1).map((hour) => (
+                        <div key={hour}>
+                          <div
+                            className="absolute left-0 right-0 border-t border-foreground/[0.06]"
+                            style={{ top: (hour - 7) * HOUR_HEIGHT }}
                           />
-                        ))}
-                      </AnimatePresence>
+                          <div
+                            className="absolute left-0 right-0 border-t border-dashed border-foreground/[0.03]"
+                            style={{ top: (hour - 7) * HOUR_HEIGHT + HOUR_HEIGHT / 2 }}
+                          />
+                        </div>
+                      ))}
+
+                      {/* Clickable hour cells */}
+                      {HOURS.map((hour) => (
+                        <div
+                          key={`click-${hour}`}
+                          className="absolute left-0 right-0 group/hour cursor-pointer hover:bg-accent/[0.03] transition-colors duration-100"
+                          style={{ top: (hour - 7) * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                          onClick={() => {
+                            setNovoAgendamentoDefaultDate(selectedDate)
+                            setNovoAgendamentoDefaultTime(`${String(hour).padStart(2, "0")}:00`)
+                            setNovoAgendamentoOpen(true)
+                          }}
+                        >
+                          <Plus className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3.5 w-3.5 text-accent/50 opacity-0 group-hover/hour:opacity-100 transition-opacity duration-100" />
+                        </div>
+                      ))}
+
+                      {/* Appointments */}
+                      {(() => {
+                        const overlapLayout = computeOverlapLayout(dayViewApts)
+                        return (
+                          <AnimatePresence>
+                            {dayViewApts.map((apt, i) => (
+                              <DayAptCard
+                                key={apt.id}
+                                apt={apt}
+                                index={i}
+                                colorMap={professionalColorMap}
+                                layout={overlapLayout.get(apt.id)}
+                                onClick={() => setSelectedAppointment(apt)}
+                              />
+                            ))}
+                          </AnimatePresence>
+                        )
+                      })()}
+
+                      {/* Now indicator */}
+                      {selectedDate.toDateString() === new Date().toDateString() && (() => {
+                        const now = new Date()
+                        const nowMin = now.getHours() * 60 + now.getMinutes()
+                        const topPx = minutesToPx(nowMin)
+                        if (topPx <= 0 || topPx >= DAY_HEIGHT) return null
+                        return (
+                          <div className="absolute left-0 right-0 pointer-events-none z-20" style={{ top: topPx }}>
+                            <div className="flex items-center">
+                              <div className="absolute -left-[3px] -top-[3px] h-[7px] w-[7px] rounded-full bg-rose-500" />
+                              <div className="flex-1 h-[2px] bg-rose-500/60" />
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
-
-                  {selectedDate.toDateString() === new Date().toDateString() && (() => {
-                    const now = new Date()
-                    const nowMin = now.getHours() * 60 + now.getMinutes() - 7 * 60
-                    if (nowMin < 0 || nowMin > 12 * 60) return null
-                    const top = (nowMin / 60) * 64
-                    return (
-                      <div className="absolute left-14 right-0 pointer-events-none z-10" style={{ top }}>
-                        <div className="flex items-center">
-                          <div className="h-2 w-2 rounded-full bg-accent ml-0.5 shrink-0" />
-                          <div className="flex-1 h-px bg-accent/40" />
-                        </div>
-                      </div>
-                    )
-                  })()}
                 </div>
               </motion.div>
             )}
@@ -1028,6 +1191,7 @@ export default function CalendarPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3, ease }}
+                className="flex flex-col h-full"
               >
                 {(() => {
                   const startOfWeek = new Date(selectedDate)
@@ -1039,10 +1203,11 @@ export default function CalendarPage() {
                   })
                   return (
                     <>
-                      <div className="flex border-b border-border">
-                        <div className="w-16 shrink-0" />
+                      {/* Day headers */}
+                      <div className="flex border-b border-border shrink-0">
+                        <div className="w-14 shrink-0" />
                         {weekDays.map((d, i) => {
-                          const today = d.toDateString() === new Date().toDateString()
+                          const isToday = d.toDateString() === new Date().toDateString()
                           const sel = d.toDateString() === selectedDate.toDateString()
                           const dayKey = toYMD(d)
                           const dayOcc = occupancyByDate.get(dayKey)
@@ -1050,12 +1215,16 @@ export default function CalendarPage() {
                           return (
                             <button
                               key={i}
-                              onClick={() => setSelectedDate(d)}
-                              className="flex-1 py-3 flex flex-col items-center gap-0.5 hover:bg-foreground/[0.05] transition-colors duration-150 cursor-pointer"
+                              onClick={() => {
+                                setSelectedDate(d)
+                                setViewMode("day")
+                                setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1))
+                              }}
+                              className="flex-1 py-2.5 flex flex-col items-center gap-0.5 hover:bg-foreground/[0.05] transition-colors duration-150 cursor-pointer border-l border-border/80"
                             >
                               <span className="text-[9px] font-extrabold uppercase tracking-widest text-foreground">{WEEKDAYS[d.getDay()]}</span>
                               <span className={`h-7 w-7 flex items-center justify-center rounded-full text-[13px] font-black transition-colors ${
-                                today ? "bg-accent text-accent-foreground" : sel ? "bg-foreground/10 text-foreground" : "text-foreground hover:text-foreground/85"
+                                isToday ? "bg-accent text-accent-foreground" : sel ? "bg-foreground/10 text-foreground" : "text-foreground hover:text-foreground/85"
                               }`}>{d.getDate()}</span>
                               {isWorkingDay && dayOcc!.capacity > 0 && (
                                 <span className="text-[8px] font-mono text-muted-foreground/60 tabular-nums">
@@ -1063,66 +1232,148 @@ export default function CalendarPage() {
                                 </span>
                               )}
                               {!isWorkingDay && agendaStats && (
-                                <span className="text-[8px] text-muted-foreground/30 italic">—</span>
+                                <span className="text-[8px] text-muted-foreground/30 italic">&mdash;</span>
                               )}
                             </button>
                           )
                         })}
                       </div>
-                      <div className="relative">
-                        {HOURS.map((hour) => (
-                          <div key={hour} className="flex border-b border-border" style={{ height: 56 }}>
-                            <div className="w-16 shrink-0 flex items-start justify-end pr-3 pt-1">
-                              <span className="text-[9px] font-bold text-foreground font-mono">{String(hour).padStart(2,"0")}:00</span>
-                            </div>
-                            {weekDays.map((d, di) => {
-                              const apts = filteredApts.filter(
-                                a => a.day === d.getDate() && a.month === d.getMonth() && a.year === d.getFullYear() &&
-                                  parseInt(a.time.split(":")[0]) === hour
+
+                      {/* Time grid */}
+                      <div ref={weekGridRef} className="flex-1 overflow-y-auto relative">
+                        <div className="flex min-h-[500px]" style={{ minHeight: DAY_HEIGHT }}>
+                          {/* Hour labels */}
+                          <div className="w-14 shrink-0 flex flex-col">
+                            {HOURS.map((hour) => (
+                              <div
+                                key={hour}
+                                className="flex items-start justify-end pr-2 pt-0.5 -mt-[1px]"
+                                style={{ height: HOUR_HEIGHT }}
+                              >
+                                <span className="text-[9px] font-bold text-foreground font-mono tabular-nums">
+                                  {String(hour).padStart(2, "0")}:00
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Day columns */}
+                          <div className="flex-1 grid grid-cols-7">
+                            {weekDays.map((d) => {
+                              const dayApts = filteredApts.filter(
+                                a => a.day === d.getDate() && a.month === d.getMonth() && a.year === d.getFullYear()
                               )
-                              const dayKey = toYMD(d)
-                              const dayOcc = occupancyByDate.get(dayKey)
-                              // A working day is one where we have capacity OR has appointments
-                              const isWorkingDay = dayOcc !== undefined && (dayOcc.capacity > 0 || dayOcc.total > 0)
+                              const overlapLayout = computeOverlapLayout(dayApts)
+                              const isToday = d.toDateString() === new Date().toDateString()
+
                               return (
                                 <div
-                                  key={di}
-                                  className={`flex-1 border-l relative px-0.5 py-0.5 flex flex-col gap-0.5 transition-colors duration-100 ${
-                                    isWorkingDay
-                                      ? "border-border/80 group/cell cursor-pointer hover:bg-accent/[0.03]"
-                                      : "border-foreground/[0.05] opacity-40"
-                                  }`}
-                                  onClick={() => {
-                                    if (isWorkingDay && apts.length === 0) {
-                                      setNovoAgendamentoDefaultDate(d)
-                                      setNovoAgendamentoDefaultTime(`${String(hour).padStart(2, "0")}:00`)
-                                      setNovoAgendamentoOpen(true)
-                                    }
-                                  }}
+                                  key={d.toISOString()}
+                                  className="relative border-l border-border/80"
+                                  style={{ minHeight: DAY_HEIGHT }}
                                 >
-                                  {isWorkingDay && apts.length === 0 && (
-                                    <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity duration-100">
-                                      <Plus className="h-3 w-3 text-accent/60" />
-                                    </span>
+                                  {/* Hour + half-hour lines */}
+                                  {HOURS.slice(0, -1).map((hour) => (
+                                    <div key={hour}>
+                                      <div
+                                        className="absolute left-0 right-0 border-t border-foreground/[0.06]"
+                                        style={{ top: (hour - 7) * HOUR_HEIGHT }}
+                                      />
+                                      <div
+                                        className="absolute left-0 right-0 border-t border-dashed border-foreground/[0.03]"
+                                        style={{ top: (hour - 7) * HOUR_HEIGHT + HOUR_HEIGHT / 2 }}
+                                      />
+                                    </div>
+                                  ))}
+
+                                  {/* Today highlight */}
+                                  {isToday && (
+                                    <div className="absolute inset-0 bg-accent/[0.02] pointer-events-none" />
                                   )}
-                                  {apts.map((apt) => {
-                                    const c = getAptColorStyle(apt.color, professionalColorMap)
+
+                                  {/* Clickable hour cells for new appointment */}
+                                  {HOURS.map((hour) => (
+                                    <div
+                                      key={`click-${hour}`}
+                                      className="absolute left-0 right-0 group/cell cursor-pointer hover:bg-accent/[0.04] transition-colors duration-100"
+                                      style={{ top: (hour - 7) * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                                      onClick={() => {
+                                        setNovoAgendamentoDefaultDate(d)
+                                        setNovoAgendamentoDefaultTime(`${String(hour).padStart(2, "0")}:00`)
+                                        setNovoAgendamentoOpen(true)
+                                      }}
+                                    >
+                                      <Plus className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 text-accent/50 opacity-0 group-hover/cell:opacity-100 transition-opacity duration-100" />
+                                    </div>
+                                  ))}
+
+                                  {/* Appointments */}
+                                  {dayApts.map((apt, idx) => {
+                                    const c = getProColor(apt.color, professionalColorMap)
+                                    const top = timeToTop(apt.time)
+                                    const h = Math.max(durationToPx(apt.duration) - 4, 22)
+                                    const layout = overlapLayout.get(apt.id) ?? { col: 0, totalCols: 1 }
+                                    const widthPct = 100 / layout.totalCols
+                                    const leftPct = layout.col * widthPct
+                                    const showService = h >= 36
+                                    const showPro = h >= 50
+
                                     return (
-                                      <button
+                                      <motion.button
                                         key={apt.id}
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.25, delay: idx * 0.02, ease }}
                                         onClick={(e) => { e.stopPropagation(); setSelectedAppointment(apt) }}
-                                        className={`w-full text-left rounded px-1.5 py-0.5 text-[9px] font-bold truncate border cursor-pointer hover:ring-1 hover:ring-accent/40 transition-all ${c.bg} ${c.border} ${c.text} flex items-center gap-1`}
+                                        className={`absolute rounded-md px-1.5 py-0.5 text-left cursor-pointer hover:ring-2 hover:ring-accent/40 hover:brightness-110 transition-all overflow-hidden z-[2]
+                                          ${apt.status === "done" ? "opacity-40" : ""}
+                                          ${apt.status === "cancelled" ? "opacity-25 line-through" : ""}`}
+                                        style={{
+                                          top,
+                                          height: h,
+                                          left: `calc(${leftPct}% + 2px)`,
+                                          width: `calc(${widthPct}% - 4px)`,
+                                          backgroundColor: c.bg,
+                                          borderLeft: `3px solid ${c.dot}`,
+                                          border: `1px solid ${c.border}`,
+                                          borderLeftWidth: 3,
+                                          borderLeftColor: c.dot,
+                                        }}
                                       >
-                                        <span className="truncate">{apt.time} {apt.patientName.split(" ")[0]}</span>
-                                        <span className={`h-1 w-1 rounded-full shrink-0 ${apt.paid ? "bg-white/40" : "bg-foreground/10"}`} />
-                                      </button>
+                                        <div className="flex items-center gap-1 min-w-0">
+                                          <span className="text-[9px] font-bold truncate text-foreground">{apt.patientName.split(" ")[0]}</span>
+                                          <span className="text-[8px] font-medium opacity-60 shrink-0 ml-auto">{apt.time}</span>
+                                        </div>
+                                        {showService && (
+                                          <p className="text-[8px] font-medium text-foreground/50 truncate">{apt.type}</p>
+                                        )}
+                                        {showPro && (
+                                          <p className="text-[8px] font-semibold truncate" style={{ color: c.dot }}>{apt.doctorName.split(" ")[0]}</p>
+                                        )}
+                                      </motion.button>
                                     )
                                   })}
+
+                                  {/* Now indicator */}
+                                  {isToday && (() => {
+                                    const now = new Date()
+                                    const nowMin = now.getHours() * 60 + now.getMinutes()
+                                    const topPx = minutesToPx(nowMin)
+                                    if (topPx <= 0 || topPx >= DAY_HEIGHT) return null
+                                    return (
+                                      <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: topPx }}>
+                                        <div className="flex items-center">
+                                          <div className="absolute -left-[3px] -top-[3px] h-[7px] w-[7px] rounded-full bg-rose-500" />
+                                          <div className="flex-1 h-[2px] bg-rose-500/60" />
+                                        </div>
+                                      </div>
+                                    )
+                                  })()}
                                 </div>
                               )
                             })}
                           </div>
-                        ))}
+                        </div>
                       </div>
                     </>
                   )
