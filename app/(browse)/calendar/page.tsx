@@ -605,6 +605,8 @@ export default function CalendarPage() {
   const { data: agendaStats } = useStatsAgenda(statsParams)
 
   // Build lookup: date string → { total, capacity, byProfessional[] }
+  // Backend now returns consolidated byDay when groupByProfessional=true,
+  // so we use that directly and enrich with per-professional breakdown.
   const occupancyByDate = useMemo(() => {
     const map = new Map<string, {
       total: number
@@ -613,7 +615,7 @@ export default function CalendarPage() {
     }>()
     if (!agendaStats) return map
 
-    // Aggregate totals from byDay
+    // Use consolidated byDay from backend (summed across all professionals)
     agendaStats.byDay.forEach(d => {
       map.set(d.date, {
         total: d.total,
@@ -621,7 +623,7 @@ export default function CalendarPage() {
         byProfessional: [],
       })
     })
-    // Fill per-professional breakdown
+    // Enrich with per-professional breakdown
     agendaStats.byProfessional?.forEach(pb => {
       pb.byDay.forEach(d => {
         const existing = map.get(d.date)
@@ -630,12 +632,6 @@ export default function CalendarPage() {
             professionalId: pb.professionalId,
             total: d.total,
             capacity: d.slotsCapacity ?? 0,
-          })
-        } else {
-          map.set(d.date, {
-            total: d.total,
-            capacity: d.slotsCapacity ?? 0,
-            byProfessional: [{ professionalId: pb.professionalId, total: d.total, capacity: d.slotsCapacity ?? 0 }],
           })
         }
       })
@@ -1216,6 +1212,23 @@ export default function CalendarPage() {
                   })
                   return (
                     <>
+                      {/* Professional color legend */}
+                      {activeDoctor === "all" && professionals && professionals.length > 1 && (
+                        <div className="flex items-center gap-3 px-6 py-1.5 border-b border-border/40 bg-foreground/[0.02] shrink-0 overflow-x-auto">
+                          {professionals.map((p) => {
+                            const c = getProColor(p.id, professionalColorMap)
+                            return (
+                              <div key={p.id} className="flex items-center gap-1.5 shrink-0">
+                                <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
+                                <span className="text-[10px] font-semibold text-foreground/70 whitespace-nowrap">
+                                  {p.fullName.split(" ")[0]}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
                       {/* Day headers */}
                       <div className="flex border-b border-border shrink-0">
                         <div className="w-14 shrink-0" />
@@ -1225,6 +1238,9 @@ export default function CalendarPage() {
                           const dayKey = toYMD(d)
                           const dayOcc = occupancyByDate.get(dayKey)
                           const isWorkingDay = dayOcc !== undefined && (dayOcc.capacity > 0 || dayOcc.total > 0)
+                          const dayAptsCount = filteredApts.filter(
+                            a => a.day === d.getDate() && a.month === d.getMonth() && a.year === d.getFullYear()
+                          ).length
                           return (
                             <button
                               key={i}
@@ -1235,7 +1251,15 @@ export default function CalendarPage() {
                               }}
                               className="flex-1 py-2.5 flex flex-col items-center gap-0.5 hover:bg-foreground/[0.05] transition-colors duration-150 cursor-pointer border-l border-border/80"
                             >
-                              <span className="text-[9px] font-extrabold uppercase tracking-widest text-foreground">{WEEKDAYS[d.getDay()]}</span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px] font-extrabold uppercase tracking-widest text-foreground">{WEEKDAYS[d.getDay()]}</span>
+                                {dayAptsCount > 0 && (
+                                  <>
+                                    <span className="text-[8px] text-foreground/30">&middot;</span>
+                                    <span className="text-[9px] font-bold text-foreground/50 tabular-nums">{dayAptsCount}</span>
+                                  </>
+                                )}
+                              </div>
                               <span className={`h-7 w-7 flex items-center justify-center rounded-full text-[13px] font-black transition-colors ${
                                 isToday ? "bg-accent text-accent-foreground" : sel ? "bg-foreground/10 text-foreground" : "text-foreground hover:text-foreground/85"
                               }`}>{d.getDate()}</span>
@@ -1355,13 +1379,14 @@ export default function CalendarPage() {
                                       >
                                         <div className="flex items-center gap-1 min-w-0">
                                           <span className="text-[9px] font-bold truncate text-foreground">{apt.patientName.split(" ")[0]}</span>
-                                          <span className="text-[8px] font-medium opacity-60 shrink-0 ml-auto">{apt.time}</span>
+                                          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ml-auto ${apt.paid ? "bg-emerald-400/70" : "bg-foreground/15"}`} title={apt.paid ? "Pago" : "Pendente"} />
+                                          <span className="text-[8px] font-medium opacity-60 shrink-0">{apt.time}</span>
                                         </div>
                                         {showService && (
                                           <p className="text-[8px] font-medium text-foreground/50 truncate">{apt.type}</p>
                                         )}
                                         {showPro && (
-                                          <p className="text-[8px] font-semibold truncate" style={{ color: c.dot }}>{apt.doctorName.split(" ")[0]}</p>
+                                          <span className="inline-flex items-center gap-0.5 text-[7px] font-bold px-1 py-px rounded-sm truncate" style={{ backgroundColor: `rgba(${hexToRgb(c.hex)}, 0.15)`, color: c.dot }}>{apt.doctorName.split(" ")[0]}</span>
                                         )}
                                       </motion.button>
                                     )
