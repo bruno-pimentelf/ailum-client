@@ -238,8 +238,16 @@ interface SidebarProps {
   accountManagerPhone?: string
 }
 
+function cloneNav(entries: NavEntry[]): NavEntry[] {
+  return entries.map((e) =>
+    isGroup(e)
+      ? { ...e, children: e.children.map((c) => ({ ...c })) }
+      : { ...e }
+  )
+}
+
 function getNavigation(isSuperAdmin?: boolean): NavEntry[] {
-  const nav = structuredClone(baseNavigation) as NavEntry[]
+  const nav = cloneNav(baseNavigation)
   if (isSuperAdmin) {
     // Add Playground to Atendimento group
     const atendimento = nav.find((e) => isGroup(e) && e.label === "Atendimento") as (NavGroup & { type: "group" }) | undefined
