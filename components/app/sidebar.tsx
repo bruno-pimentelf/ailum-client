@@ -15,7 +15,7 @@ import {
   CalendarBlank,
   User,
   Phone,
-  Robot,
+  TestTube,
   ChartLineUp,
   CurrencyCircleDollar,
   WhatsappLogo,
@@ -54,7 +54,6 @@ const baseNavigation: NavEntry[] = [
       { label: "Conversas", href: "/chats", icon: ChatCircleText },
       { label: "Fluxos", href: "/boards", icon: Kanban },
       { label: "Contatos", href: "/contacts", icon: AddressBook },
-      { label: "Playground", href: "/playground", icon: Robot },
     ],
   },
   { label: "Calendário", href: "/calendar", icon: CalendarBlank },
@@ -240,8 +239,13 @@ interface SidebarProps {
 }
 
 function getNavigation(isSuperAdmin?: boolean): NavEntry[] {
-  const nav = [...baseNavigation]
+  const nav = structuredClone(baseNavigation) as NavEntry[]
   if (isSuperAdmin) {
+    // Add Playground to Atendimento group
+    const atendimento = nav.find((e) => isGroup(e) && e.label === "Atendimento") as (NavGroup & { type: "group" }) | undefined
+    if (atendimento) {
+      atendimento.children.push({ label: "Playground", href: "/playground", icon: TestTube })
+    }
     // Insert "Admin" before "Configurações" (last item)
     const settingsIdx = nav.findIndex(
       (e) => !isGroup(e) && (e as NavItem).href === "/settings"
