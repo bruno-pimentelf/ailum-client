@@ -622,6 +622,7 @@ function InlineEventCard({
   professionalId,
   existingEvent,
   onClose,
+  onPreviewChange,
 }: {
   date: Date
   time: string
@@ -630,6 +631,7 @@ function InlineEventCard({
   professionalId: string
   existingEvent?: CalendarEvent | null
   onClose: () => void
+  onPreviewChange?: (preview: { date: Date; startTime: string; endTime: string; color: string; title: string } | null) => void
 }) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ left: x, top: y })
@@ -651,6 +653,13 @@ function InlineEventCard({
 
   const createEvent = useCreateCalendarEvent()
   const updateEvent = useUpdateCalendarEvent()
+
+  // Sync preview to parent
+  useEffect(() => {
+    onPreviewChange?.({ date, startTime, endTime, color, title })
+    return () => { onPreviewChange?.(null) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startTime, endTime, color, title])
 
   useEffect(() => {
     titleRef.current?.focus()
@@ -1146,6 +1155,7 @@ export function ProfessionalCalendar({
   // Calendar events state
   type CalendarMode = "agendamento" | "evento"
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("agendamento")
+  const updateEventMut = useUpdateCalendarEvent()
   const [inlineEvent, setInlineEvent] = useState<{
     date: Date
     time: string
@@ -1153,6 +1163,23 @@ export function ProfessionalCalendar({
     y: number
     existingEvent?: CalendarEvent | null
   } | null>(null)
+  // Live preview state synced from InlineEventCard
+  const [eventPreview, setEventPreview] = useState<{
+    date: Date
+    startTime: string
+    endTime: string
+    color: string
+    title: string
+  } | null>(null)
+  // Drag state for existing events
+  const [draggingEvent, setDraggingEvent] = useState<{
+    event: CalendarEvent
+    originCol: number
+    originMin: number
+    currentCol: number
+    currentMin: number
+  } | null>(null)
+  const dragRef = useRef<{ startX: number; startY: number; colWidth: number } | null>(null)
   const [eventPopover, setEventPopover] = useState<{
     event: CalendarEvent
     x: number
@@ -1312,7 +1339,7 @@ export function ProfessionalCalendar({
                 <button
                   key={m}
                   onClick={() => setViewMode(m)}
-                  className={`relative px-3 py-1 text-[11px] font-bold rounded-md ${
+                  className={`relative px-3 py-1 text-[11px] font-bold rounded-md cursor-pointer ${
                     viewMode === m ? "text-foreground" : "text-foreground/85 hover:text-foreground/85"
                   }`}
                 >
@@ -1335,7 +1362,7 @@ export function ProfessionalCalendar({
                   <button
                     key={m}
                     onClick={() => setCalendarMode(m)}
-                    className={`relative px-2.5 py-1 text-[11px] font-bold rounded-md ${
+                    className={`relative px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer ${
                       calendarMode === m ? "text-foreground" : "text-foreground/85 hover:text-foreground/85"
                     }`}
                   >
@@ -1666,23 +1693,81 @@ export function ProfessionalCalendar({
 
                       {/* Calendar events */}
                       {dayEvents.map((ev) => {
+                        const isDragging = draggingEvent?.event.id === ev.id && draggingEvent?.event.occurrenceDate === ev.occurrenceDate
                         const evTop = timeToTop(ev.startTime)
                         const evStartMin = timeToMinutes(ev.startTime)
                         const evEndMin = timeToMinutes(ev.endTime)
                         const evH = Math.max(20, durationToPx(evEndMin - evStartMin) - 4)
                         const showTime = evH >= 32
+                        const colIdx = weekDays.findIndex((wd) => wd.getDate() === d.getDate() && wd.getMonth() === d.getMonth())
                         return (
                           <button
                             key={`ev-${ev.id}-${ev.occurrenceDate ?? ""}`}
                             onClick={(e) => {
                               e.stopPropagation()
+                              if (draggingEvent) return
                               setEventPopover({
                                 event: ev,
                                 x: e.clientX,
                                 y: e.clientY,
                               })
                             }}
-                            className="absolute left-1 right-1 rounded-md px-1.5 py-1 text-left cursor-pointer hover:ring-2 hover:ring-white/20 transition-all overflow-hidden z-[3]"
+                            onMouseDown={(e) => {
+                              if (!canEdit) return
+                              e.stopPropagation()
+                              const colEl = (e.currentTarget.parentElement as HTMLElement)
+                              const colRect = colEl.getBoundingClientRect()
+                              dragRef.current = {
+                                startX: e.clientX,
+                                startY: e.clientY,
+                                colWidth: colRect.width,
+                              }
+                              const startMin = evStartMin
+
+                              const onMove = (me: MouseEvent) => {
+                                if (!dragRef.current) return
+                                const dx = me.clientX - dragRef.current.startX
+                                const dy = me.clientY - dragRef.current.startY
+                                // Only start dragging after 5px threshold
+                                if (!draggingEvent && Math.abs(dx) < 5 && Math.abs(dy) < 5) return
+                                const colShift = Math.round(dx / dragRef.current.colWidth)
+                                const minShift = snapTo15(Math.round(dy / (HOUR_HEIGHT / 60)))
+                                setDraggingEvent({
+                                  event: ev,
+                                  originCol: colIdx,
+                                  originMin: startMin,
+                                  currentCol: Math.max(0, Math.min(6, colIdx + colShift)),
+                                  currentMin: Math.max(HOURS[0] * 60, startMin + minShift),
+                                })
+                              }
+
+                              const onUp = async () => {
+                                window.removeEventListener("mousemove", onMove)
+                                window.removeEventListener("mouseup", onUp)
+                                dragRef.current = null
+
+                                const drag = draggingEvent
+                                // Read from latest state via a trick — we use the state at cleanup time
+                                setDraggingEvent((prev) => {
+                                  if (prev && (prev.currentCol !== prev.originCol || prev.currentMin !== prev.originMin)) {
+                                    const newDate = weekDays[prev.currentCol]
+                                    const dateStr = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, "0")}-${String(newDate.getDate()).padStart(2, "0")}`
+                                    const durMin = timeToMinutes(prev.event.endTime) - timeToMinutes(prev.event.startTime)
+                                    const newStart = minutesToHHMM(prev.currentMin)
+                                    const newEnd = minutesToHHMM(prev.currentMin + durMin)
+                                    updateEventMut.mutate({
+                                      id: prev.event.id,
+                                      body: { date: dateStr, startTime: newStart, endTime: newEnd },
+                                    })
+                                  }
+                                  return null
+                                })
+                              }
+
+                              window.addEventListener("mousemove", onMove)
+                              window.addEventListener("mouseup", onUp)
+                            }}
+                            className={`absolute left-1 right-1 rounded-md px-1.5 py-1 text-left cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-white/20 transition-all overflow-hidden z-[3] ${isDragging ? "opacity-30" : ""}`}
                             style={{
                               top: evTop,
                               height: evH,
@@ -1709,6 +1794,51 @@ export function ProfessionalCalendar({
                           </button>
                         )
                       })}
+
+                      {/* Event preview ghost */}
+                      {eventPreview && eventPreview.date.getDate() === d.getDate() && eventPreview.date.getMonth() === d.getMonth() && eventPreview.date.getFullYear() === d.getFullYear() && (
+                        <div
+                          className="absolute left-1 right-1 rounded-md px-1.5 py-1 pointer-events-none z-[2] animate-pulse"
+                          style={{
+                            top: timeToTop(eventPreview.startTime),
+                            height: Math.max(20, durationToPx(timeToMinutes(eventPreview.endTime) - timeToMinutes(eventPreview.startTime)) - 4),
+                            backgroundColor: `${eventPreview.color}15`,
+                            borderLeft: `3px solid ${eventPreview.color}80`,
+                            border: `1px dashed ${eventPreview.color}50`,
+                            borderLeftWidth: 3,
+                            borderLeftStyle: "solid",
+                          }}
+                        >
+                          <span className="text-[9px] font-bold truncate opacity-70" style={{ color: eventPreview.color }}>
+                            {eventPreview.title || "Novo evento"}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Drag ghost */}
+                      {draggingEvent && (() => {
+                        const colDate = d
+                        const colIdx = weekDays.findIndex((wd) => wd.getDate() === colDate.getDate() && wd.getMonth() === colDate.getMonth())
+                        if (colIdx !== draggingEvent.currentCol) return null
+                        const durMin = timeToMinutes(draggingEvent.event.endTime) - timeToMinutes(draggingEvent.event.startTime)
+                        return (
+                          <div
+                            className="absolute left-1 right-1 rounded-md px-1.5 py-1 pointer-events-none z-[5] opacity-70"
+                            style={{
+                              top: minutesToPx(draggingEvent.currentMin),
+                              height: Math.max(20, durationToPx(durMin) - 4),
+                              backgroundColor: `${draggingEvent.event.color}25`,
+                              borderLeft: `3px solid ${draggingEvent.event.color}`,
+                              border: `2px solid ${draggingEvent.event.color}60`,
+                              borderLeftWidth: 3,
+                            }}
+                          >
+                            <span className="text-[9px] font-bold truncate" style={{ color: draggingEvent.event.color }}>
+                              {draggingEvent.event.title}
+                            </span>
+                          </div>
+                        )
+                      })()}
 
                       {/* Now indicator */}
                       {(() => {
@@ -1914,7 +2044,8 @@ export function ProfessionalCalendar({
             y={inlineEvent.y}
             professionalId={professionalId}
             existingEvent={inlineEvent.existingEvent}
-            onClose={() => setInlineEvent(null)}
+            onClose={() => { setInlineEvent(null); setEventPreview(null) }}
+            onPreviewChange={setEventPreview}
           />
         )}
       </AnimatePresence>
