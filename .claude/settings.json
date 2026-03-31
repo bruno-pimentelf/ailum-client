@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /Users/brunopimentel/Documents/Projects/Ailum/ailum-client/app/\\\\\\(browse\\\\\\)/admin/funnels/)"
+    ]
+  }
+}
