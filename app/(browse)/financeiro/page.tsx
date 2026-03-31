@@ -535,7 +535,7 @@ export default function FinanceiroPage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false)
 
   const { data: me } = useMe()
-  const isAdmin = me?.role === "ADMIN"
+  const isAdmin = me?.role === "ADMIN" || me?.role === "SECRETARY"
 
   // Não-admins não têm acesso a GET /integrations (403), mas têm BILLING_READ
   // e podem acessar os dados do Asaas diretamente — tratamos como configurado.

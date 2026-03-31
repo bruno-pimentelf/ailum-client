@@ -269,7 +269,7 @@ export function DisponibilidadeTab() {
   const effectiveProfId = role === "PROFESSIONAL" ? professionalIdFromAuth : selectedProfId
 
   useEffect(() => {
-    if (role === "ADMIN" && professionals?.length && !selectedProfId) {
+    if ((role === "ADMIN" || role === "SECRETARY") && professionals?.length && !selectedProfId) {
       const ownId =
         professionalIdFromAuth && professionals.some((p) => p.id === professionalIdFromAuth)
           ? professionalIdFromAuth
@@ -348,7 +348,7 @@ export function DisponibilidadeTab() {
       </div>
 
       {/* Admin: professional selector */}
-      {role === "ADMIN" && professionals && professionals.length > 1 && (
+      {role !== "PROFESSIONAL" && professionals && professionals.length > 1 && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Profissional</p>
           <ProfessionalSelector
@@ -401,7 +401,7 @@ export function DisponibilidadeTab() {
       )}
 
       {/* No professional selected (admin edge case) */}
-      {!professional && role === "ADMIN" && !loadingProfessional && (
+      {!professional && role !== "PROFESSIONAL" && !loadingProfessional && (
         <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
           <p className="text-[13px] text-muted-foreground">Selecione um profissional acima.</p>
         </div>

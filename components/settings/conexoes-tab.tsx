@@ -447,7 +447,7 @@ function AsaasSection({ integration }: { integration: Integration | null }) {
 
 export function ConexoesTab() {
   const { data: me } = useMe()
-  const isAdmin = me?.role === "ADMIN"
+  const isAdmin = me?.role === "ADMIN" || me?.role === "SECRETARY"
   const { data: integrations, isLoading, isError, refetch } = useIntegrations()
   const [expandedInstanceId, setExpandedInstanceId] = useState<string | null>(null)
   const [showNewInstance, setShowNewInstance] = useState(false)

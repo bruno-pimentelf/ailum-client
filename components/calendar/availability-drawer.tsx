@@ -227,7 +227,7 @@ export function AvailabilityDrawer({ open, onClose, defaultProfessionalId }: Ava
   const [showPicker, setShowPicker] = useState(false)
 
   const role = me?.role ?? null
-  const isAdmin = role === "ADMIN"
+  const isAdmin = role === "ADMIN" || role === "SECRETARY"
   const isProfessional = role === "PROFESSIONAL"
 
   // Sync defaultProfessionalId when it changes

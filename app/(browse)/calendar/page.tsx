@@ -518,7 +518,7 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [currentDate, setCurrentDate] = useState(new Date(THIS_YEAR, THIS_MONTH, 1))
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [activeDoctor, setActiveDoctor] = useState("all")
+  const [activeDoctor, setActiveDoctor] = useState<string | null>(null) // null = not yet initialized
   const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false)
   const [novoAgendamentoDefaultDate, setNovoAgendamentoDefaultDate] = useState<Date | undefined>(undefined)
   const [novoAgendamentoDefaultTime, setNovoAgendamentoDefaultTime] = useState<string | undefined>(undefined)
@@ -529,6 +529,19 @@ export default function CalendarPage() {
   const doctorDropdownRef = useRef<HTMLDivElement>(null)
   const weekGridRef = useRef<HTMLDivElement>(null)
   const dayGridRef = useRef<HTMLDivElement>(null)
+
+  // Auto-select first professional as default (or own if PROFESSIONAL role)
+  useEffect(() => {
+    if (activeDoctor !== null) return // already initialized
+    if (!me || !professionals) return
+    if (me.role === "PROFESSIONAL" && me.professionalId) {
+      setActiveDoctor(me.professionalId)
+    } else if (professionals.length > 0) {
+      setActiveDoctor(professionals[0].id)
+    } else {
+      setActiveDoctor("all")
+    }
+  }, [me, professionals, activeDoctor])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -569,7 +582,7 @@ export default function CalendarPage() {
     let professionalIdParam: string | undefined
     if (role === "PROFESSIONAL" && professionalId) {
       professionalIdParam = professionalId
-    } else if ((role === "ADMIN" || role === "SECRETARY") && activeDoctor !== "all") {
+    } else if ((role === "ADMIN" || role === "SECRETARY") && activeDoctor && activeDoctor !== "all") {
       professionalIdParam = activeDoctor
     }
     return {
@@ -705,7 +718,7 @@ export default function CalendarPage() {
 
   if (showProfessionalCalendar && professionalCalendarId) {
     const pro = professionals?.find((p) => p.id === professionalCalendarId)
-    const canEditAvailability = role === "ADMIN" || role === "PROFESSIONAL"
+    const canEditAvailability = role === "ADMIN" || role === "SECRETARY" || role === "PROFESSIONAL"
     return (
       <div className="flex h-full overflow-hidden">
         <div className="flex-1 min-w-0 overflow-hidden">
@@ -819,7 +832,7 @@ export default function CalendarPage() {
                 <span className="max-w-[180px] truncate font-medium">
                   {loadingProfessionals
                     ? "Carregando..."
-                    : doctorsList.find((d) => d.id === activeDoctor)?.name ?? "Todos profissionais"}
+                    : doctorsList.find((d) => d.id === activeDoctor)?.name ?? "Selecionar profissional"}
                 </span>
                 <CaretUpDown className="h-3 w-3 text-muted-foreground shrink-0" />
               </button>

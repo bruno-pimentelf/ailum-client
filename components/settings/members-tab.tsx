@@ -449,7 +449,7 @@ function MemberCard({ member, index, onEdit, canManage }: { member: ApiMember; i
 
 export function MembersTab() {
   const { data: me } = useMe()
-  const canManage = me?.role === "ADMIN"
+  const canManage = me?.role === "ADMIN" || me?.role === "SECRETARY"
   const { data: members, isLoading, error, refetch } = useMembers()
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState<ApiRoleFilter>("all")

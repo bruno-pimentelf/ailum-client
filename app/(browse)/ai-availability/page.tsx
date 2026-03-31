@@ -294,7 +294,7 @@ export default function AiAvailabilityPage() {
   const [successToast, setSuccessToast] = useState<string | null>(null)
 
   const role = me?.role ?? null
-  const isAdmin = role === "ADMIN"
+  const isAdmin = role === "ADMIN" || role === "SECRETARY"
   const isProfessional = role === "PROFESSIONAL"
 
   // For admins with multiple professionals, require explicit selection
