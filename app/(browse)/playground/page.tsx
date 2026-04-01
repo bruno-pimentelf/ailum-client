@@ -762,7 +762,7 @@ export default function PlaygroundPage() {
       {!mounted ? (
         <div className="flex-1 min-h-0 overflow-hidden" suppressHydrationWarning />
       ) : (
-      <ResizablePanelGroup className="flex-1 min-h-0 overflow-hidden" direction="horizontal">
+      <ResizablePanelGroup className="flex-1 min-h-0 overflow-hidden">
         {/* Chat panel */}
         <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-w-0 min-h-0 overflow-hidden">
       {/* Chat body */}
