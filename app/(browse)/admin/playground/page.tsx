@@ -59,6 +59,8 @@ interface ChatMessage {
   content: string
   timestamp: Date
   tokenCount?: number
+  /** Index into the results array — only for assistant messages */
+  resultIndex?: number
 }
 
 // ─── Typing indicator ───────────────────────────────────────────────────────
@@ -567,12 +569,16 @@ function ChatPanel({
   messages,
   sending,
   sessionActive,
+  selectedResultIdx,
   onSend,
+  onSelectMessage,
 }: {
   messages: ChatMessage[]
   sending: boolean
   sessionActive: boolean
+  selectedResultIdx: number | null
   onSend: (message: string) => void
+  onSelectMessage: (resultIndex: number) => void
 }) {
   const [input, setInput] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -621,53 +627,51 @@ function ChatPanel({
         )}
 
         <AnimatePresence initial={false}>
-          {messages.map((msg, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease }}
-              className={`flex items-end gap-2 ${
-                msg.role === "user" ? "justify-end" : ""
-              }`}
-            >
-              {msg.role === "assistant" && (
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 border border-accent/20">
-                  <Robot className="h-3.5 w-3.5 text-accent" weight="fill" />
-                </div>
-              )}
-              <div
-                className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
-                  msg.role === "user"
-                    ? "rounded-br-md bg-accent text-accent-foreground"
-                    : "rounded-bl-md bg-card border border-border/60 text-foreground"
-                }`}
+          {messages.map((msg, i) => {
+            const isSelected = msg.role === "assistant" && msg.resultIndex != null && msg.resultIndex === selectedResultIdx
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease }}
+                className={`flex items-end gap-2 ${msg.role === "user" ? "justify-end" : ""}`}
               >
-                <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
-                  {msg.content}
-                </p>
+                {msg.role === "assistant" && (
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 border border-accent/20">
+                    <Robot className="h-3.5 w-3.5 text-accent" weight="fill" />
+                  </div>
+                )}
                 <div
-                  className={`flex items-center gap-1.5 mt-1 ${
+                  onClick={() => {
+                    if (msg.role === "assistant" && msg.resultIndex != null) onSelectMessage(msg.resultIndex)
+                  }}
+                  className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 transition-all ${
                     msg.role === "user"
-                      ? "text-accent-foreground/50"
-                      : "text-muted-foreground/50"
+                      ? "rounded-br-md bg-accent text-accent-foreground"
+                      : `rounded-bl-md bg-card border text-foreground cursor-pointer hover:border-accent/40 ${isSelected ? "border-accent/50 ring-1 ring-accent/20" : "border-border/60"}`
                   }`}
                 >
-                  <span className="text-[9px]">
-                    {msg.timestamp.toLocaleTimeString("pt-BR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  {msg.role === "assistant" && msg.tokenCount != null && (
-                    <span className="text-[9px] bg-muted/30 rounded px-1 py-0.5 font-mono">
-                      {msg.tokenCount.toLocaleString("pt-BR")} tokens
+                  <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+                    {msg.content}
+                  </p>
+                  <div className={`flex items-center gap-1.5 mt-1 ${msg.role === "user" ? "text-accent-foreground/50" : "text-muted-foreground/50"}`}>
+                    <span className="text-[9px]">
+                      {msg.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
-                  )}
+                    {msg.role === "assistant" && msg.tokenCount != null && (
+                      <span className="text-[9px] bg-muted/30 rounded px-1 py-0.5 font-mono">
+                        {msg.tokenCount.toLocaleString("pt-BR")} tk
+                      </span>
+                    )}
+                    {isSelected && (
+                      <span className="text-[8px] text-accent font-semibold">● selecionado</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            )
+          })}
         </AnimatePresence>
 
         <AnimatePresence>{sending && <TypingIndicator />}</AnimatePresence>
@@ -713,7 +717,7 @@ function ChatPanel({
 
 type AuditTab = "acoes" | "auditoria" | "custo"
 
-function AuditPanel({ result }: { result: SAPlaygroundResult | null }) {
+function AuditPanel({ result, results }: { result: SAPlaygroundResult | null; results: SAPlaygroundResult[] }) {
   const [tab, setTab] = useState<AuditTab>("acoes")
 
   const tabs: Array<{ key: AuditTab; label: string; icon: React.ElementType }> = [
@@ -759,7 +763,7 @@ function AuditPanel({ result }: { result: SAPlaygroundResult | null }) {
           <>
             {tab === "acoes" && <ActionsTab result={result} />}
             {tab === "auditoria" && <AuditTab result={result} />}
-            {tab === "custo" && <CostTab result={result} />}
+            {tab === "custo" && <CostTab result={result} results={results} />}
           </>
         )}
       </div>
@@ -929,7 +933,11 @@ function AuditDetailItem({
   )
 }
 
-function CostTab({ result }: { result: SAPlaygroundResult }) {
+function CostTab({ result, results }: { result: SAPlaygroundResult; results: SAPlaygroundResult[] }) {
+  const totalCost = results.reduce((sum, r) => sum + (r.estimatedCostUsd ?? 0), 0)
+  const totalInput = results.reduce((sum, r) => sum + (r.inputTokens ?? 0), 0)
+  const totalOutput = results.reduce((sum, r) => sum + (r.outputTokens ?? 0), 0)
+  const totalDuration = results.reduce((sum, r) => sum + (r.durationMs ?? 0), 0)
   const rows: Array<{ label: string; value: string | number | undefined }> = [
     { label: "Provider", value: result.llmProvider },
     { label: "Modelo", value: result.llmModel },
@@ -952,20 +960,40 @@ function CostTab({ result }: { result: SAPlaygroundResult }) {
   ]
 
   return (
-    <div className="space-y-3">
-      {rows.map((row) => (
-        <div
-          key={row.label}
-          className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-2"
-        >
-          <span className="text-[11px] text-muted-foreground/80">
-            {row.label}
-          </span>
-          <span className="text-[12px] font-medium text-foreground tabular-nums">
-            {row.value ?? "—"}
-          </span>
+    <div className="space-y-4">
+      {/* This message */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2">Esta mensagem</p>
+        <div className="space-y-1.5">
+          {rows.map((row) => (
+            <div key={row.label} className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-2">
+              <span className="text-[11px] text-muted-foreground/80">{row.label}</span>
+              <span className="text-[12px] font-medium text-foreground tabular-nums">{row.value ?? "—"}</span>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
+
+      {/* Session totals */}
+      {results.length > 1 && (
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2">Total da sessão ({results.length} msgs)</p>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between rounded-lg border border-accent/20 bg-accent/5 px-3 py-2">
+              <span className="text-[11px] text-accent/80">Custo total</span>
+              <span className="text-[12px] font-bold text-accent tabular-nums">${totalCost.toFixed(4)}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-2">
+              <span className="text-[11px] text-muted-foreground/80">Tokens totais</span>
+              <span className="text-[12px] font-medium text-foreground tabular-nums">{(totalInput + totalOutput).toLocaleString("pt-BR")}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/40 bg-card/30 px-3 py-2">
+              <span className="text-[11px] text-muted-foreground/80">Duração total</span>
+              <span className="text-[12px] font-medium text-foreground tabular-nums">{(totalDuration / 1000).toFixed(1)}s</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -978,7 +1006,8 @@ export default function SAPlaygroundPage() {
   const [stageId, setStageId] = useState<string | null>(null)
   const [contactId, setContactId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [lastResult, setLastResult] = useState<SAPlaygroundResult | null>(null)
+  const [results, setResults] = useState<SAPlaygroundResult[]>([])
+  const [selectedResultIdx, setSelectedResultIdx] = useState<number | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -997,7 +1026,8 @@ export default function SAPlaygroundPage() {
         onSuccess: (data) => {
           setContactId(data.contactId)
           setMessages([])
-          setLastResult(null)
+          setResults([])
+          setSelectedResultIdx(null)
         },
         onError: (err) => {
           setError(
@@ -1017,7 +1047,8 @@ export default function SAPlaygroundPage() {
       onSuccess: () => {
         setContactId(null)
         setMessages([])
-        setLastResult(null)
+        setResults([])
+        setSelectedResultIdx(null)
       },
       onError: (err) => {
         setError(
@@ -1045,7 +1076,9 @@ export default function SAPlaygroundPage() {
         {
           onSuccess: (result) => {
             setSending(false)
-            setLastResult(result)
+            const newResultIdx = results.length
+            setResults((prev) => [...prev, result])
+            setSelectedResultIdx(newResultIdx)
             if (result.reply) {
               setMessages((prev) => [
                 ...prev,
@@ -1054,6 +1087,7 @@ export default function SAPlaygroundPage() {
                   content: result.reply!,
                   timestamp: new Date(),
                   tokenCount: (result.inputTokens ?? 0) + (result.outputTokens ?? 0) || undefined,
+                  resultIndex: newResultIdx,
                 },
               ])
             }
@@ -1121,11 +1155,13 @@ export default function SAPlaygroundPage() {
           messages={messages}
           sending={sending}
           sessionActive={sessionActive}
+          selectedResultIdx={selectedResultIdx}
           onSend={handleSend}
+          onSelectMessage={setSelectedResultIdx}
         />
       </div>
 
-      <AuditPanel result={lastResult} />
+      <AuditPanel result={selectedResultIdx != null ? results[selectedResultIdx] ?? null : null} results={results} />
     </div>
   )
 }
