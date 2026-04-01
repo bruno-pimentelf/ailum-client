@@ -34,10 +34,14 @@ import {
   Flask,
   Eye,
   ArrowsClockwise,
+  CalendarPlus,
 } from "@phosphor-icons/react"
+import { QuickScheduleModal } from "./quick-schedule-modal"
+import type { QuickScheduleContact } from "./quick-schedule-modal"
 import { PixChargeBlock } from "./pix-charge-block"
 import { useMessages, useTypingStatus } from "@/hooks/use-chats"
 import { useIntegrations } from "@/hooks/use-integrations"
+import { useInstanceStore } from "@/lib/instance-store"
 import type { Integration } from "@/lib/api/integrations"
 import { sendMessage, markAsRead, createNote, describeImage, summarizeDocument } from "@/lib/api/conversations"
 import { ContactInfoPanel } from "@/components/app/contact-info-panel"
@@ -1520,6 +1524,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const [noteMode, setNoteMode] = useState(false)
   // Profile panel
   const [showProfile, setShowProfile] = useState(false)
+  const [showSchedule, setShowSchedule] = useState(false)
   // Template picker
   const { data: allTemplates } = useTemplates()
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
@@ -1651,15 +1656,41 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       : m
   )
 
+  // Instance-aware filtering
+  const selectedInstanceId = useInstanceStore((s) => s.selectedInstanceId)
+  const multiInstance = zapiInstances.length > 1
+
+  const visibleMessages = useMemo(() => {
+    if (!selectedInstanceId || !multiInstance) return allMessages
+    return allMessages.filter((msg) => {
+      // Notes are instance-agnostic — always show
+      if (msg.role === "NOTE") return true
+      const msgInstance = (msg.metadata as Record<string, unknown> | undefined)?.zapiInstanceId as string | undefined
+      if (msgInstance) return msgInstance === selectedInstanceId
+      // Outgoing messages without instance tag — show (legacy)
+      if (msg.role === "OPERATOR" || msg.role === "AGENT") return true
+      return true
+    })
+  }, [allMessages, selectedInstanceId, multiInstance])
+
+  // Instance label map for badges
+  const instanceLabelMap = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const inst of zapiInstances) {
+      if (inst.instanceId) m.set(inst.instanceId, inst.label || inst.instanceId)
+    }
+    return m
+  }, [zapiInstances])
+
   const { messageById, messageByZapi } = useMemo(() => {
     const byId = new Map<string, AnyMessage>()
     const byZapi = new Map<string, AnyMessage>()
-    for (const m of allMessages) {
+    for (const m of visibleMessages) {
       byId.set(m.id, m)
       if (m.zapiMessageId) byZapi.set(m.zapiMessageId, m)
     }
     return { messageById: byId, messageByZapi: byZapi }
-  }, [allMessages])
+  }, [visibleMessages])
 
   const previewText = useCallback((m: AnyMessage | null | undefined) => {
     if (!m) return ""
@@ -2181,6 +2212,16 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Schedule button */}
+          <button
+            type="button"
+            onClick={() => setShowSchedule(true)}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium border border-border/50 bg-muted/20 text-muted-foreground/70 hover:bg-accent/10 hover:text-accent hover:border-accent/30 transition-all cursor-pointer"
+            title="Agendar consulta"
+          >
+            <CalendarPlus className="h-3.5 w-3.5" />
+            <span>Agendar</span>
+          </button>
           {/* AI toggle */}
           <div className="relative group">
             <button
@@ -2260,7 +2301,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
             )}
           </div>
         )}
-        {messagesLoading && allMessages.length === 0 && (
+        {messagesLoading && visibleMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 py-16">
             <motion.div
               animate={{ rotate: 360 }}
@@ -2271,7 +2312,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           </div>
         )}
 
-        {!messagesLoading && allMessages.length === 0 && (
+        {!messagesLoading && visibleMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/30 border border-border/40">
               <ChatCircleText className="h-6 w-6 text-muted-foreground/85" weight="duotone" />
@@ -2280,23 +2321,38 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           </div>
         )}
 
-        {allMessages.map((msg, i) => {
+        {visibleMessages.map((msg, i) => {
           const refId = msg.referenceMessageId
           const refMsg = refId
             ? (messageById.get(refId) ?? messageByZapi.get(refId) ?? null)
             : null
           const currentKey = getMsgDateKey(msg.createdAt)
-          const prevKey = i > 0 ? getMsgDateKey(allMessages[i - 1].createdAt) : null
+          const prevKey = i > 0 ? getMsgDateKey(visibleMessages[i - 1].createdAt) : null
           const showDateDivider = currentKey && currentKey !== prevKey
+
+          // Instance change divider (only when viewing all instances with multi-instance)
+          const msgInstance = (msg.metadata as Record<string, unknown> | undefined)?.zapiInstanceId as string | undefined
+          const prevMsgInstance = i > 0 ? ((visibleMessages[i - 1].metadata as Record<string, unknown> | undefined)?.zapiInstanceId as string | undefined) : undefined
+          const showInstanceDivider = !selectedInstanceId && multiInstance && msgInstance && msgInstance !== prevMsgInstance && i > 0
+
           return (
             <div key={msg.id} className="flex flex-col gap-3">
               {showDateDivider && (
                 <DateDivider label={formatDateLabel(msg.createdAt)} />
               )}
+              {showInstanceDivider && (
+                <div className="flex items-center gap-2 px-2">
+                  <div className="flex-1 h-px bg-border/40" />
+                  <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider whitespace-nowrap">
+                    via {instanceLabelMap.get(msgInstance!) ?? msgInstance}
+                  </span>
+                  <div className="flex-1 h-px bg-border/40" />
+                </div>
+              )}
               <MessageBubble
                 msg={msg}
                 contactId={contact.id!}
-                animate={i >= allMessages.length - 1}
+                animate={i >= visibleMessages.length - 1}
                 quotedText={previewText(refMsg)}
                 onReply={handleReplyMessage}
                 onReact={handleReactToMessage}
@@ -2557,6 +2613,14 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
         </motion.div>
       )}
     </AnimatePresence>
+
+    {/* Quick schedule modal */}
+    {showSchedule && (
+      <QuickScheduleModal
+        contact={{ id: contact.id ?? "", name: contact.name ?? null, phone: contact.phone ?? "" }}
+        onClose={() => setShowSchedule(false)}
+      />
+    )}
     </div>
   )
 }

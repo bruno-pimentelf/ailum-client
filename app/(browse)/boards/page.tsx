@@ -34,6 +34,7 @@ import {
   FloppyDisk,
   Sparkle,
   ChatCircleText,
+  CalendarPlus,
   X,
 } from "@phosphor-icons/react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -42,6 +43,7 @@ import { useMe } from "@/hooks/use-me"
 import { useInstanceStore } from "@/lib/instance-store"
 import { FunnelModal } from "@/components/app/funnel-modal"
 import { SelectContactModal } from "@/components/app/select-contact-modal"
+import { QuickScheduleModal } from "@/components/app/quick-schedule-modal"
 import { StageConfigModal } from "@/components/app/stage-config-modal"
 import { MoveContactModal } from "@/components/app/move-contact-modal"
 import {
@@ -187,6 +189,7 @@ function KanbanCard({
   overlay = false,
   onMoveToOtherFunnel,
   onOpenChat,
+  onSchedule,
   instanceLabel,
 }: {
   contact: BoardContact
@@ -195,6 +198,7 @@ function KanbanCard({
   overlay?: boolean
   onMoveToOtherFunnel?: () => void
   onOpenChat?: () => void
+  onSchedule?: () => void
   instanceLabel?: string | null
 }) {
   const name = contact.name ?? contact.phone
@@ -222,6 +226,16 @@ function KanbanCard({
           </div>
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
+          {!overlay && onSchedule && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onSchedule() }}
+              className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/60 hover:text-accent hover:bg-accent/10 transition-all duration-150 cursor-pointer"
+              title="Agendar consulta"
+            >
+              <CalendarPlus className="h-3.5 w-3.5" />
+            </button>
+          )}
           {!overlay && onOpenChat && (
             <button
               type="button"
@@ -341,12 +355,14 @@ function DraggableCard({
   stageColor,
   onMoveToOtherFunnel,
   onOpenChat,
+  onSchedule,
   instanceLabel,
 }: {
   contact: BoardContact
   stageColor: string
   onMoveToOtherFunnel?: () => void
   onOpenChat?: () => void
+  onSchedule?: () => void
   instanceLabel?: string | null
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: contact.id })
@@ -359,6 +375,7 @@ function DraggableCard({
         isDragging={isDragging}
         onMoveToOtherFunnel={onMoveToOtherFunnel}
         onOpenChat={onOpenChat}
+        onSchedule={onSchedule}
         instanceLabel={instanceLabel}
       />
     </div>
@@ -377,6 +394,7 @@ function KanbanColumn({
   onOpenConfig,
   onMoveToOtherFunnel,
   onOpenChat,
+  onSchedule,
   canEdit,
   instanceMap,
 }: {
@@ -389,6 +407,7 @@ function KanbanColumn({
   onOpenConfig: (stage: BoardStage) => void
   onMoveToOtherFunnel?: (contact: BoardContact) => void
   onOpenChat?: (contact: BoardContact) => void
+  onSchedule?: (contact: BoardContact) => void
   canEdit?: boolean
   instanceMap: Map<string, string>
 }) {
@@ -536,6 +555,7 @@ function KanbanColumn({
                       : undefined
                   }
                   onOpenChat={onOpenChat ? () => onOpenChat(contact) : undefined}
+                  onSchedule={onSchedule ? () => onSchedule(contact) : undefined}
                   instanceLabel={instanceMap.size > 1 && contact.zapiInstanceId ? instanceMap.get(contact.zapiInstanceId) : null}
                 />
               </motion.div>
@@ -587,6 +607,7 @@ function MobileColumn({
   onOpenConfig,
   onMoveToOtherFunnel,
   onOpenChat,
+  onSchedule,
   instanceMap,
 }: {
   stage: BoardStage
@@ -598,6 +619,7 @@ function MobileColumn({
   onOpenConfig: (stage: BoardStage) => void
   onMoveToOtherFunnel?: (contact: BoardContact) => void
   onOpenChat?: (contact: BoardContact) => void
+  onSchedule?: (contact: BoardContact) => void
   instanceMap: Map<string, string>
 }) {
   const [open, setOpen] = useState(true)
@@ -730,6 +752,7 @@ function MobileColumn({
                         : undefined
                     }
                     onOpenChat={onOpenChat ? () => onOpenChat(c) : undefined}
+                    onSchedule={onSchedule ? () => onSchedule(c) : undefined}
                     instanceLabel={instanceMap.size > 1 && c.zapiInstanceId ? instanceMap.get(c.zapiInstanceId) : null}
                   />
                 ))
@@ -761,6 +784,7 @@ export default function BoardsPage() {
     currentStageId: string
   } | null>(null)
   const [chatContact, setChatContact] = useState<BoardContact | null>(null)
+  const [scheduleContact, setScheduleContact] = useState<BoardContact | null>(null)
   const tenantId = useAuthStore((s) => s.tenantId)
   const [devMode, setDevMode] = useState(false)
   const [devJson, setDevJson] = useState("")
@@ -1318,6 +1342,7 @@ export default function BoardsPage() {
                         })
                       }
                       onOpenChat={setChatContact}
+                      onSchedule={setScheduleContact}
                       instanceMap={instanceMap}
                     />
                   ))}
@@ -1353,6 +1378,7 @@ export default function BoardsPage() {
                             )
                           }
                           onOpenChat={setChatContact}
+                          onSchedule={setScheduleContact}
                           instanceMap={instanceMap}
                         />
                       </div>
@@ -1427,6 +1453,13 @@ export default function BoardsPage() {
         </motion.div>
       )}
     </AnimatePresence>
+    {/* Quick schedule modal */}
+    {scheduleContact && (
+      <QuickScheduleModal
+        contact={{ id: scheduleContact.id, name: scheduleContact.name ?? null, phone: scheduleContact.phone }}
+        onClose={() => setScheduleContact(null)}
+      />
+    )}
     </>
   )
 }
