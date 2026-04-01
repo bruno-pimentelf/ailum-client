@@ -368,7 +368,7 @@ function ImagePreviewOverlay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="absolute inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md"
+      className="absolute inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-xl"
     >
       {/* Top bar */}
       <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-border/40">
@@ -378,7 +378,7 @@ function ImagePreviewOverlay({
           className="cursor-pointer flex items-center gap-2 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
         >
           <X className="h-4 w-4" weight="bold" />
-          Cancelar
+          Fechar
         </button>
         <span className="text-[12px] text-muted-foreground/70 truncate max-w-[200px]">{attachment.file.name}</span>
       </div>
