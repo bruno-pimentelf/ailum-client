@@ -665,7 +665,7 @@ export default function PlaygroundPage() {
   }, [])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/50 shrink-0 h-11 px-4 md:px-5">
         <div className="flex items-center gap-2.5">
