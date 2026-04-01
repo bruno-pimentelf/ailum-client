@@ -1147,11 +1147,27 @@ export default function SAPlaygroundPage() {
             const newResultIdx = results.length
             setResults((prev) => [...prev, result])
             setSelectedResultIdx(newResultIdx)
-            if (result.reply) {
+            // Use WHATSAPP_SEND chunks from interceptedActions to replicate actual WhatsApp delivery
+            const whatsappChunks = (result.interceptedActions ?? [])
+              .filter((a: { type: string; data?: Record<string, unknown> }) => a.type === "WHATSAPP_SEND" && a.data?.content)
+              .map((a: { data?: Record<string, unknown> }) => a.data!.content as string)
+
+            if (whatsappChunks.length > 0) {
+              setMessages((prev) => [
+                ...prev,
+                ...whatsappChunks.map((chunk: string, i: number) => ({
+                  role: "assistant" as const,
+                  content: chunk,
+                  timestamp: new Date(Date.now() + i),
+                  tokenCount: i === 0 ? ((result.inputTokens ?? 0) + (result.outputTokens ?? 0) || undefined) : undefined,
+                  resultIndex: newResultIdx,
+                })),
+              ])
+            } else if (result.reply) {
               setMessages((prev) => [
                 ...prev,
                 {
-                  role: "assistant",
+                  role: "assistant" as const,
                   content: result.reply!,
                   timestamp: new Date(),
                   tokenCount: (result.inputTokens ?? 0) + (result.outputTokens ?? 0) || undefined,
