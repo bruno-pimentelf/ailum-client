@@ -322,7 +322,7 @@ type PendingAttachment =
   | { kind: "image"; file: File; preview: string }
   | { kind: "document"; file: File }
 
-function AttachmentPreview({ attachment, onRemove }: { attachment: PendingAttachment; onRemove: () => void }) {
+function DocumentPreview({ attachment, onRemove }: { attachment: PendingAttachment & { kind: "document" }; onRemove: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
@@ -331,20 +331,10 @@ function AttachmentPreview({ attachment, onRemove }: { attachment: PendingAttach
       transition={{ duration: 0.2, ease }}
       className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-3 py-2 mx-4 mb-1"
     >
-      {attachment.kind === "image" ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={attachment.preview} alt="preview" className="h-9 w-9 rounded-lg object-cover shrink-0 border border-border/40" />
-          <span className="text-[12px] text-foreground/70 truncate flex-1">{attachment.file.name}</span>
-        </>
-      ) : (
-        <>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted/30">
-            <FileDoc className="h-4 w-4 text-muted-foreground/90" />
-          </div>
-          <span className="text-[12px] text-foreground/70 truncate flex-1">{attachment.file.name}</span>
-        </>
-      )}
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted/30">
+        <FileDoc className="h-4 w-4 text-muted-foreground/90" />
+      </div>
+      <span className="text-[12px] text-foreground/70 truncate flex-1">{attachment.file.name}</span>
       <button
         type="button"
         onClick={onRemove}
@@ -352,6 +342,79 @@ function AttachmentPreview({ attachment, onRemove }: { attachment: PendingAttach
       >
         <X className="h-3 w-3" weight="bold" />
       </button>
+    </motion.div>
+  )
+}
+
+function ImagePreviewOverlay({
+  attachment,
+  caption,
+  onCaptionChange,
+  onSend,
+  onClose,
+}: {
+  attachment: PendingAttachment & { kind: "image" }
+  caption: string
+  onCaptionChange: (v: string) => void
+  onSend: () => void
+  onClose: () => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { inputRef.current?.focus() }, [])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="absolute inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md"
+    >
+      {/* Top bar */}
+      <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-border/40">
+        <button
+          type="button"
+          onClick={onClose}
+          className="cursor-pointer flex items-center gap-2 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <X className="h-4 w-4" weight="bold" />
+          Cancelar
+        </button>
+        <span className="text-[12px] text-muted-foreground/70 truncate max-w-[200px]">{attachment.file.name}</span>
+      </div>
+
+      {/* Image preview */}
+      <div className="flex-1 min-h-0 flex items-center justify-center p-6 overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={attachment.preview}
+          alt="preview"
+          className="max-w-full max-h-full object-contain rounded-xl border border-border/30 shadow-lg shadow-black/20"
+        />
+      </div>
+
+      {/* Caption + send */}
+      <div className="shrink-0 border-t border-border/40 px-5 py-3">
+        <form
+          onSubmit={(e) => { e.preventDefault(); onSend() }}
+          className="flex items-center gap-3"
+        >
+          <input
+            ref={inputRef}
+            value={caption}
+            onChange={(e) => onCaptionChange(e.target.value)}
+            placeholder="Adicionar legenda..."
+            className="flex-1 h-9 rounded-xl border border-border bg-card/50 px-4 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-300"
+          />
+          <motion.button
+            type="submit"
+            whileTap={{ scale: 0.95 }}
+            className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground hover:brightness-110 transition-all"
+          >
+            <PaperPlaneTilt className="h-4 w-4" weight="fill" />
+          </motion.button>
+        </form>
+      </div>
     </motion.div>
   )
 }
@@ -1442,6 +1505,8 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [attachment, setAttachment] = useState<PendingAttachment | null>(null)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
+  const [draggingOver, setDraggingOver] = useState(false)
+  const dragCounterRef = useRef(0)
   const [replyTo, setReplyTo] = useState<FirestoreMessage | null>(null)
   const [mediaViewer, setMediaViewer] = useState<MediaViewerPayload | null>(null)
 
@@ -2020,8 +2085,64 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       className="flex flex-1 flex-col min-h-0 overflow-hidden relative"
+      onDragEnter={(e) => {
+        e.preventDefault()
+        dragCounterRef.current++
+        if (e.dataTransfer?.types?.includes("Files")) setDraggingOver(true)
+      }}
+      onDragOver={(e) => e.preventDefault()}
+      onDragLeave={(e) => {
+        e.preventDefault()
+        dragCounterRef.current--
+        if (dragCounterRef.current <= 0) { setDraggingOver(false); dragCounterRef.current = 0 }
+      }}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDraggingOver(false)
+        dragCounterRef.current = 0
+        const file = e.dataTransfer?.files?.[0]
+        if (!file) return
+        if (file.type.startsWith("image/")) {
+          setAttachment({ kind: "image", file, preview: URL.createObjectURL(file) })
+        } else {
+          setAttachment({ kind: "document", file })
+        }
+      }}
     >
       <MediaViewerModal media={mediaViewer} onClose={() => setMediaViewer(null)} />
+
+      {/* ── Image preview overlay (WhatsApp-style) ── */}
+      <AnimatePresence>
+        {attachment && attachment.kind === "image" && (
+          <ImagePreviewOverlay
+            key="img-preview"
+            attachment={attachment}
+            caption={inputValue}
+            onCaptionChange={setInputValue}
+            onSend={() => {
+              handleSendText({ preventDefault: () => {} } as React.FormEvent)
+            }}
+            onClose={() => { setAttachment(null); setInputValue("") }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Drag-drop overlay ── */}
+      <AnimatePresence>
+        {draggingOver && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-accent/40 rounded-xl"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <ImageIcon className="h-8 w-8 text-accent/70" />
+              <span className="text-[13px] font-medium text-accent/80">Solte a imagem aqui</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Toast ── */}
       <AnimatePresence>
@@ -2234,11 +2355,11 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           )}
         </AnimatePresence>
 
-        {/* Attachment preview */}
+        {/* Document attachment preview (images use the full overlay) */}
         <AnimatePresence>
-          {attachment && (
+          {attachment && attachment.kind === "document" && (
             <div className="pt-2">
-              <AttachmentPreview attachment={attachment} onRemove={() => setAttachment(null)} />
+              <DocumentPreview attachment={attachment} onRemove={() => setAttachment(null)} />
             </div>
           )}
         </AnimatePresence>
