@@ -23,7 +23,7 @@ export function useSAPlaygroundSend() {
   return useMutation<
     SAPlaygroundResult,
     Error,
-    { tenantId: string; contactId: string; message: string }
+    { tenantId: string; contactId: string; message: string; llmProviderOverride?: string; llmModelOverride?: string }
   >({
     mutationFn: (body) => superAdminApi.sendPlaygroundMessage(body),
   })

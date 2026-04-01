@@ -354,6 +354,10 @@ function ConfigPanel({
   setFunnelId,
   stageId,
   setStageId,
+  llmProvider,
+  setLlmProvider,
+  llmModel,
+  setLlmModel,
   onInit,
   onReset,
   initPending,
@@ -366,6 +370,10 @@ function ConfigPanel({
   setFunnelId: (id: string | null) => void
   stageId: string | null
   setStageId: (id: string | null) => void
+  llmProvider: string | null
+  setLlmProvider: (v: string | null) => void
+  llmModel: string | null
+  setLlmModel: (v: string | null) => void
   onInit: () => void
   onReset: () => void
   initPending: boolean
@@ -526,6 +534,57 @@ function ConfigPanel({
             />
           </motion.div>
         )}
+        {/* LLM Override */}
+        <div className="pt-3 border-t border-border/40">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80 mb-1.5 block">
+            Modelo (override)
+          </label>
+          <select
+            value={llmProvider ?? ""}
+            onChange={(e) => {
+              const p = e.target.value || null
+              setLlmProvider(p)
+              setLlmModel(null)
+            }}
+            className="w-full h-8 rounded-lg border border-border/60 bg-card/50 px-2 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30 cursor-pointer mb-1.5"
+          >
+            <option value="">Config do tenant</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="openai">OpenAI (GPT)</option>
+            <option value="gemini">Google (Gemini)</option>
+          </select>
+          {llmProvider && (
+            <select
+              value={llmModel ?? ""}
+              onChange={(e) => setLlmModel(e.target.value || null)}
+              className="w-full h-8 rounded-lg border border-border/60 bg-card/50 px-2 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30 cursor-pointer"
+            >
+              <option value="">Selecionar modelo</option>
+              {llmProvider === "anthropic" && (
+                <>
+                  <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+                  <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                </>
+              )}
+              {llmProvider === "openai" && (
+                <>
+                  <option value="gpt-5.4-mini">GPT-5.4 Mini</option>
+                  <option value="gpt-4o-mini">GPT-4o Mini</option>
+                  <option value="gpt-4o">GPT-4o</option>
+                </>
+              )}
+              {llmProvider === "gemini" && (
+                <>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                </>
+              )}
+            </select>
+          )}
+          {!llmProvider && (
+            <p className="text-[9px] text-muted-foreground/50 mt-1">Usa o modelo configurado no stage/env</p>
+          )}
+        </div>
       </div>
 
       {/* Action buttons */}
@@ -1005,6 +1064,8 @@ export default function SAPlaygroundPage() {
   const [funnelId, setFunnelId] = useState<string | null>(null)
   const [stageId, setStageId] = useState<string | null>(null)
   const [contactId, setContactId] = useState<string | null>(null)
+  const [llmProvider, setLlmProvider] = useState<string | null>(null)
+  const [llmModel, setLlmModel] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [results, setResults] = useState<SAPlaygroundResult[]>([])
   const [selectedResultIdx, setSelectedResultIdx] = useState<number | null>(null)
@@ -1072,7 +1133,13 @@ export default function SAPlaygroundPage() {
       ])
 
       sendMut.mutate(
-        { tenantId, contactId, message },
+        {
+          tenantId,
+          contactId,
+          message,
+          llmProviderOverride: llmProvider ?? undefined,
+          llmModelOverride: llmModel ?? undefined,
+        },
         {
           onSuccess: (result) => {
             setSending(false)
@@ -1117,6 +1184,10 @@ export default function SAPlaygroundPage() {
         setFunnelId={setFunnelId}
         stageId={stageId}
         setStageId={setStageId}
+        llmProvider={llmProvider}
+        setLlmProvider={setLlmProvider}
+        llmModel={llmModel}
+        setLlmModel={setLlmModel}
         onInit={handleInit}
         onReset={handleReset}
         initPending={initMut.isPending}

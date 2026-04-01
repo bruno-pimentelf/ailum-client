@@ -188,7 +188,7 @@ export const superAdminApi = {
   initPlayground: (body: { tenantId: string; funnelId: string; stageId?: string }) =>
     apiFetch<{ contactId: string; contact: Record<string, unknown> }>("/super-admin/playground/init", { method: "POST", body }),
 
-  sendPlaygroundMessage: (body: { tenantId: string; contactId: string; message: string }) =>
+  sendPlaygroundMessage: (body: { tenantId: string; contactId: string; message: string; llmProviderOverride?: string; llmModelOverride?: string }) =>
     apiFetch<SAPlaygroundResult>("/super-admin/playground/message", {
       method: "POST",
       body,
