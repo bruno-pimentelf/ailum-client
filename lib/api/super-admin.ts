@@ -76,6 +76,39 @@ export interface PlanCreateInput {
   displayOrder?: number
 }
 
+export interface DryRunAction {
+  type: string // WHATSAPP_SEND, APPOINTMENT_CREATE, PIX_CHARGE, STAGE_MOVE, TRIGGER_DISPATCH, etc.
+  description: string
+  data?: Record<string, unknown>
+}
+
+export interface SAPlaygroundResult {
+  status: string
+  reply: string | null
+  confirmationSummary?: string
+  intent?: string
+  confidence?: number
+  interceptedActions: DryRunAction[]
+  inputTokens?: number
+  outputTokens?: number
+  llmProvider?: string
+  llmModel?: string
+  estimatedCostUsd?: number
+  durationMs?: number
+  contactSentiment?: string
+  auditDetails?: Array<{ label: string; detail: string; data?: Record<string, unknown> }>
+}
+
+export interface TenantInstance {
+  id: string
+  instanceId: string
+  label: string | null
+  connectedPhone: string | null
+  isAiEnabled: boolean
+  isDefault: boolean
+  isActive: boolean
+}
+
 export const superAdminApi = {
   listTenants: (params?: { search?: string; page?: number }) => {
     const qs = new URLSearchParams()
@@ -148,4 +181,23 @@ export const superAdminApi = {
       `/super-admin/tenants/${tenantId}/subscription/reset`,
       { method: "POST" }
     ),
+
+  listTenantInstances: (tenantId: string) =>
+    apiFetch<TenantInstance[]>(`/super-admin/tenants/${tenantId}/instances`),
+
+  initPlayground: (body: { tenantId: string; funnelId: string; stageId?: string }) =>
+    apiFetch<{ contactId: string; contact: Record<string, unknown> }>("/super-admin/playground/init", { method: "POST", body }),
+
+  sendPlaygroundMessage: (body: { tenantId: string; contactId: string; message: string }) =>
+    apiFetch<SAPlaygroundResult>("/super-admin/playground/message", {
+      method: "POST",
+      body,
+      signal: AbortSignal.timeout(120_000),
+    }),
+
+  resetPlayground: (tenantId: string) =>
+    apiFetch<void>("/super-admin/playground/reset", { method: "POST", body: { tenantId } }),
+
+  getPlaygroundAudit: (tenantId: string, limit?: number) =>
+    apiFetch<Array<Record<string, unknown>>>(`/super-admin/playground/audit?tenantId=${tenantId}&limit=${limit ?? 20}`),
 }

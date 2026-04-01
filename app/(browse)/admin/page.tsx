@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Warning,
   ArrowsClockwise,
+  TestTube,
 } from "@phosphor-icons/react"
 import { useSuperAdminOverviewStats } from "@/hooks/use-super-admin"
 
@@ -173,6 +174,12 @@ export default function AdminPage() {
           label="Planos"
           description="Gerenciar planos e assinaturas"
           icon={CreditCard}
+        />
+        <QuickLink
+          href="/admin/playground"
+          label="Playground"
+          description="Testar agente IA em modo dry-run"
+          icon={TestTube}
         />
       </div>
     </div>

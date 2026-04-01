@@ -15,7 +15,6 @@ import {
   CalendarBlank,
   User,
   Phone,
-  TestTube,
   ChartLineUp,
   CurrencyCircleDollar,
   WhatsappLogo,
@@ -249,11 +248,6 @@ function cloneNav(entries: NavEntry[]): NavEntry[] {
 function getNavigation(isSuperAdmin?: boolean): NavEntry[] {
   const nav = cloneNav(baseNavigation)
   if (isSuperAdmin) {
-    // Add Playground to Atendimento group
-    const atendimento = nav.find((e) => isGroup(e) && e.label === "Atendimento") as (NavGroup & { type: "group" }) | undefined
-    if (atendimento) {
-      atendimento.children.push({ label: "Playground", href: "/playground", icon: TestTube })
-    }
     // Insert "Admin" before "Configurações" (last item)
     const settingsIdx = nav.findIndex(
       (e) => !isGroup(e) && (e as NavItem).href === "/settings"
