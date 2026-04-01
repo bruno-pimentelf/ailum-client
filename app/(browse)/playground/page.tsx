@@ -199,17 +199,17 @@ function TypingIndicator() {
       transition={{ duration: 0.2, ease }}
       className="flex items-end gap-2"
     >
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 border border-accent/20">
-        <Robot className="h-3.5 w-3.5 text-accent" weight="fill" />
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 border border-accent/20">
+        <Robot className="h-3 w-3 text-accent" weight="fill" />
       </div>
-      <div className="rounded-2xl rounded-bl-md px-4 py-2.5 bg-card border border-border/60">
-        <div className="flex gap-1">
+      <div className="rounded-2xl rounded-bl-sm px-4 py-2.5 bg-card border border-border/60">
+        <div className="flex gap-0.5">
           {[0, 1, 2].map((i) => (
             <motion.span
               key={i}
-              className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50"
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.12, ease: "easeInOut" }}
+              className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40"
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
             />
           ))}
         </div>
@@ -463,21 +463,21 @@ function MessageBubble({
 
   return (
     <motion.div
-      initial={animate ? { opacity: 0, y: 10 } : false}
+      initial={animate ? { opacity: 0, y: 6 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease }}
-      className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}
+      transition={{ duration: 0.25, ease }}
+      className={`flex items-end gap-2 ${isUser ? "flex-row-reverse" : ""}`}
     >
       {!isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/15 border border-accent/20 mb-1">
-          <Robot className="h-3.5 w-3.5 text-accent" weight="fill" />
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 border border-accent/20 mb-1">
+          <Robot className="h-3 w-3 text-accent" weight="fill" />
         </div>
       )}
       <div
-        className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
+        className={`max-w-[72%] rounded-2xl px-3.5 py-2.5 ${
           isUser
-            ? "bg-accent/15 border border-accent/20 rounded-br-md"
-            : "bg-card border border-border/60 rounded-bl-md"
+            ? "bg-accent/15 border border-accent/20 rounded-br-sm"
+            : "bg-card border border-border/60 rounded-bl-sm"
         }`}
       >
         {isPixCharge ? (
@@ -493,11 +493,16 @@ function MessageBubble({
         ) : isAudio && audioUrl ? (
           <AudioPlayer url={audioUrl} text={msg.content} />
         ) : (
-          <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words text-foreground">
+          <p className="text-[12px] leading-relaxed whitespace-pre-wrap break-words text-foreground/90">
             {msg.content}
           </p>
         )}
-        <span className="text-[10px] text-muted-foreground/90 mt-1 block">{time}</span>
+        <div className={`flex items-center mt-1 gap-1.5 ${isUser ? "justify-end" : ""}`}>
+          {!isUser && msg.role === "AGENT" && (
+            <Robot className="h-2.5 w-2.5 text-accent/50" weight="fill" />
+          )}
+          <span className="text-[10px] text-muted-foreground/50">{time}</span>
+        </div>
       </div>
     </motion.div>
   )
@@ -660,9 +665,9 @@ export default function PlaygroundPage() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full overflow-hidden px-4 md:px-5">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 shrink-0 h-11">
+      <div className="flex items-center justify-between border-b border-border/50 shrink-0 h-11 px-4 md:px-5">
         <div className="flex items-center gap-2.5">
           <Robot className="h-4 w-4 text-accent" weight="fill" />
           <span className="text-[13px] font-semibold text-foreground">Playground</span>
@@ -759,10 +764,10 @@ export default function PlaygroundPage() {
       ) : (
       <ResizablePanelGroup className="flex-1 min-h-0 h-full">
         {/* Chat panel */}
-        <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-w-0">
+        <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-w-0 overflow-hidden">
       {/* Chat body */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
             {contactLoading && (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <motion.div
@@ -801,7 +806,7 @@ export default function PlaygroundPage() {
 
         {/* Input area */}
         {isReady && (
-          <div className="shrink-0 border-t border-border/50 px-6 py-4">
+          <div className="shrink-0 border-t border-border/50 px-5 py-3">
               {error && (
                 <p className="text-[12px] text-rose-400 mb-3">{error}</p>
               )}
@@ -835,7 +840,7 @@ export default function PlaygroundPage() {
         <ResizableHandle withHandle className="bg-border/60 hover:bg-border transition-colors data-[resize-handle-state=drag]:bg-accent/30" />
 
         {/* Audit panel — scrollable container */}
-        <ResizablePanel defaultSize={40} minSize={28} className="flex flex-col min-w-0 min-h-0 border-l border-border/50 bg-muted/[0.03]">
+        <ResizablePanel defaultSize={40} minSize={28} className="flex flex-col min-w-0 min-h-0 overflow-hidden border-l border-border/50 bg-muted/[0.03]">
           <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b border-border/50">
             <div className="flex items-center gap-2">
               <ChartLineUp className="h-4 w-4 text-accent" weight="duotone" />
