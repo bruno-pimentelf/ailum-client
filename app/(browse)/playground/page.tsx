@@ -762,12 +762,12 @@ export default function PlaygroundPage() {
       {!mounted ? (
         <div className="flex-1 min-h-0 overflow-hidden" suppressHydrationWarning />
       ) : (
-      <ResizablePanelGroup className="flex-1 min-h-0 h-full">
+      <ResizablePanelGroup className="flex-1 min-h-0 overflow-hidden" direction="horizontal">
         {/* Chat panel */}
-        <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-w-0 overflow-hidden">
+        <ResizablePanel defaultSize={60} minSize={40} className="flex flex-col min-w-0 min-h-0 overflow-hidden">
       {/* Chat body */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+      <div className="flex-1 flex flex-col min-h-0 h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-3">
             {contactLoading && (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <motion.div
@@ -840,7 +840,7 @@ export default function PlaygroundPage() {
         <ResizableHandle withHandle className="bg-border/60 hover:bg-border transition-colors data-[resize-handle-state=drag]:bg-accent/30" />
 
         {/* Audit panel — scrollable container */}
-        <ResizablePanel defaultSize={40} minSize={28} className="flex flex-col min-w-0 min-h-0 overflow-hidden border-l border-border/50 bg-muted/[0.03]">
+        <ResizablePanel defaultSize={40} minSize={28} className="flex flex-col min-w-0 min-h-0 h-0 overflow-hidden border-l border-border/50 bg-muted/[0.03]">
           <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b border-border/50">
             <div className="flex items-center gap-2">
               <ChartLineUp className="h-4 w-4 text-accent" weight="duotone" />
