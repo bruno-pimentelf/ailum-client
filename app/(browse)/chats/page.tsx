@@ -10,6 +10,7 @@ import {
   WifiSlash,
   Robot,
   User,
+  UserCircle,
 } from "@phosphor-icons/react"
 import { formatMessagePreview } from "@/components/app/message-preview"
 import { ChatView } from "@/components/app/chat-view"
@@ -235,8 +236,11 @@ function ConversationItem({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+type ChatTab = "ai" | "manual"
+
 export default function ChatsPage() {
   const [search, setSearch] = useState("")
+  const [chatTab, setChatTab] = useState<ChatTab>("ai")
   // Store the full contact object — doc.id is the contactId for API calls
   const [selected, setSelected] = useState<FirestoreContact | null>(null)
 
@@ -257,10 +261,34 @@ export default function ChatsPage() {
   const showInstanceHint = instanceMap.size > 1
   const selectedInstanceId = useInstanceStore((s) => s.selectedInstanceId)
 
-  const filtered = contacts.filter((c) => {
+  // Build a map of instance AI settings for quick lookup
+  const zapiInstances = useMemo(
+    () => (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId),
+    [integrations],
+  )
+
+  // Determine if AI is effectively active for a given contact
+  const isAiEffective = (c: FirestoreContact): boolean => {
+    // Contact-level: AI disabled or manually assigned to a member
+    if (c.isAiEnabled === false || c.assignedMemberId) return false
+    // Instance-level: find the instance for this contact
+    const inst = zapiInstances.find((i) => i.instanceId === c.zapiInstanceId)
+    if (!inst) return false
+    // Instance AI fully enabled
+    if (inst.isAiEnabled) return true
+    // Test mode: only whitelisted phones
+    if (inst.isAiTestMode) {
+      const phones = inst.aiTestPhones ?? []
+      if (phones.length === 0) return false
+      const contactPhone = (c.contactPhone ?? c.phone ?? "").replace(/\D/g, "")
+      return phones.some((tp) => contactPhone.endsWith(tp.replace(/\D/g, "")))
+    }
+    return false
+  }
+
+  const baseFiltered = contacts.filter((c) => {
     const ph = c.contactPhone ?? c.phone ?? ""
     if (ph === "__playground__") return false
-    // Filter by instance if selected — hide contacts without matching instance
     if (selectedInstanceId && c.zapiInstanceId !== selectedInstanceId) return false
     if (!search) return true
     const q = search.toLowerCase()
@@ -270,6 +298,16 @@ export default function ChatsPage() {
       (c.lastMessage ?? "").toLowerCase().includes(q)
     )
   })
+
+  const aiContacts = baseFiltered.filter((c) => isAiEffective(c))
+  const manualContacts = baseFiltered.filter((c) => !isAiEffective(c))
+  const filtered = chatTab === "ai" ? aiContacts : manualContacts
+
+  // Auto-switch tab when selected contact changes responsibility
+  const selectedInAi = selected ? aiContacts.some((c) => c.id === selected.id) : false
+  const selectedInManual = selected ? manualContacts.some((c) => c.id === selected.id) : false
+  if (selected && selectedInManual && chatTab === "ai") setChatTab("manual")
+  if (selected && selectedInAi && chatTab === "manual") setChatTab("ai")
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -306,6 +344,42 @@ export default function ChatsPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* ── Conversation list ── */}
         <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-background/50">
+          {/* AI / Manual tabs */}
+          <div className="flex items-stretch border-b border-border/50 px-3 pt-2">
+            {([
+              { key: "ai" as ChatTab, label: "IA", icon: Robot, count: aiContacts.length },
+              { key: "manual" as ChatTab, label: "Manuais", icon: UserCircle, count: manualContacts.length },
+            ]).map((tab) => {
+              const active = chatTab === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setChatTab(tab.key)}
+                  className={`relative flex items-center gap-1.5 px-3 pb-2 text-[11px] font-bold transition-colors cursor-pointer ${
+                    active ? "text-foreground" : "text-muted-foreground/60 hover:text-muted-foreground/80"
+                  }`}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="chat-tab-indicator"
+                      className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-accent"
+                      transition={{ duration: 0.18, ease }}
+                    />
+                  )}
+                  <tab.icon className="h-3.5 w-3.5" weight={active ? "fill" : "regular"} />
+                  <span>{tab.label}</span>
+                  {tab.count > 0 && (
+                    <span className={`text-[9px] rounded-full px-1.5 py-0.5 font-semibold ${
+                      active ? "bg-accent/15 text-accent" : "bg-muted/40 text-muted-foreground/60"
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
           <div className="p-3 border-b border-border/50">
             <div className="relative">
               <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/85 pointer-events-none" />
