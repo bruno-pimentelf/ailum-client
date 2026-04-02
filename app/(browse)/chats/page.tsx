@@ -332,11 +332,17 @@ export default function ChatsPage() {
   const manualContacts = baseFiltered.filter((c) => !isAiEffective(c))
   const filtered = chatTab === "ai" ? aiContacts : manualContacts
 
-  // Auto-switch tab when selected contact changes responsibility
-  const selectedInAi = selected ? aiContacts.some((c) => c.id === selected.id) : false
-  const selectedInManual = selected ? manualContacts.some((c) => c.id === selected.id) : false
-  if (selected && selectedInManual && chatTab === "ai") setChatTab("manual")
-  if (selected && selectedInAi && chatTab === "manual") setChatTab("ai")
+  // Auto-switch tab only when the selected contact's responsibility changes via Firestore
+  // (not on user tab clicks). Track the last known AI state of the selected contact.
+  const selectedAiState = selected ? isAiEffective(selected) : null
+  const prevSelectedAiRef = useRef<boolean | null>(null)
+  useEffect(() => {
+    if (selectedAiState === null) { prevSelectedAiRef.current = null; return }
+    if (prevSelectedAiRef.current !== null && prevSelectedAiRef.current !== selectedAiState) {
+      setChatTab(selectedAiState ? "ai" : "manual")
+    }
+    prevSelectedAiRef.current = selectedAiState
+  }, [selectedAiState])
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -383,7 +389,14 @@ export default function ChatsPage() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setChatTab(tab.key)}
+                  onClick={() => {
+                    setChatTab(tab.key)
+                    // Deselect if current contact is not in the new tab
+                    if (selected) {
+                      const targetList = tab.key === "ai" ? aiContacts : manualContacts
+                      if (!targetList.some((c) => c.id === selected.id)) setSelected(null)
+                    }
+                  }}
                   className={`relative flex items-center gap-1.5 px-3 pb-2 text-[11px] font-bold transition-colors cursor-pointer ${
                     active ? "text-foreground" : "text-muted-foreground/60 hover:text-muted-foreground/80"
                   }`}
