@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useCallback, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   MagnifyingGlass,
@@ -146,6 +146,35 @@ function formatRelativeTime(ts: FirestoreContact["lastMessageAt"] | undefined): 
 
 // ─── Conversation item ────────────────────────────────────────────────────────
 
+function ScrollSentinel({ onVisible, loading }: { onVisible: () => void; loading: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const onVisibleRef = useRef(onVisible)
+  onVisibleRef.current = onVisible
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) onVisibleRef.current() },
+      { rootMargin: "200px" },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} className="flex items-center justify-center py-3">
+      {loading && (
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          className="h-4 w-4 rounded-full border-2 border-accent/20 border-t-accent"
+        />
+      )}
+    </div>
+  )
+}
+
 function ConversationItem({
   contact,
   active,
@@ -245,7 +274,7 @@ export default function ChatsPage() {
   const [selected, setSelected] = useState<FirestoreContact | null>(null)
 
   const tenantId = useAuthStore((s) => s.tenantId)
-  const { contacts, loading } = useContacts(tenantId)
+  const { contacts, loading, loadingMore, hasMore, loadMore } = useContacts(tenantId)
   const { whatsappConnected, whatsappError } = useWhatsappStatus(tenantId)
   const { data: integrations } = useIntegrations()
 
@@ -405,17 +434,24 @@ export default function ChatsPage() {
             )}
 
             {!loading && (
-              <AnimatePresence initial={false}>
-                {filtered.map((contact, i) => (
-                  <ConversationItem
-                    key={contact.id ?? i}
-                    contact={contact}
-                    active={selected?.id === contact.id}
-                    onClick={() => setSelected(contact)}
-                    instanceLabel={showInstanceHint && contact.zapiInstanceId ? instanceMap.get(contact.zapiInstanceId) : null}
-                  />
-                ))}
-              </AnimatePresence>
+              <>
+                <AnimatePresence initial={false}>
+                  {filtered.map((contact, i) => (
+                    <ConversationItem
+                      key={contact.id ?? i}
+                      contact={contact}
+                      active={selected?.id === contact.id}
+                      onClick={() => setSelected(contact)}
+                      instanceLabel={showInstanceHint && contact.zapiInstanceId ? instanceMap.get(contact.zapiInstanceId) : null}
+                    />
+                  ))}
+                </AnimatePresence>
+
+                {/* Scroll sentinel — triggers loadMore when visible */}
+                {hasMore && !search && (
+                  <ScrollSentinel onVisible={loadMore} loading={loadingMore} />
+                )}
+              </>
             )}
 
             {!loading && filtered.length === 0 && (

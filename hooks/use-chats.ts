@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import {
   collection,
   doc,
@@ -11,42 +11,104 @@ import {
   getDocs,
   onSnapshot,
   type DocumentSnapshot,
+  type QueryDocumentSnapshot,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuthStore } from "@/lib/auth-store"
 import type { FirestoreContact, FirestoreMessage } from "@/lib/types/firestore"
 
+const REALTIME_PAGE = 30
+const LOAD_MORE_SIZE = 30
+
 /**
- * Real-time list of conversations for a tenant, ordered by most recent.
- * Only opens the listener after Firebase Auth is ready (firebaseReady flag).
+ * Real-time contact list with infinite scroll.
+ *
+ * - First page (most recent 30) is a live onSnapshot subscription.
+ * - Older pages are fetched on demand via getDocs (static).
+ * - Contacts from both are merged by ID (real-time wins on conflict).
  */
 export function useContacts(tenantId: string | null) {
-  const [contacts, setContacts] = useState<FirestoreContact[]>([])
+  const [realtimeContacts, setRealtimeContacts] = useState<FirestoreContact[]>([])
+  const [olderContacts, setOlderContacts] = useState<FirestoreContact[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const firebaseReady = useAuthStore((s) => s.firebaseReady)
 
+  // Keep a ref to the last doc of the realtime snapshot for cursor
+  const realtimeLastDoc = useRef<QueryDocumentSnapshot | null>(null)
+  // Keep a ref to the last doc of the oldest page fetched
+  const olderCursor = useRef<QueryDocumentSnapshot | null>(null)
+
+  // Real-time subscription for the most recent contacts
   useEffect(() => {
     if (!tenantId || !firebaseReady) return
     setLoading(true)
+    setOlderContacts([])
+    setHasMore(true)
+    olderCursor.current = null
 
     const ref = collection(db, "tenants", tenantId, "contacts")
-    const q = query(ref, orderBy("lastMessageAt", "desc"), limit(50))
+    const q = query(ref, orderBy("lastMessageAt", "desc"), limit(REALTIME_PAGE))
 
     const unsub = onSnapshot(q, (snap) => {
-      setContacts(
-        snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreContact))
+      setRealtimeContacts(
+        snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreContact)),
       )
+      realtimeLastDoc.current = snap.docs[snap.docs.length - 1] ?? null
       setLoading(false)
     })
 
     return () => unsub()
   }, [tenantId, firebaseReady])
 
-  return { contacts, loading }
+  // Load more (older contacts, static fetch)
+  const loadMore = useCallback(async () => {
+    if (!tenantId || !firebaseReady || loadingMore || !hasMore) return
+
+    const cursor = olderCursor.current ?? realtimeLastDoc.current
+    if (!cursor) { setHasMore(false); return }
+
+    setLoadingMore(true)
+    try {
+      const ref = collection(db, "tenants", tenantId, "contacts")
+      const q = query(
+        ref,
+        orderBy("lastMessageAt", "desc"),
+        startAfter(cursor),
+        limit(LOAD_MORE_SIZE),
+      )
+      const snap = await getDocs(q)
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreContact))
+
+      if (docs.length > 0) {
+        olderCursor.current = snap.docs[snap.docs.length - 1]
+        setOlderContacts((prev) => {
+          // Dedupe by id
+          const existingIds = new Set(prev.map((c) => c.id))
+          const newOnly = docs.filter((d) => !existingIds.has(d.id))
+          return [...prev, ...newOnly]
+        })
+      }
+
+      if (docs.length < LOAD_MORE_SIZE) setHasMore(false)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [tenantId, firebaseReady, loadingMore, hasMore])
+
+  // Merge: realtime contacts win on conflict (they're more up to date)
+  const contacts = useMemo(() => {
+    const realtimeIds = new Set(realtimeContacts.map((c) => c.id))
+    const olderFiltered = olderContacts.filter((c) => !realtimeIds.has(c.id))
+    return [...realtimeContacts, ...olderFiltered]
+  }, [realtimeContacts, olderContacts])
+
+  return { contacts, loading, loadingMore, hasMore, loadMore }
 }
 
 const INITIAL_PAGE_SIZE = 50
-const LOAD_MORE_SIZE = 50
+const MSG_LOAD_MORE_SIZE = 50
 
 /**
  * Real-time messages for a specific contact.
@@ -112,14 +174,14 @@ export function useMessages(tenantId: string | null, contactId: string | null) {
         messagesRef,
         orderBy("createdAt", "desc"),
         startAfter(cursor),
-        limit(LOAD_MORE_SIZE)
+        limit(MSG_LOAD_MORE_SIZE)
       )
       const snap = await getDocs(q)
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FirestoreMessage))
       if (snap.docs.length > 0) {
         setOldestSnapshot(snap.docs[snap.docs.length - 1])
         setOlderMessages((prev) => [...prev, ...docs])
-        setHasMoreOlder(snap.docs.length >= LOAD_MORE_SIZE)
+        setHasMoreOlder(snap.docs.length >= MSG_LOAD_MORE_SIZE)
       } else {
         setHasMoreOlder(false)
       }
