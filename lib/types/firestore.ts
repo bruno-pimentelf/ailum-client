@@ -40,6 +40,7 @@ export interface FirestoreContact {
   stageId?: string | null
   funnelId?: string | null
   assignedProfessionalId?: string | null
+  assignedMemberId?: string | null
 
   // Conversation preview
   lastMessage?: string

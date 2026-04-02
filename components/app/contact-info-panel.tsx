@@ -48,6 +48,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import type { FirestoreContact, FirestoreReminder } from "@/lib/types/firestore"
+import { ResponsibleSelector } from "./responsible-selector"
 import { createReminder, toggleReminder, deleteReminder, generateSummary, getFollowUps, toggleFollowUpsPause, type FollowUpItem } from "@/lib/api/conversations"
 import { schedulingApi, type Appointment } from "@/lib/api/scheduling"
 import { useQuery } from "@tanstack/react-query"
@@ -860,6 +861,14 @@ export function ContactInfoPanel({ contactId, initialContact, onDeleted }: Conta
           {!formattedPhone && !contact.email && !memories["name"] && (
             <p className="text-[12px] text-muted-foreground/60">Nenhuma informação de contato registrada</p>
           )}
+        </div>
+
+        {/* Responsible */}
+        <div className="rounded-xl border border-border/40 bg-card/20 p-4">
+          <ResponsibleSelector
+            contactId={contactId}
+            assignedMemberId={contact.assignedMemberId ?? null}
+          />
         </div>
 
         {/* Summary */}

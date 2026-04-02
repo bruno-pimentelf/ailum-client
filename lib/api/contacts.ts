@@ -22,6 +22,7 @@ export interface ApiContact {
   currentFunnel: { id: string; name: string } | null
   currentStage: { id: string; name: string; color: string } | null
   assignedProfessional: { id: string; fullName: string } | null
+  assignedMember: { id: string; userId: string; role: string } | null
 }
 
 export interface ContactsResponse {
@@ -143,6 +144,9 @@ export const contactsApi = {
 
   importCommit: (body: ContactImportCommitInput) =>
     apiFetch<ContactImportCommitResponse>("/contacts/imports/commit", { method: "POST", body }),
+
+  update: (contactId: string, body: { assignedMemberId?: string | null; name?: string; email?: string; notes?: string }) =>
+    apiFetch<ApiContact>(`/contacts/${contactId}`, { method: "PATCH", body }),
 
   toggleAi: (contactId: string, enabled: boolean) =>
     apiFetch<{ id: string; isAiEnabled: boolean }>(`/contacts/${contactId}/ai`, {

@@ -25,6 +25,7 @@ export interface BoardContact {
   currentStageId: string | null
   summary: string | null
   assignedProfessional: { id: string; fullName: string } | null
+  assignedMember: { id: string; userId: string; role: string; userName: string | null } | null
   messages: Array<{
     content: string
     type: string

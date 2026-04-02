@@ -35,6 +35,7 @@ import {
   Sparkle,
   ChatCircleText,
   CalendarPlus,
+  UserCircle,
   X,
 } from "@phosphor-icons/react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -304,6 +305,17 @@ function KanbanCard({
         {contact.assignedProfessional && (
           <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/20 px-1.5 py-0.5 text-[10px] text-muted-foreground/90">
             {contact.assignedProfessional.fullName.split(" ")[0]}
+          </span>
+        )}
+        {contact.assignedMember ? (
+          <span className="inline-flex items-center gap-1 rounded-md border border-violet-500/25 bg-violet-500/10 px-1.5 py-0.5 text-[10px] text-violet-400">
+            <UserCircle className="h-3 w-3" weight="fill" />
+            {contact.assignedMember.userName?.split(" ")[0] ?? "Secretaria"}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-md border border-accent/25 bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
+            <Robot className="h-3 w-3" weight="fill" />
+            IA
           </span>
         )}
         {contact.summary && <SummaryBadge summary={contact.summary} />}

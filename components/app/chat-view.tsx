@@ -38,6 +38,7 @@ import {
 } from "@phosphor-icons/react"
 import { QuickScheduleModal } from "./quick-schedule-modal"
 import type { QuickScheduleContact } from "./quick-schedule-modal"
+import { ResponsibleSelector } from "./responsible-selector"
 import { PixChargeBlock } from "./pix-charge-block"
 import { useMessages, useTypingStatus } from "@/hooks/use-chats"
 import { useIntegrations } from "@/hooks/use-integrations"
@@ -2222,6 +2223,12 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
             <CalendarPlus className="h-3.5 w-3.5" />
             <span>Agendar</span>
           </button>
+          {/* Responsible selector */}
+          <ResponsibleSelector
+            contactId={contact.id ?? ""}
+            assignedMemberId={contact.assignedMemberId as string | null ?? null}
+            compact
+          />
           {/* AI toggle */}
           <div className="relative group">
             <button
@@ -2459,7 +2466,13 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
           )}
         </AnimatePresence>
 
-        {/* Input row */}
+        {/* AI-managed notice or Input row */}
+        {isAiEnabled && !contact.assignedMemberId ? (
+          <div className="flex items-center justify-center gap-2 px-4 py-4 border-t border-border/30">
+            <Robot className="h-4 w-4 text-accent/60" weight="fill" />
+            <p className="text-[12px] text-muted-foreground/70">A IA esta respondendo este contato. Assuma a conversa para enviar mensagens.</p>
+          </div>
+        ) : (
         <form onSubmit={handleSendText} className="flex items-center gap-2 px-4 py-3">
           {/* Hidden file inputs */}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
@@ -2590,6 +2603,7 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
             )}
           </AnimatePresence>
         </form>
+        )}
       </div>
     </motion.div>
 

@@ -139,6 +139,7 @@ export function useBoard(funnelId: string | null, params?: { search?: string }) 
                     zapiInstanceId: patch.zapiInstanceId ?? null,
                     summary: null,
                     assignedProfessional: null,
+                    assignedMember: null,
                     messages: [],
                   }
               next[newStageId] = [...next[newStageId], merged]
