@@ -380,7 +380,7 @@ export default function ChatsPage() {
         {/* ── Conversation list ── */}
         <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-background/50">
           {/* AI / Manual tabs */}
-          <div className="flex items-stretch border-b border-border/50 px-3 pt-2">
+          <div className="flex items-stretch border-b border-border/50 pt-2">
             {([
               { key: "ai" as ChatTab, label: "IA", icon: Robot, count: aiContacts.length },
               { key: "manual" as ChatTab, label: "Manuais", icon: UserCircle, count: manualContacts.length },
@@ -397,7 +397,7 @@ export default function ChatsPage() {
                       if (!targetList.some((c) => c.id === selected.id)) setSelected(null)
                     }
                   }}
-                  className={`relative flex items-center gap-1.5 px-3 pb-2 text-[11px] font-bold transition-colors cursor-pointer ${
+                  className={`relative flex-1 flex items-center justify-center gap-1.5 pb-2 text-[11px] font-bold transition-colors cursor-pointer ${
                     active ? "text-foreground" : "text-muted-foreground/60 hover:text-muted-foreground/80"
                   }`}
                 >
