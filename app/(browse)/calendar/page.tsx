@@ -914,7 +914,7 @@ export default function CalendarPage() {
               className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border/60 bg-foreground/[0.05] text-foreground/85 text-[12px] font-bold hover:bg-foreground/[0.08] hover:border-border transition-colors duration-200 group cursor-pointer"
             >
               <Sparkle className="h-3.5 w-3.5 text-accent group-hover:scale-110 transition-transform duration-200" weight="duotone" />
-              Disponibilidade
+              Concierge
             </button>
 
             <button

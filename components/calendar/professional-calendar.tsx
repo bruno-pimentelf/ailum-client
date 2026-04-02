@@ -23,8 +23,9 @@ import {
   Repeat,
   Pencil,
   Trash,
+  Sparkle,
 } from "@phosphor-icons/react"
-// useQueryClient no longer needed — availability editing removed from calendar
+import { AvailabilityDrawer } from "./availability-drawer"
 import {
   useProfessional,
   useProfessionalMutations,
@@ -1136,6 +1137,7 @@ export function ProfessionalCalendar({
   const [novoAgendamentoOpen, setNovoAgendamentoOpen] = useState(false)
   const [novoAgendamentoDate, setNovoAgendamentoDate] = useState<Date | undefined>(undefined)
   const [novoAgendamentoTime, setNovoAgendamentoTime] = useState<string | undefined>(undefined)
+  const [conciergeOpen, setConciergeOpen] = useState(false)
   const [contextMenu, setContextMenu] = useState<{
     date: Date
     x: number
@@ -1362,6 +1364,14 @@ export function ProfessionalCalendar({
                 </button>
               ))}
             </div>
+
+            <button
+              onClick={() => setConciergeOpen(true)}
+              className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border/60 bg-foreground/[0.05] text-foreground/85 text-[12px] font-bold hover:bg-foreground/[0.08] hover:border-border transition-colors duration-200 group cursor-pointer"
+            >
+              <Sparkle className="h-3.5 w-3.5 text-accent group-hover:scale-110 transition-transform duration-200" weight="duotone" />
+              Concierge
+            </button>
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -2189,6 +2199,12 @@ export function ProfessionalCalendar({
           appointment={selectedAppointment}
         />
       )}
+
+      <AvailabilityDrawer
+        open={conciergeOpen}
+        onClose={() => setConciergeOpen(false)}
+        defaultProfessionalId={professionalId}
+      />
     </div>
     </TooltipProvider>
   )
