@@ -21,23 +21,29 @@ export function ResponsibleSelector({
   compact = false,
 }: ResponsibleSelectorProps) {
   const [open, setOpen] = useState(false)
+  const [optimisticMemberId, setOptimisticMemberId] = useState<string | null | undefined>(undefined)
   const ref = useRef<HTMLDivElement>(null)
   const { data: members } = useMembers()
+
+  // Sync optimistic state with prop when Firestore catches up
+  const effectiveMemberId = optimisticMemberId !== undefined ? optimisticMemberId : assignedMemberId
 
   // Only show secretaries (SECRETARY role) as assignable
   const secretaries = (members ?? []).filter(
     (m) => m.role === "SECRETARY" && m.isActive && m.user,
   )
 
-  const currentMember = assignedMemberId
-    ? secretaries.find((m) => m.id === assignedMemberId) ?? null
+  const currentMember = effectiveMemberId
+    ? secretaries.find((m) => m.id === effectiveMemberId) ?? null
     : null
 
-  const isAI = !assignedMemberId
+  const isAI = !effectiveMemberId
 
   const assignMut = useMutation({
     mutationFn: (memberId: string | null) =>
       contactsApi.update(contactId, { assignedMemberId: memberId }),
+    onMutate: (memberId) => setOptimisticMemberId(memberId),
+    onSettled: () => setTimeout(() => setOptimisticMemberId(undefined), 3000),
   })
 
   // Close on click outside
@@ -51,7 +57,7 @@ export function ResponsibleSelector({
   }, [open])
 
   const handleSelect = (memberId: string | null) => {
-    if (memberId === assignedMemberId) {
+    if (memberId === effectiveMemberId) {
       setOpen(false)
       return
     }
