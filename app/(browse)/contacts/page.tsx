@@ -474,7 +474,7 @@ export default function ContactsPage() {
   }, [integrations])
 
   const contacts = (data?.data ?? []).filter(
-    (c) => !selectedInstanceId || !c.zapiInstanceId || c.zapiInstanceId === selectedInstanceId,
+    (c) => !selectedInstanceId || c.zapiInstanceId === selectedInstanceId,
   )
   const pages    = data?.pages ?? 1
   const total    = data?.total ?? 0

@@ -260,8 +260,8 @@ export default function ChatsPage() {
   const filtered = contacts.filter((c) => {
     const ph = c.contactPhone ?? c.phone ?? ""
     if (ph === "__playground__") return false
-    // Filter by instance if selected
-    if (selectedInstanceId && c.zapiInstanceId && c.zapiInstanceId !== selectedInstanceId) return false
+    // Filter by instance if selected — hide contacts without matching instance
+    if (selectedInstanceId && c.zapiInstanceId !== selectedInstanceId) return false
     if (!search) return true
     const q = search.toLowerCase()
     return (
