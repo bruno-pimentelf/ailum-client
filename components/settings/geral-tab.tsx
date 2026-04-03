@@ -49,6 +49,7 @@ export function GeralTab() {
     addressStreet: "", addressNumber: "", addressComplement: "",
     addressNeighborhood: "", addressCity: "", addressState: "", addressZip: "",
     notificationsEnabled: true,
+    notificationPhone: "",
     notificationTypes: [] as string[],
     notificationDigestMinutes: 15,
     notificationRoles: [] as string[],
@@ -75,6 +76,7 @@ export function GeralTab() {
       addressState:        tenant.addressState ?? "",
       addressZip:          tenant.addressZip ?? "",
       notificationsEnabled: tenant.notificationsEnabled ?? true,
+      notificationPhone: tenant.notificationPhone ?? "",
       notificationTypes: tenant.notificationTypes ?? [],
       notificationDigestMinutes: tenant.notificationDigestMinutes ?? 15,
       notificationRoles: tenant.notificationRoles ?? [],
@@ -141,6 +143,7 @@ export function GeralTab() {
         addressState:        form.addressState || undefined,
         addressZip:          form.addressZip || undefined,
         notificationsEnabled: form.notificationsEnabled,
+        notificationPhone: form.notificationPhone || null,
         notificationTypes: form.notificationTypes,
         notificationDigestMinutes: Math.max(1, Number(form.notificationDigestMinutes) || 15),
         notificationRoles: form.notificationRoles,
@@ -327,6 +330,17 @@ export function GeralTab() {
                 }`}
               />
             </button>
+          </div>
+
+          <div>
+            <label className={labelCls}>WhatsApp para alertas de IA desativada</label>
+            <p className="text-[10px] text-muted-foreground/60 mb-1.5">Receba uma mensagem quando a IA se desabilitar em algum contato</p>
+            <input
+              value={form.notificationPhone}
+              onChange={(e) => setForm((p) => ({ ...p, notificationPhone: e.target.value }))}
+              placeholder="5527999999999"
+              className={inputCls}
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

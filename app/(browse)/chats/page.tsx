@@ -212,6 +212,9 @@ function ConversationItem({
 
       <div className="relative shrink-0 mt-0.5">
         <Avatar name={displayName} photoUrl={contact.photoUrl} />
+        {contact.needsAttention && !isTyping && (
+          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 border-2 border-background" />
+        )}
         {isTyping && (
           <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-background animate-pulse" />
         )}
@@ -330,6 +333,7 @@ export default function ChatsPage() {
 
   const aiContacts = baseFiltered.filter((c) => isAiEffective(c))
   const manualContacts = baseFiltered.filter((c) => !isAiEffective(c))
+  const attentionCount = manualContacts.filter((c) => c.needsAttention).length
   const filtered = chatTab === "ai" ? aiContacts : manualContacts
 
   // Auto-switch tab only when the selected contact's responsibility changes via Firestore
@@ -415,6 +419,14 @@ export default function ChatsPage() {
                       active ? "bg-accent/15 text-accent" : "bg-muted/40 text-muted-foreground/60"
                     }`}>
                       {tab.count}
+                    </span>
+                  )}
+                  {tab.key === "manual" && attentionCount > 0 && (
+                    <span className="relative flex h-4 min-w-4 items-center justify-center">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400/40" />
+                      <span className="relative inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
+                        {attentionCount}
+                      </span>
                     </span>
                   )}
                 </button>

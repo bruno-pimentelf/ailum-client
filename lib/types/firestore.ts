@@ -42,6 +42,11 @@ export interface FirestoreContact {
   assignedProfessionalId?: string | null
   assignedMemberId?: string | null
 
+  // Attention flag (set when AI escalates to operator)
+  needsAttention?: boolean
+  needsAttentionAt?: Timestamp | null
+  needsAttentionReason?: string | null
+
   // Conversation preview
   lastMessage?: string
   lastMessageAt?: Timestamp | null

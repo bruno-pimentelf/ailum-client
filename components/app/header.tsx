@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
   MagnifyingGlass,
   Bell,
-  Question,
   User,
   Buildings,
   CaretUpDown,
@@ -18,11 +17,14 @@ import {
   X,
   WarningCircle,
   WarningOctagon,
+  Warning,
   Info,
+  ChatCircleText,
 } from "@phosphor-icons/react"
 import { authClient } from "@/lib/auth-client"
 import { useAuthStore } from "@/lib/auth-store"
 import { useNotifications, type TenantNotification } from "@/hooks/use-notifications"
+import { useAttentionContacts } from "@/hooks/use-attention-contacts"
 import { useTenant } from "@/hooks/use-tenant"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -38,6 +40,8 @@ export function AppHeader() {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [clinicSearch, setClinicSearch] = useState("")
   const [notifFilter, setNotifFilter] = useState<"all" | "critical" | "payments" | "agenda" | "automations">("all")
+  const [attentionOpen, setAttentionOpen] = useState(false)
+  const attentionRef = useRef<HTMLDivElement>(null)
   const [toasts, setToasts] = useState<Array<{ id: string; title: string; body: string; severity: "critical" | "warning" | "info" }>>([])
   const dropdownRef = useRef<HTMLDivElement>(null)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
@@ -56,6 +60,7 @@ export function AppHeader() {
     clearPending,
     readPendingIds,
   } = useNotifications()
+  const attentionContacts = useAttentionContacts()
 
   const selectedClinic = orgs.find((o) => o.id === activeOrgId) ?? orgs[0] ?? null
 
@@ -75,6 +80,9 @@ export function AppHeader() {
       }
       if (notificationsRef.current && !notificationsRef.current.contains(target)) {
         setNotificationsOpen(false)
+      }
+      if (attentionRef.current && !attentionRef.current.contains(target)) {
+        setAttentionOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClick)
@@ -469,10 +477,93 @@ export function AppHeader() {
           </AnimatePresence>
         </div>
 
-        {/* Help */}
-        <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200">
-          <Question className="h-4 w-4" />
-        </button>
+        {/* Attention contacts */}
+        <div className="relative" ref={attentionRef}>
+          <button
+            onClick={() => setAttentionOpen((v) => !v)}
+            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors duration-200 cursor-pointer"
+          >
+            <Warning className="h-4 w-4" weight={attentionContacts.length > 0 ? "fill" : "regular"} />
+            {attentionContacts.length > 0 && (
+              <>
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-4 text-white text-center">
+                  {attentionContacts.length > 9 ? "9+" : attentionContacts.length}
+                </span>
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full bg-rose-500/40 px-1 animate-ping" />
+              </>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {attentionOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                transition={{ duration: 0.2, ease }}
+                className="absolute right-0 top-full mt-2 w-[340px] max-w-[calc(100vw-24px)] rounded-xl border border-border bg-popover shadow-xl shadow-foreground/8 overflow-hidden z-50"
+              >
+                <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
+                  <div>
+                    <p className="text-[12px] font-semibold text-foreground">Precisam de atencao</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {attentionContacts.length > 0
+                        ? `${attentionContacts.length} contato${attentionContacts.length > 1 ? "s" : ""} aguardando`
+                        : "Nenhum contato precisa de atencao"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setAttentionOpen(false)}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="max-h-[360px] overflow-y-auto p-1.5 space-y-0.5">
+                  {attentionContacts.length === 0 && (
+                    <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                      <Check className="h-6 w-6 text-emerald-400/40" weight="bold" />
+                      <p className="text-[12px] text-muted-foreground/60">Tudo em ordem</p>
+                    </div>
+                  )}
+
+                  {attentionContacts.map((c) => {
+                    const name = c.contactName ?? c.name ?? c.contactPhone ?? c.phone ?? "?"
+                    const reason = c.needsAttentionReason ?? "IA desativada"
+                    return (
+                      <Link
+                        key={c.id}
+                        href={`/chats`}
+                        onClick={() => setAttentionOpen(false)}
+                        className="flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 hover:bg-rose-500/5 transition-colors cursor-pointer"
+                      >
+                        <div className="relative shrink-0 mt-0.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10 text-rose-400">
+                            <Warning className="h-3.5 w-3.5" weight="fill" />
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12px] font-semibold text-foreground truncate">{name}</p>
+                          <p className="text-[11px] text-muted-foreground/80 line-clamp-1 mt-0.5">{reason}</p>
+                          {c.needsAttentionAt && (
+                            <span className="text-[10px] text-muted-foreground/50 mt-0.5 block">
+                              {formatRelative(typeof c.needsAttentionAt === "object" && "toDate" in c.needsAttentionAt
+                                ? (c.needsAttentionAt as { toDate: () => Date }).toDate().toISOString()
+                                : new Date().toISOString()
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        <ChatCircleText className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-1" />
+                      </Link>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Divider */}
         <div className="mx-1 h-5 w-px bg-border" />

@@ -33,6 +33,7 @@ export interface Tenant {
   notificationTypes?: string[]
   notificationDigestMinutes?: number
   notificationRoles?: string[]
+  notificationPhone?: string | null
   createdAt: string
 }
 
@@ -68,6 +69,7 @@ export type TenantUpdateInput = Partial<
     | "notificationTypes"
     | "notificationDigestMinutes"
     | "notificationRoles"
+    | "notificationPhone"
   >
 >
 

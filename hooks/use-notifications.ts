@@ -136,6 +136,20 @@ export function useNotifications() {
     }
   }, [tenantId, firebaseReady])
 
+  // Browser push notification for escalated contacts
+  useEffect(() => {
+    if (recentAdded.length === 0) return
+    const escalated = recentAdded.filter((n) => n.type === "agent.escalated")
+    if (escalated.length === 0) return
+    if (typeof window === "undefined" || !("Notification" in window)) return
+    if (Notification.permission === "default") Notification.requestPermission()
+    if (Notification.permission === "granted") {
+      for (const n of escalated) {
+        new Notification(n.title, { body: n.body, icon: "/favicon.ico", tag: n.id })
+      }
+    }
+  }, [recentAdded])
+
   const unreadCount = useMemo(() => items.filter((n) => !n.read).length, [items])
 
   const markAsRead = useCallback(
