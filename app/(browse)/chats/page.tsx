@@ -102,23 +102,28 @@ function PhoneCopy({ phone }: { phone: string }) {
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && handleCopy(e as unknown as React.MouseEvent)}
       title={`Copiar ${phone}`}
-      className="group flex items-center gap-1 cursor-pointer"
+      className={`group inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md cursor-pointer border transition-all duration-150 ${
+        copied
+          ? "bg-accent/15 border-accent/30"
+          : "bg-muted/40 border-border/50 hover:bg-muted/70 hover:border-border"
+      }`}
     >
-      <span className="text-[10px] text-muted-foreground/90 font-mono group-hover:text-muted-foreground/85 transition-colors duration-150">
-        {phone}
-      </span>
       <AnimatePresence mode="wait">
         {copied ? (
           <motion.span key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-            <Check className="h-2.5 w-2.5 text-accent" />
+            <Check className="h-3 w-3 text-accent" weight="bold" />
           </motion.span>
         ) : (
-          <motion.span key="cp" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            <Copy className="h-2.5 w-2.5 text-muted-foreground/90" />
+          <motion.span key="cp" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+            <Copy className="h-3 w-3 text-muted-foreground/70 group-hover:text-muted-foreground transition-colors duration-150" />
           </motion.span>
         )}
       </AnimatePresence>
+      <span className={`text-[10px] font-mono tracking-wide transition-colors duration-150 ${
+        copied ? "text-accent" : "text-muted-foreground/90 group-hover:text-foreground/80"
+      }`}>
+        {phone}
+      </span>
     </div>
   )
 }
