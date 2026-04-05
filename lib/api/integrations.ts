@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api"
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type WhatsAppProvider = "zapi" | "uazapi"
-export type Provider = WhatsAppProvider | "asaas" | "infinitepay" | "elevenlabs"
+export type Provider = WhatsAppProvider | "asaas" | "rinne" | "infinitepay" | "elevenlabs"
 
 export type Integration = {
   id?: string
@@ -88,6 +88,54 @@ export type ZapiProfilePictureBatchInput = {
 
 export type ZapiQrCode = {
   value: string // data:image/png;base64,...
+}
+
+export type RinneOnboardInput = {
+  fullName: string
+  documentNumber: string
+  documentType: "CPF" | "CNPJ"
+  documentTaxType: "PF" | "PJ" | "MEI" | "ME"
+  contact: {
+    firstName: string
+    lastName: string
+    phone: string
+    email: string
+    motherName: string
+    birthDate: string
+    documentNumber: string
+    address: {
+      street: string
+      streetNumber?: string
+      neighborhood: string
+      zipcode: string
+      city: string
+      state: string
+    }
+  }
+  address: {
+    street: string
+    streetNumber?: string
+    neighborhood: string
+    zipcode: string
+    city: string
+    state: string
+  }
+  bankAccount?: {
+    branchNumber: string
+    accountNumber: string
+    accountType: "CHECKING" | "SAVINGS" | "PAYMENT"
+    accountHolderName: string
+    accountHolderDocumentNumber: string
+    ispb: string
+  }
+}
+
+export type RinneOnboardingStatus = {
+  merchantId: string | null
+  merchantStatus: string | null
+  affiliationId: string | null
+  affiliationStatus: string | null
+  canProcessPayments: boolean
 }
 
 export type AsaasSaveInput = {
@@ -298,6 +346,14 @@ export const integrationsApi = {
 
   uazapiRestart: (body?: { instanceId?: string }) =>
     apiFetch<{ restarted: boolean }>("/integrations/uazapi/restart", { method: "POST", body }),
+
+  // ── Rinne (Ailum Pay) ───────────────────────────────────────────────────────
+
+  rinneOnboard: (body: RinneOnboardInput) =>
+    apiFetch<RinneOnboardingStatus>("/integrations/rinne/onboard", { method: "POST", body }),
+
+  rinneStatus: () =>
+    apiFetch<RinneOnboardingStatus>("/integrations/rinne/status"),
 
   // ── Asaas ──────────────────────────────────────────────────────────────────
 

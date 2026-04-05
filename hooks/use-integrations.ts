@@ -6,6 +6,7 @@ import {
   type AsaasSaveInput,
   type Provider,
   type WhatsAppProvider,
+  type RinneOnboardInput,
   type ZapiSyncRoutingInput,
   type ZapiContactRoutingInput,
 } from "@/lib/api/integrations"
@@ -198,6 +199,26 @@ export function useDeleteWhatsAppInstance(provider: WhatsAppProvider) {
 }
 
 // ── Asaas ────────────────────────────────────────────────────────────────────
+
+export function useRinneOnboard() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: RinneOnboardInput) => integrationsApi.rinneOnboard(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY })
+      qc.invalidateQueries({ queryKey: ["integrations", "rinne", "status"] })
+    },
+  })
+}
+
+export function useRinneStatus(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ["integrations", "rinne", "status"],
+    queryFn: integrationsApi.rinneStatus,
+    enabled: options?.enabled ?? true,
+    refetchInterval: 30_000,
+  })
+}
 
 export function useSaveAsaas() {
   const qc = useQueryClient()

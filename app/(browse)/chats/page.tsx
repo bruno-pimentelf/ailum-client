@@ -18,7 +18,6 @@ import { useContacts, useWhatsappStatus } from "@/hooks/use-chats"
 import { useAuthStore } from "@/lib/auth-store"
 import { useInstanceStore } from "@/lib/instance-store"
 import { useIntegrations } from "@/hooks/use-integrations"
-import { statusLabel } from "@/lib/contact-utils"
 import type { FirestoreContact } from "@/lib/types/firestore"
 import Link from "next/link"
 
@@ -243,17 +242,14 @@ function ConversationItem({
             ) : (
               <User className="h-3 w-3 text-muted-foreground/90 shrink-0" />
             )}
-            <span className="text-[11px] text-muted-foreground/85 truncate">
-              {statusLabel(contact.status)}
-            </span>
             {instanceLabel && (
-              <span className="text-[9px] text-muted-foreground/60 truncate max-w-[70px]" title={instanceLabel}>
-                · {instanceLabel}
+              <span className="text-[11px] text-muted-foreground/85 truncate" title={instanceLabel}>
+                {instanceLabel}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {displayPhone && <PhoneCopy phone={displayPhone} />}
+            {displayPhone && <PhoneCopy phone={displayPhone.replace(/^55/, "")} />}
             {unread > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-accent-foreground px-1">
                 {unread > 99 ? "99+" : unread}
