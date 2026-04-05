@@ -41,7 +41,6 @@ import {
   useWhatsAppDisconnect,
   useWhatsAppRestart,
   useDeleteWhatsAppInstance,
-  useRinneOnboard,
   useRinneStatus,
 } from "@/hooks/use-integrations"
 import { integrationsApi } from "@/lib/api/integrations"
@@ -475,38 +474,6 @@ function StatusBadge({ status }: { status: string | null }) {
 function AilumPaySection({ integration }: { integration: Integration | null }) {
   const isOnboarded = !!(integration?.instanceId)
   const { data: rinneStatus, isLoading: statusLoading } = useRinneStatus({ enabled: isOnboarded })
-  const onboard = useRinneOnboard()
-  const [showForm, setShowForm] = useState(false)
-
-  const [form, setForm] = useState({
-    fullName: "", documentNumber: "", documentType: "CNPJ" as "CPF" | "CNPJ", documentTaxType: "PJ" as "PF" | "PJ" | "MEI" | "ME",
-    firstName: "", lastName: "", phone: "", email: "", motherName: "", birthDate: "", contactDoc: "",
-    street: "", streetNumber: "", neighborhood: "", zipcode: "", city: "", state: "",
-    bankBranch: "", bankAccount: "", bankType: "CHECKING" as "CHECKING" | "SAVINGS" | "PAYMENT",
-    bankHolderName: "", bankHolderDoc: "", bankIspb: "",
-  })
-
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((p) => ({ ...p, [k]: e.target.value }))
-
-  function handleOnboard(e: React.FormEvent) {
-    e.preventDefault()
-    onboard.mutate({
-      fullName: form.fullName, documentNumber: form.documentNumber, documentType: form.documentType, documentTaxType: form.documentTaxType,
-      contact: {
-        firstName: form.firstName, lastName: form.lastName, phone: form.phone, email: form.email,
-        motherName: form.motherName, birthDate: form.birthDate, documentNumber: form.contactDoc,
-        address: { street: form.street, streetNumber: form.streetNumber || undefined, neighborhood: form.neighborhood, zipcode: form.zipcode, city: form.city, state: form.state },
-      },
-      address: { street: form.street, streetNumber: form.streetNumber || undefined, neighborhood: form.neighborhood, zipcode: form.zipcode, city: form.city, state: form.state },
-      ...(form.bankBranch && form.bankAccount ? {
-        bankAccount: {
-          branchNumber: form.bankBranch, accountNumber: form.bankAccount, accountType: form.bankType,
-          accountHolderName: form.bankHolderName, accountHolderDocumentNumber: form.bankHolderDoc, ispb: form.bankIspb,
-        },
-      } : {}),
-    }, { onSuccess: () => setShowForm(false) })
-  }
 
   // Already onboarded — show status
   if (isOnboarded) {
@@ -536,89 +503,16 @@ function AilumPaySection({ integration }: { integration: Integration | null }) {
     )
   }
 
-  // Not onboarded — show CTA or form
+  // Not onboarded — link to dedicated page
   return (
-    <div className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] p-4 space-y-3">
-      {!showForm ? (
-        <div className="flex flex-col items-center gap-3 py-4">
-          <p className="text-[12px] text-muted-foreground/70 text-center">Configure sua conta de pagamentos para receber PIX diretamente dos pacientes.</p>
-          <button onClick={() => setShowForm(true)}
-            className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent/15 border border-accent/25 px-4 py-2 text-[11px] font-bold text-accent hover:bg-accent/25 transition-all">
-            <Plus className="h-3 w-3" weight="bold" /> Configurar Ailum Pay
-          </button>
-        </div>
-      ) : (
-        <form onSubmit={handleOnboard} className="space-y-4">
-          <AnimatePresence>
-            {onboard.isError && (
-              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="flex items-center gap-2 rounded-xl border border-rose-500/25 bg-rose-500/[0.08] px-3.5 py-2.5 text-[11px] text-rose-400">
-                <Warning className="h-3.5 w-3.5 shrink-0" weight="fill" /> Erro ao criar conta. Verifique os dados.
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">Dados da empresa</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <input value={form.fullName} onChange={set("fullName")} placeholder="Razão social *" className={inputCls} />
-            </div>
-            <input value={form.documentNumber} onChange={set("documentNumber")} placeholder="CNPJ/CPF *" className={inputCls} />
-            <select value={form.documentTaxType} onChange={set("documentTaxType")} className={inputCls}>
-              <option value="PJ">PJ</option><option value="MEI">MEI</option><option value="ME">ME</option><option value="PF">PF</option>
-            </select>
-          </div>
-
-          <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">Responsável</p>
-          <div className="grid grid-cols-2 gap-3">
-            <input value={form.firstName} onChange={set("firstName")} placeholder="Nome *" className={inputCls} />
-            <input value={form.lastName} onChange={set("lastName")} placeholder="Sobrenome *" className={inputCls} />
-            <input value={form.phone} onChange={set("phone")} placeholder="Telefone (+55...) *" className={inputCls} />
-            <input value={form.email} onChange={set("email")} placeholder="Email *" className={inputCls} />
-            <input value={form.motherName} onChange={set("motherName")} placeholder="Nome da mãe *" className={inputCls} />
-            <input value={form.birthDate} onChange={set("birthDate")} placeholder="Nascimento (DD-MM-AAAA) *" className={inputCls} />
-            <input value={form.contactDoc} onChange={set("contactDoc")} placeholder="CPF do responsável *" className={inputCls} />
-          </div>
-
-          <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">Endereço</p>
-          <div className="grid grid-cols-2 gap-3">
-            <input value={form.street} onChange={set("street")} placeholder="Rua *" className={inputCls} />
-            <input value={form.streetNumber} onChange={set("streetNumber")} placeholder="Número" className={inputCls} />
-            <input value={form.neighborhood} onChange={set("neighborhood")} placeholder="Bairro *" className={inputCls} />
-            <input value={form.zipcode} onChange={set("zipcode")} placeholder="CEP *" className={inputCls} />
-            <input value={form.city} onChange={set("city")} placeholder="Cidade *" className={inputCls} />
-            <input value={form.state} onChange={set("state")} placeholder="UF (ex: SP) *" className={inputCls} maxLength={2} />
-          </div>
-
-          <details className="group/bank">
-            <summary className="cursor-pointer text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider hover:text-muted-foreground/70 transition-colors list-none flex items-center gap-1.5">
-              <CaretRight className="h-3 w-3 group-open/bank:rotate-90 transition-transform" weight="bold" /> Dados bancários (opcional)
-            </summary>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <input value={form.bankBranch} onChange={set("bankBranch")} placeholder="Agência" className={inputCls} />
-              <input value={form.bankAccount} onChange={set("bankAccount")} placeholder="Conta" className={inputCls} />
-              <input value={form.bankHolderName} onChange={set("bankHolderName")} placeholder="Titular" className={inputCls} />
-              <input value={form.bankHolderDoc} onChange={set("bankHolderDoc")} placeholder="CPF/CNPJ do titular" className={inputCls} />
-              <input value={form.bankIspb} onChange={set("bankIspb")} placeholder="ISPB do banco" className={inputCls} />
-              <select value={form.bankType} onChange={set("bankType")} className={inputCls}>
-                <option value="CHECKING">Corrente</option><option value="SAVINGS">Poupança</option><option value="PAYMENT">Pagamento</option>
-              </select>
-            </div>
-          </details>
-
-          <div className="flex items-center gap-2 pt-1">
-            <button type="button" onClick={() => setShowForm(false)}
-              className="cursor-pointer flex-1 rounded-xl border border-border/70 py-2.5 text-[12px] text-muted-foreground/70 hover:text-foreground/85 hover:bg-foreground/[0.04] transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" disabled={onboard.isPending || !form.fullName || !form.documentNumber || !form.firstName || !form.email}
-              className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2.5 text-[12px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50">
-              {onboard.isPending ? <Spinner /> : <Check className="h-3.5 w-3.5" weight="bold" />}
-              Criar conta
-            </button>
-          </div>
-        </form>
-      )}
+    <div className="rounded-xl border border-foreground/[0.06] bg-foreground/[0.02] p-4">
+      <div className="flex flex-col items-center gap-3 py-4">
+        <p className="text-[12px] text-muted-foreground/70 text-center">Configure sua conta de pagamentos para receber PIX diretamente dos pacientes.</p>
+        <a href="/ailum-pay"
+          className="cursor-pointer flex items-center gap-1.5 rounded-lg bg-accent/15 border border-accent/25 px-4 py-2 text-[11px] font-bold text-accent hover:bg-accent/25 transition-all">
+          <Plus className="h-3 w-3" weight="bold" /> Configurar Ailum Pay
+        </a>
+      </div>
     </div>
   )
 }
