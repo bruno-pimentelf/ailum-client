@@ -44,7 +44,7 @@ import { useMessages, useTypingStatus } from "@/hooks/use-chats"
 import { useIntegrations } from "@/hooks/use-integrations"
 import { useInstanceStore } from "@/lib/instance-store"
 import type { Integration } from "@/lib/api/integrations"
-import { sendMessage, markAsRead, createNote, describeImage, summarizeDocument } from "@/lib/api/conversations"
+import { sendMessage, markAsRead, createNote, describeImage, summarizeDocument, type SendMessageInput } from "@/lib/api/conversations"
 import { ContactInfoPanel } from "@/components/app/contact-info-panel"
 import { contactsApi } from "@/lib/api/contacts"
 import { useMutation } from "@tanstack/react-query"
@@ -1965,10 +1965,10 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
         }
         if (step.type === "TEXT") {
           const text = substituteVariables(step.body)
-          doSend({}, text)
+          doSend({ type: "TEXT", text }, text)
         } else if (step.mediaUrl) {
           const caption = step.caption ? substituteVariables(step.caption) : undefined
-          doSend({ type: step.type, mediaUrl: step.mediaUrl, caption, fileName: step.fileName ?? undefined }, caption || `[${step.type}]`)
+          doSend({ type: step.type, mediaUrl: step.mediaUrl, caption, fileName: step.fileName ?? undefined } as SendMessageInput, caption || `[${step.type}]`)
         }
       }
       return
