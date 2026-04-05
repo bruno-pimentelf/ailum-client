@@ -27,6 +27,10 @@ import {
   Checks,
   Play,
   Pause,
+  ListNumbers,
+  ArrowUp,
+  ArrowDown,
+  Timer,
 } from "@phosphor-icons/react"
 import {
   Tooltip,
@@ -37,7 +41,7 @@ import {
 import { useTemplates, useTemplateMutations } from "@/hooks/use-templates"
 import { useAuthStore } from "@/lib/auth-store"
 import { uploadTemplateMedia } from "@/lib/firebase"
-import type { MessageTemplate, TemplateInput, TemplateType } from "@/lib/api/templates"
+import type { MessageTemplate, TemplateInput, TemplateType, TemplateStep } from "@/lib/api/templates"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -726,6 +730,251 @@ function VariableChips({ onInsert }: { onInsert: (v: string) => void }) {
 
 // ─── Form Modal ────────────────────────────────────────────────────────────────
 
+// ─── Sequence builder ──────────────────────────────────────────────────────────
+
+const DELAY_PRESETS = [
+  { label: "Sem pausa", value: 0 },
+  { label: "1s", value: 1 },
+  { label: "2s", value: 2 },
+  { label: "3s", value: 3 },
+  { label: "5s", value: 5 },
+  { label: "10s", value: 10 },
+]
+
+function emptyStep(order: number): TemplateStep {
+  return { order, type: "TEXT", body: "", delaySeconds: order === 0 ? 0 : 2 }
+}
+
+function SequenceBuilder({
+  steps,
+  onChange,
+  tenantId,
+}: {
+  steps: TemplateStep[]
+  onChange: (steps: TemplateStep[]) => void
+  tenantId: string | null
+}) {
+  const [uploading, setUploading] = useState<number | null>(null)
+
+  function updateStep(index: number, patch: Partial<TemplateStep>) {
+    const next = steps.map((s, i) => i === index ? { ...s, ...patch } : s)
+    onChange(next)
+  }
+
+  function addStep() {
+    onChange([...steps, emptyStep(steps.length)])
+  }
+
+  function removeStep(index: number) {
+    if (steps.length <= 1) return
+    onChange(steps.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })))
+  }
+
+  function moveStep(index: number, direction: -1 | 1) {
+    const target = index + direction
+    if (target < 0 || target >= steps.length) return
+    const next = [...steps]
+    const temp = next[index]
+    next[index] = next[target]
+    next[target] = temp
+    onChange(next.map((s, i) => ({ ...s, order: i })))
+  }
+
+  async function handleUpload(index: number, file: File) {
+    if (!tenantId) return
+    const step = steps[index]
+    const maxMB = ACCEPTED_FILES[step.type]?.maxMB ?? 16
+    if (file.size > maxMB * 1024 * 1024) return
+    setUploading(index)
+    try {
+      const url = await uploadTemplateMedia(tenantId, file)
+      updateStep(index, { mediaUrl: url })
+    } catch { /* ignore */ }
+    finally { setUploading(null) }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Etapas da sequencia</p>
+        <span className="text-[10px] text-muted-foreground/60">{steps.length} etapa{steps.length !== 1 ? "s" : ""}</span>
+      </div>
+
+      <div className="space-y-2">
+        {steps.map((step, i) => {
+          const isMedia = step.type !== "TEXT"
+          const TypeIcon = TYPES.find((t) => t.value === step.type)?.icon ?? TextAa
+          return (
+            <div key={i} className="rounded-xl border border-border/50 bg-card/20 overflow-hidden">
+              {/* Step header */}
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/30 bg-muted/10">
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-accent/15 text-[10px] font-bold text-accent">{i + 1}</span>
+
+                {/* Type selector */}
+                <div className="flex items-center gap-0.5">
+                  {TYPES.map((t) => {
+                    const Icon = t.icon
+                    const active = step.type === t.value
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => updateStep(i, { type: t.value, ...(t.value === "TEXT" ? { mediaUrl: null } : {}) })}
+                        className={`flex h-6 w-6 items-center justify-center rounded-md transition-all cursor-pointer ${
+                          active ? "bg-accent/20 text-accent" : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30"
+                        }`}
+                        title={t.label}
+                      >
+                        <Icon className="h-3 w-3" weight={active ? "fill" : "regular"} />
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="flex-1" />
+
+                {/* Delay */}
+                {i > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Timer className="h-3 w-3 text-muted-foreground/50" />
+                    <select
+                      value={step.delaySeconds ?? 2}
+                      onChange={(e) => updateStep(i, { delaySeconds: Number(e.target.value) })}
+                      className="h-6 rounded-md border border-border/40 bg-background/60 px-1.5 text-[10px] text-foreground cursor-pointer focus:outline-none"
+                    >
+                      {DELAY_PRESETS.map((d) => (
+                        <option key={d.value} value={d.value}>{d.label}</option>
+                      ))}
+                      <option value={15}>15s</option>
+                      <option value={30}>30s</option>
+                      <option value={60}>1min</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Move up/down */}
+                <button type="button" onClick={() => moveStep(i, -1)} disabled={i === 0}
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/30 disabled:opacity-30 disabled:cursor-default cursor-pointer">
+                  <ArrowUp className="h-3 w-3" />
+                </button>
+                <button type="button" onClick={() => moveStep(i, 1)} disabled={i === steps.length - 1}
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/30 disabled:opacity-30 disabled:cursor-default cursor-pointer">
+                  <ArrowDown className="h-3 w-3" />
+                </button>
+
+                {/* Remove */}
+                {steps.length > 1 && (
+                  <button type="button" onClick={() => removeStep(i)}
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground/40 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer">
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Step body */}
+              <div className="p-3 space-y-2">
+                {step.type === "TEXT" ? (
+                  <VariableTextarea
+                    value={toDisplay(step.body)}
+                    onChange={(val) => updateStep(i, { body: toStorage(val) })}
+                    rows={3}
+                    placeholder="Digite a mensagem. Use @ para variaveis"
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    {/* Media upload */}
+                    {step.mediaUrl ? (
+                      <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-muted/10 px-3 py-2">
+                        <TypeIcon className="h-4 w-4 text-accent shrink-0" weight="duotone" />
+                        <span className="text-[11px] text-foreground/80 truncate flex-1">Arquivo anexado</span>
+                        <button type="button" onClick={() => updateStep(i, { mediaUrl: null })}
+                          className="text-[10px] text-muted-foreground hover:text-rose-400 cursor-pointer">Remover</button>
+                      </div>
+                    ) : (
+                      <label className={`flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/40 py-4 cursor-pointer hover:border-accent/30 hover:bg-accent/5 transition-all ${uploading === i ? "opacity-60" : ""}`}>
+                        <input type="file" className="hidden" accept={ACCEPTED_FILES[step.type]?.accept}
+                          onChange={(e) => e.target.files?.[0] && handleUpload(i, e.target.files[0])} disabled={uploading === i} />
+                        {uploading === i
+                          ? <Spinner className="h-4 w-4 animate-spin text-accent" />
+                          : <CloudArrowUp className="h-4 w-4 text-muted-foreground/60" />}
+                        <span className="text-[11px] text-muted-foreground/60">
+                          {uploading === i ? "Enviando..." : `Enviar ${TYPES.find((t) => t.value === step.type)?.label?.toLowerCase()}`}
+                        </span>
+                      </label>
+                    )}
+                    {/* Caption for non-audio */}
+                    {step.type !== "AUDIO" && (
+                      <textarea
+                        value={toDisplay(step.caption ?? "")}
+                        onChange={(e) => updateStep(i, { caption: toStorage(e.target.value) })}
+                        rows={2}
+                        placeholder="Legenda (opcional)"
+                        className="w-full rounded-lg border border-border/40 bg-background/40 px-3 py-2 text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-accent/30 resize-none"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={addStep}
+        className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/30 py-3 text-[12px] font-medium text-muted-foreground/50 hover:text-accent hover:border-accent/30 hover:bg-accent/5 transition-all cursor-pointer"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Adicionar etapa
+      </button>
+
+      {/* Preview */}
+      {steps.length > 0 && (
+        <div className="rounded-xl border border-border/30 bg-black/20 p-4">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Previa da sequencia</p>
+          <div className="space-y-2">
+            {steps.map((step, i) => {
+              const preview = step.type === "TEXT" ? previewBody(toDisplay(step.body)) : (step.caption ? previewBody(toDisplay(step.caption)) : `[${TYPES.find((t) => t.value === step.type)?.label}]`)
+              return (
+                <div key={i}>
+                  {i > 0 && (step.delaySeconds ?? 0) > 0 && (
+                    <div className="flex items-center justify-center gap-2 py-1">
+                      <div className="h-px flex-1 bg-border/20" />
+                      <span className="text-[9px] text-muted-foreground/40 flex items-center gap-1">
+                        <Timer className="h-2.5 w-2.5" /> {step.delaySeconds}s
+                      </span>
+                      <div className="h-px flex-1 bg-border/20" />
+                    </div>
+                  )}
+                  <div className="flex items-end gap-2 justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-accent/15 border border-accent/20">
+                      {step.type === "IMAGE" && step.mediaUrl && (
+                        <img src={step.mediaUrl} alt="" className="w-full max-h-24 object-cover rounded-t-2xl" />
+                      )}
+                      <div className="px-3 pt-2 pb-1">
+                        <p className="text-[12px] text-foreground whitespace-pre-wrap leading-relaxed break-words">
+                          {preview || "(vazio)"}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-end gap-1 px-3 pb-1">
+                        <span className="text-[9px] text-muted-foreground/60">14:3{i}</span>
+                        <Checks className="h-3 w-3 text-accent/50" weight="bold" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Template form modal ───────────────────────────────────────────────────────
+
 function TemplateFormModal({
   onClose,
   template,
@@ -750,6 +999,8 @@ function TemplateFormModal({
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSequence, setIsSequence] = useState(false)
+  const [steps, setSteps] = useState<TemplateStep[]>([emptyStep(0)])
 
   useEffect(() => {
     if (template) {
@@ -762,6 +1013,14 @@ function TemplateFormModal({
       setMediaUrl(template.mediaUrl ?? "")
       setCaption(toDisplay(template.caption ?? ""))
       setFileName(template.fileName ?? "")
+      // Load steps if multi-step template
+      if (template.steps && Array.isArray(template.steps) && template.steps.length > 0) {
+        setIsSequence(true)
+        setSteps(template.steps as TemplateStep[])
+      } else {
+        setIsSequence(false)
+        setSteps([emptyStep(0)])
+      }
     } else {
       setType("TEXT")
       setKey("")
@@ -772,6 +1031,8 @@ function TemplateFormModal({
       setMediaUrl("")
       setCaption("")
       setFileName("")
+      setIsSequence(false)
+      setSteps([emptyStep(0)])
     }
     setError(null)
     setShowPreview(false)
@@ -795,6 +1056,15 @@ function TemplateFormModal({
     if (purpose === "_custom") {
       if (!key.trim()) return "O identificador é obrigatório"
       if (!KEY_REGEX.test(key)) return "Use apenas letras minúsculas, números, _ e -"
+    }
+    if (isSequence) {
+      if (steps.length === 0) return "Adicione pelo menos uma etapa"
+      for (let i = 0; i < steps.length; i++) {
+        const s = steps[i]
+        if (s.type === "TEXT" && !s.body.trim()) return `Etapa ${i + 1}: texto vazio`
+        if (s.type !== "TEXT" && !s.mediaUrl) return `Etapa ${i + 1}: envie um arquivo`
+      }
+      return null
     }
     if (type === "TEXT" && !body.trim()) return "O texto da mensagem é obrigatório"
     if (isMedia && !mediaUrl.trim()) return "Envie um arquivo para continuar"
@@ -833,11 +1103,12 @@ function TemplateFormModal({
         key: resolvedKey.trim(),
         name: name.trim(),
         description: description.trim() || undefined,
-        type,
-        body: type === "TEXT" ? toStorage(body.trim()) : toStorage(caption.trim()) || "",
-        mediaUrl: isMedia ? mediaUrl.trim() || undefined : undefined,
-        caption: isMedia ? toStorage(caption.trim()) || undefined : undefined,
-        fileName: type === "DOCUMENT" ? fileName.trim() || undefined : undefined,
+        type: isSequence ? (steps[0]?.type ?? "TEXT") : type,
+        body: isSequence ? (steps[0]?.body ?? "") : (type === "TEXT" ? toStorage(body.trim()) : toStorage(caption.trim()) || ""),
+        mediaUrl: isSequence ? undefined : (isMedia ? mediaUrl.trim() || undefined : undefined),
+        caption: isSequence ? undefined : (isMedia ? toStorage(caption.trim()) || undefined : undefined),
+        fileName: isSequence ? undefined : (type === "DOCUMENT" ? fileName.trim() || undefined : undefined),
+        steps: isSequence ? steps : undefined,
       }
       if (isEdit) {
         const { key: _k, ...rest } = input
@@ -986,6 +1257,30 @@ function TemplateFormModal({
                   </div>
                 </div>
 
+                {/* Sequence toggle */}
+                <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/15 px-3 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <ListNumbers className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-[12px] font-medium text-foreground">Sequencia de mensagens</p>
+                      <p className="text-[10px] text-muted-foreground/80">Enviar varias mensagens com pausas entre elas</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isSequence}
+                    onClick={() => setIsSequence((v) => !v)}
+                    className={`relative h-6 w-10 shrink-0 rounded-full border-2 transition-colors cursor-pointer ${
+                      isSequence ? "border-accent bg-accent/20" : "border-border bg-muted/30"
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${
+                      isSequence ? "left-5 bg-accent" : "left-0.5 bg-muted-foreground/50"
+                    }`} />
+                  </button>
+                </div>
+
                 {/* Description */}
                 <div>
                   <label className={labelCls}>Descrição <span className="font-normal text-muted-foreground/50">(opcional)</span></label>
@@ -1001,7 +1296,11 @@ function TemplateFormModal({
 
             {/* ═══ Right column — Conteúdo ═══ */}
             <div className="overflow-y-auto overscroll-contain p-6 space-y-5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Conteúdo da mensagem</p>
+              {isSequence ? (
+                <SequenceBuilder steps={steps} onChange={setSteps} tenantId={tenantId} />
+              ) : (
+              <>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Conteudo da mensagem</p>
 
               {/* TEXT body */}
               {type === "TEXT" && (
@@ -1144,6 +1443,9 @@ function TemplateFormModal({
                 </>
               )}
 
+              </>
+              )}
+
               {/* Error */}
               <AnimatePresence>
                 {error && (
@@ -1260,6 +1562,11 @@ export function TemplatesTab() {
                       <span className="rounded-lg border border-border/40 bg-muted/20 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                         {typeCfg.label}
                       </span>
+                      {t.steps && Array.isArray(t.steps) && t.steps.length > 1 && (
+                        <span className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-medium text-violet-400">
+                          {t.steps.length} etapas
+                        </span>
+                      )}
                       {reserved && (
                         <TooltipProvider>
                           <Tooltip>

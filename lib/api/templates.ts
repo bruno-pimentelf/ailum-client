@@ -2,6 +2,17 @@ import { apiFetch } from "@/lib/api"
 
 export type TemplateType = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO" | "DOCUMENT"
 
+export interface TemplateStep {
+  order: number
+  type: TemplateType
+  body: string
+  mediaUrl?: string | null
+  caption?: string | null
+  fileName?: string | null
+  /** Delay in seconds before sending this step (0 = immediate) */
+  delaySeconds?: number
+}
+
 export interface MessageTemplate {
   id: string
   tenantId: string
@@ -14,6 +25,8 @@ export interface MessageTemplate {
   caption: string | null
   fileName: string | null
   variables: string[]
+  /** Multi-step sequence. When present, overrides type/body/mediaUrl/caption/fileName. */
+  steps: TemplateStep[] | null
   createdAt: string
   updatedAt: string
 }
@@ -28,6 +41,7 @@ export interface TemplateInput {
   caption?: string | null
   fileName?: string | null
   variables?: string[]
+  steps?: TemplateStep[]
 }
 
 export const templatesApi = {

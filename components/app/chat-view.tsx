@@ -1468,6 +1468,9 @@ function TemplatePicker({
                 <div className="flex items-center gap-2">
                   <p className="text-[12px] font-semibold text-foreground/90 truncate">{t.name}</p>
                   <span className="shrink-0 text-[9px] font-mono text-muted-foreground/40">/{t.key}</span>
+                  {t.steps && Array.isArray(t.steps) && t.steps.length > 1 && (
+                    <span className="shrink-0 rounded bg-violet-500/15 border border-violet-500/20 px-1 py-px text-[9px] font-semibold text-violet-400">{t.steps.length} etapas</span>
+                  )}
                 </div>
                 {t.type === "TEXT" ? (
                   <p className="text-[11px] text-muted-foreground/60 line-clamp-2 mt-0.5 leading-relaxed">{t.body}</p>
@@ -1947,18 +1950,36 @@ export function ChatView({ contact, tenantId }: ChatViewProps) {
       .replace(/\{\{email\}\}/gi, contact.email ?? "")
   }
 
-  function handleTemplateSelect(template: MessageTemplate) {
+  async function handleTemplateSelect(template: MessageTemplate) {
     setTemplatePickerOpen(false)
     setTemplateQuery("")
     setTemplateSelectedIdx(0)
 
+    // Multi-step sequence — send all steps with delays
+    if (template.steps && Array.isArray(template.steps) && template.steps.length > 0) {
+      const steps = [...template.steps].sort((a, b) => a.order - b.order)
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i]
+        if (i > 0 && step.delaySeconds && step.delaySeconds > 0) {
+          await new Promise((r) => setTimeout(r, step.delaySeconds! * 1000))
+        }
+        if (step.type === "TEXT") {
+          const text = substituteVariables(step.body)
+          doSend({}, text)
+        } else if (step.mediaUrl) {
+          const caption = step.caption ? substituteVariables(step.caption) : undefined
+          doSend({ type: step.type, mediaUrl: step.mediaUrl, caption, fileName: step.fileName ?? undefined }, caption || `[${step.type}]`)
+        }
+      }
+      return
+    }
+
+    // Legacy single-message
     if (template.type === "TEXT") {
-      // Fill the input with substituted text — user can review before sending
       const text = substituteVariables(template.body)
       setInputValue(text)
       requestAnimationFrame(() => inputRef.current?.focus())
     } else {
-      // Media templates — send directly
       const caption = template.caption ? substituteVariables(template.caption) : undefined
       if (template.type === "IMAGE" && template.mediaUrl) {
         doSend({ type: "IMAGE", mediaUrl: template.mediaUrl, caption }, caption || `📷 ${template.name}`)
