@@ -99,6 +99,7 @@ export type AllowedTool =
   | "notify_operator"
   | "generate_pix"
   | "collect_info"
+  | "send_template"
 
 export interface StageAgentConfig {
   id: string

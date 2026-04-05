@@ -44,6 +44,7 @@ const ALLOWED_TOOLS: { value: AllowedTool; label: string }[] = [
   { value: "notify_operator", label: "Escalar para humano" },
   { value: "generate_pix", label: "Gerar cobrança PIX" },
   { value: "collect_info", label: "Coletar dados do paciente" },
+  { value: "send_template", label: "Enviar template" },
 ]
 
 const FALLBACK_MODELS = [
@@ -85,6 +86,67 @@ function formatDelay(minutes: number): string {
 function getTriggerUseAI(ac: unknown): boolean {
   if (ac && typeof ac === "object" && "useAI" in ac) return Boolean((ac as { useAI: unknown }).useAI)
   return false
+}
+
+function ProfessionalsSection({
+  professionals,
+  allowedIds,
+  onChange,
+}: {
+  professionals: Array<{ id: string; fullName: string; calendarColor: string; specialty: string | null }>
+  allowedIds: string[]
+  onChange: (ids: string[]) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const allSelected = allowedIds.length === 0
+
+  return (
+    <div className="space-y-2 pt-2 border-t border-border/20">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Profissionais</p>
+        {!allSelected && (
+          <button type="button" onClick={() => onChange([])}
+            className="text-[9px] text-muted-foreground/50 hover:text-foreground cursor-pointer">Limpar</button>
+        )}
+      </div>
+
+      {allSelected && !expanded ? (
+        <button type="button" onClick={() => setExpanded(true)}
+          className="w-full flex items-center justify-between rounded-lg border border-border/40 bg-muted/10 px-3 py-2 cursor-pointer hover:bg-muted/20 transition-colors">
+          <div className="flex items-center gap-2">
+            <UserCircle className="h-3.5 w-3.5 text-emerald-400" weight="fill" />
+            <span className="text-[11px] font-medium text-foreground">Todos os profissionais</span>
+          </div>
+          <span className="text-[9px] text-muted-foreground/50">Clique para filtrar</span>
+        </button>
+      ) : (
+        <div className="space-y-1">
+          {professionals.map((prof) => {
+            const checked = allowedIds.includes(prof.id)
+            return (
+              <button key={prof.id} type="button"
+                onClick={() => onChange(
+                  allowedIds.includes(prof.id)
+                    ? allowedIds.filter((id) => id !== prof.id)
+                    : [...allowedIds, prof.id]
+                )}
+                className={`w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-all cursor-pointer border ${
+                  checked ? "border-accent/30 bg-accent/10" : "border-transparent hover:bg-muted/20"
+                }`}>
+                <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: prof.calendarColor || "#3b82f6" }} />
+                <span className="text-[11px] font-medium text-foreground truncate flex-1">{prof.fullName}</span>
+                {checked && <Check className="h-3 w-3 text-accent" weight="bold" />}
+              </button>
+            )
+          })}
+          {allowedIds.length === 0 && expanded && (
+            <button type="button" onClick={() => setExpanded(false)}
+              className="text-[9px] text-muted-foreground/40 hover:text-foreground cursor-pointer">Fechar</button>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 interface StageConfigModalProps {
@@ -491,226 +553,164 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                   <Spinner className="h-6 w-6 text-accent animate-spin" />
                 </div>
               ) : (
-                /* ─── Agente tab ─── */
-                <div className="flex-1 min-h-0 flex flex-col px-6 sm:px-8 pt-5 gap-4 overflow-hidden">
-                  {/* Row 1: Model + Temperature + Voice */}
-                  <div className="shrink-0 flex items-end gap-4 flex-wrap">
-                    {llmData ? (
-                      <>
-                        <div className="space-y-1.5 w-[170px]">
-                          <label className={labelCls}>Provider</label>
-                          <select
-                            value={llmProvider ?? ""}
-                            onChange={(e) => {
-                              const p = e.target.value || null
-                              setLlmProvider(p)
-                              // Auto-select first model of this provider
-                              if (p && llmData.models[p]?.[0]) {
-                                setLlmModel(llmData.models[p][0].id)
-                              } else {
-                                setLlmModel(null)
-                              }
-                            }}
-                            className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer"
-                          >
-                            <option value="">Padrão do sistema</option>
-                            {Object.entries(llmData.providers).map(([key, label]) => (
-                              <option key={key} value={key}>{label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-1.5 w-[190px]">
-                          <label className={labelCls}>Modelo</label>
-                          <select
-                            value={llmModel ?? ""}
-                            onChange={(e) => setLlmModel(e.target.value || null)}
-                            disabled={!llmProvider}
-                            className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer disabled:opacity-50"
-                          >
-                            {!llmProvider && <option value="">Padrão</option>}
-                            {llmProvider && (llmData.models[llmProvider] ?? []).map((m) => (
-                              <option key={m.id} value={m.id}>{m.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-1.5 w-[150px]">
-                        <label className={labelCls}>Modelo</label>
-                        <select
-                          value={model}
-                          onChange={(e) => setModel(e.target.value as "HAIKU" | "SONNET")}
-                          className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer"
-                        >
-                          {FALLBACK_MODELS.map((m) => (
-                            <option key={m.value} value={m.value}>{m.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    <div className="space-y-1.5 sm:w-[120px]">
-                      <label className={labelCls}>Temp. ({temperature.toFixed(1)})</label>
-                      <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.1}
-                        value={temperature}
-                        onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                        className="w-full h-2.5 rounded-full accent-accent mt-2 cursor-pointer"
-                      />
-                      <p className="text-[10px] text-muted-foreground/90">0 conservador · 1 criativo</p>
+                /* ─── Agente tab — two-column layout ─── */
+                <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+
+                  {/* ═══ Left: Prompt (full height) ═══ */}
+                  <div className="flex-1 min-h-0 min-w-0 flex flex-col p-5 lg:pr-0">
+                    <div className="shrink-0 flex items-center gap-1.5 mb-2">
+                      <ListChecks className="h-3.5 w-3.5 text-muted-foreground/90" weight="duotone" />
+                      <label className={labelCls}>Instrucoes da etapa</label>
                     </div>
-                    <div className="space-y-1.5 w-[200px]">
-                      <label className={labelCls}>
-                        <SpeakerHigh className="h-3 w-3 inline mr-1" weight="duotone" />
-                        Voz do assistente
-                      </label>
+                    <p className="shrink-0 text-[11px] text-muted-foreground/70 mb-2">
+                      Use @ para referenciar etapas, profissionais, servicos, ferramentas ou templates.
+                    </p>
+                    <InstructionTextarea
+                      value={stageContext}
+                      onChange={setStageContext}
+                      placeholder="Ex: Apresente a clinica, colete nome e motivo. Ofereca horarios com @tool:search_availability."
+                      className="flex-1 min-h-0"
+                    />
+
+                    {error && (
+                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="shrink-0 text-[12px] text-rose-400 mt-2">
+                        {error}
+                      </motion.p>
+                    )}
+                  </div>
+
+                  {/* ═══ Right: Config panel (scrollable) ═══ */}
+                  <div className="lg:w-[300px] shrink-0 border-t lg:border-t-0 lg:border-l border-border/30 overflow-y-auto overscroll-contain p-5 space-y-4">
+
+                    {/* Tools */}
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Ferramentas</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {ALLOWED_TOOLS.map((tool) => {
+                          const checked = allowedTools.includes(tool.value)
+                          return (
+                            <button
+                              key={tool.value}
+                              type="button"
+                              onClick={() => toggleTool(tool.value)}
+                              className={`rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all cursor-pointer border ${
+                                checked
+                                  ? "border-accent/40 bg-accent/10 text-accent"
+                                  : "border-border/40 text-muted-foreground/60 hover:border-border hover:text-foreground"
+                              }`}
+                            >
+                              {tool.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Model + Temperature */}
+                    <div className="space-y-3 pt-2 border-t border-border/20">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Modelo</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {llmData ? (
+                          <>
+                            <div>
+                              <label className="text-[9px] font-bold text-muted-foreground/60 uppercase mb-1 block">Provider</label>
+                              <select
+                                value={llmProvider ?? ""}
+                                onChange={(e) => {
+                                  const p = e.target.value || null
+                                  setLlmProvider(p)
+                                  if (p && llmData.models[p]?.[0]) setLlmModel(llmData.models[p][0].id)
+                                  else setLlmModel(null)
+                                }}
+                                className="w-full rounded-lg border border-border/50 bg-background/40 px-2.5 py-1.5 text-[11px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent/30"
+                              >
+                                <option value="">Padrao</option>
+                                {Object.entries(llmData.providers).map(([k, l]) => (
+                                  <option key={k} value={k}>{l}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-bold text-muted-foreground/60 uppercase mb-1 block">Modelo</label>
+                              <select
+                                value={llmModel ?? ""}
+                                onChange={(e) => setLlmModel(e.target.value || null)}
+                                disabled={!llmProvider}
+                                className="w-full rounded-lg border border-border/50 bg-background/40 px-2.5 py-1.5 text-[11px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:opacity-50"
+                              >
+                                {!llmProvider && <option value="">Padrao</option>}
+                                {llmProvider && (llmData.models[llmProvider] ?? []).map((m) => (
+                                  <option key={m.id} value={m.id}>{m.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="col-span-2">
+                            <select
+                              value={model}
+                              onChange={(e) => setModel(e.target.value as "HAIKU" | "SONNET")}
+                              className="w-full rounded-lg border border-border/50 bg-background/40 px-2.5 py-1.5 text-[11px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent/30"
+                            >
+                              {FALLBACK_MODELS.map((m) => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[9px] font-bold text-muted-foreground/60 uppercase">Temperatura</label>
+                          <span className="text-[10px] font-bold text-accent tabular-nums">{temperature.toFixed(1)}</span>
+                        </div>
+                        <input type="range" min={0} max={1} step={0.1} value={temperature}
+                          onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                          className="w-full h-1.5 rounded-full appearance-none bg-border/40 accent-accent cursor-pointer" />
+                        <p className="text-[9px] text-muted-foreground/50 mt-0.5">0 conservador · 1 criativo</p>
+                      </div>
+                    </div>
+
+                    {/* Voice */}
+                    <div className="space-y-2 pt-2 border-t border-border/20">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Voz</p>
                       <select
                         value={voiceId ?? ""}
                         onChange={(e) => setVoiceId(e.target.value || null)}
-                        className="w-full rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 cursor-pointer"
+                        className="w-full rounded-lg border border-border/50 bg-background/40 px-2.5 py-1.5 text-[11px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-accent/30"
                       >
                         <option value="">Sem voz (texto)</option>
                         {voices.map((v) => (
                           <option key={v.id} value={v.id}>{v.name}</option>
                         ))}
                       </select>
-                      <p className="text-[10px] text-muted-foreground/90">Responde com áudio no WhatsApp</p>
                       {voiceId && (
-                        <div className="mt-2 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Chance de áudio</label>
-                            <span className="text-[11px] font-bold text-accent tabular-nums">{voiceChance}%</span>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-[9px] font-bold text-muted-foreground/60 uppercase">Chance de audio</label>
+                            <span className="text-[10px] font-bold text-accent tabular-nums">{voiceChance}%</span>
                           </div>
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            step={10}
-                            value={voiceChance}
+                          <input type="range" min={0} max={100} step={10} value={voiceChance}
                             onChange={(e) => setVoiceChance(Number(e.target.value))}
-                            className="w-full h-1.5 rounded-full appearance-none bg-border/60 accent-accent cursor-pointer [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:appearance-none"
-                          />
-                          <p className="text-[9px] text-muted-foreground/60">
-                            {voiceChance === 100
-                              ? "Sempre responde por áudio"
-                              : voiceChance === 0
-                                ? "Sempre responde por texto"
-                                : `${voiceChance}% áudio, ${100 - voiceChance}% texto — mais natural`
-                            }
-                          </p>
+                            className="w-full h-1.5 rounded-full appearance-none bg-border/40 accent-accent cursor-pointer" />
                         </div>
                       )}
                     </div>
-                    <div className="space-y-1.5">
-                      <label className={labelCls}>Etapa final</label>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={isTerminal}
-                        onClick={() => {
-                          if (!stage || !currentFunnel) return
-                          const next = !isTerminal
-                          setIsTerminal(next)
-                          updateStage.mutate({
-                            stageId: stage.id,
-                            funnelId: currentFunnel.id,
-                            body: { isTerminal: next },
-                          })
-                        }}
-                        className={`cursor-pointer relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors duration-200 ${
-                          isTerminal
-                            ? "border-accent bg-accent/20"
-                            : "border-border bg-muted/30"
-                        }`}
-                      >
-                        <span className={`absolute top-0.5 h-4 w-4 rounded-full transition-all duration-200 ${
-                          isTerminal
-                            ? "left-[calc(100%-20px)] bg-accent"
-                            : "left-1 bg-muted-foreground/40"
-                        }`} />
-                      </button>
-                      <p className="text-[10px] text-muted-foreground/90">Encerra o fluxo</p>
-                    </div>
-                  </div>
 
-                  {/* Row 2: Prompts (left) + Tools (right) */}
-                  <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5">
-                    {/* Left: Stage instructions — fills height */}
-                    <div className="flex-1 min-h-0 min-w-0 flex flex-col">
-                      <div className="shrink-0 flex items-center gap-1.5 mb-2">
-                        <ListChecks className="h-3.5 w-3.5 text-muted-foreground/90" weight="duotone" />
-                        <label className={labelCls}>Instruções da etapa</label>
-                      </div>
-                      <p className="shrink-0 text-[11px] text-muted-foreground/85 mb-2">
-                        O que o assistente deve fazer nesta etapa. Use @ para referenciar etapas, profissionais, serviços, ferramentas ou modelos.
-                      </p>
-                      <InstructionTextarea
-                        value={stageContext}
-                        onChange={setStageContext}
-                        placeholder="Ex: Apresente a clínica, colete nome e motivo. Ofereça horários com @tool:search_availability."
-                        className="flex-1 min-h-0"
-                      />
-                    </div>
-
-                    {/* Right: Tools + PIX — independently scrollable */}
-                    <div className="lg:w-[260px] shrink-0 flex flex-col gap-4 overflow-y-auto overscroll-contain pb-5 pr-1">
-                      <div>
-                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                          Ferramentas permitidas
-                        </h3>
-                        <div className="flex flex-col gap-1">
-                          {ALLOWED_TOOLS.map((tool) => {
-                            const checked = allowedTools.includes(tool.value)
-                            return (
-                              <button
-                                key={tool.value}
-                                type="button"
-                                onClick={() => toggleTool(tool.value)}
-                                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-all cursor-pointer ${
-                                  checked
-                                    ? "bg-accent/10 border border-accent/30"
-                                    : "bg-transparent border border-transparent hover:bg-muted/20"
-                                }`}
-                              >
-                                <div
-                                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-[1.5px] transition-colors ${
-                                    checked ? "border-accent bg-accent" : "border-muted-foreground/30"
-                                  }`}
-                                >
-                                  {checked && <Check className="h-2.5 w-2.5 text-accent-foreground" weight="bold" />}
-                                </div>
-                                <span className="text-[12px] font-medium text-foreground">{tool.label}</span>
-                              </button>
-                            )
-                          })}
-                        </div>
-                        {!allowedTools.includes("create_appointment") && (
-                          <p className="text-[10px] text-amber-500/80 mt-1.5 px-1">
-                            Sem &quot;Agendar consulta&quot;, a IA não consegue criar consultas.
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Required fields before payment */}
-                      {(allowedTools.includes("generate_pix") || allowedTools.includes("create_appointment") || requirePaymentBeforeConfirm) && (
-                        <div className="rounded-xl border border-border/40 bg-muted/5 px-3 py-3 space-y-2">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <ListChecks className="h-3.5 w-3.5 text-muted-foreground/80" weight="duotone" />
-                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                              Exigir antes de pagar/agendar
-                            </p>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-                            A IA bloqueará pagamento e agendamento até coletar esses dados.
-                          </p>
+                    {/* Required fields */}
+                    {(allowedTools.includes("generate_pix") || allowedTools.includes("create_appointment") || requirePaymentBeforeConfirm) && (
+                      <div className="space-y-2 pt-2 border-t border-border/20">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Dados obrigatorios</p>
+                        <p className="text-[9px] text-muted-foreground/50">Exigidos antes de pagar/agendar</p>
+                        <div className="flex flex-wrap gap-1.5">
                           {[
-                            { value: "cpf",        label: "CPF" },
-                            { value: "birth_date", label: "Data de nascimento" },
-                            { value: "insurance",  label: "Plano de saúde" },
-                            { value: "email",      label: "E-mail" },
-                            { value: "name",       label: "Nome" },
+                            { value: "cpf", label: "CPF" },
+                            { value: "birth_date", label: "Nascimento" },
+                            { value: "insurance", label: "Plano" },
+                            { value: "email", label: "E-mail" },
+                            { value: "name", label: "Nome" },
                           ].map((field) => {
                             const pixActive = allowedTools.includes("generate_pix") || requirePaymentBeforeConfirm
                             const locked = field.value === "cpf" && pixActive
@@ -720,140 +720,70 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                                 key={field.value}
                                 type="button"
                                 disabled={locked}
-                                onClick={() =>
-                                  setRequiredFields((prev) =>
-                                    prev.includes(field.value)
-                                      ? prev.filter((f) => f !== field.value)
-                                      : [...prev, field.value]
-                                  )
-                                }
-                                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all ${
-                                  locked
-                                    ? "bg-accent/10 border border-accent/25 opacity-70 cursor-not-allowed"
-                                    : checked
-                                    ? "bg-accent/10 border border-accent/25 cursor-pointer"
-                                    : "bg-transparent border border-transparent hover:bg-muted/20 cursor-pointer"
-                                }`}
-                              >
-                                <div
-                                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-[1.5px] transition-colors ${
-                                    checked ? "border-accent bg-accent" : "border-muted-foreground/30"
-                                  }`}
-                                >
-                                  {checked && <Check className="h-2 w-2 text-accent-foreground" weight="bold" />}
-                                </div>
-                                <span className="text-[11px] font-medium text-foreground">{field.label}</span>
-                                {locked && (
-                                  <span className="ml-auto text-[9px] text-muted-foreground/50 font-mono">obrigatório</span>
+                                onClick={() => setRequiredFields((prev) =>
+                                  prev.includes(field.value) ? prev.filter((f) => f !== field.value) : [...prev, field.value]
                                 )}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
-
-                      {/* Professionals filter */}
-                      {professionals.length > 1 && (
-                        <div className="rounded-xl border border-border/40 bg-muted/5 px-3 py-3 space-y-2">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <UserCircle className="h-3.5 w-3.5 text-muted-foreground/80" weight="duotone" />
-                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                              Profissionais neste stage
-                            </p>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-                            Vazio = todos visíveis. Selecione para restringir.
-                          </p>
-                          {professionals.map((prof) => {
-                            const checked = allowedProfessionalIds.includes(prof.id)
-                            return (
-                              <button
-                                key={prof.id}
-                                type="button"
-                                onClick={() =>
-                                  setAllowedProfessionalIds((prev) =>
-                                    prev.includes(prof.id)
-                                      ? prev.filter((id) => id !== prof.id)
-                                      : [...prev, prof.id]
-                                  )
-                                }
-                                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-all cursor-pointer ${
+                                className={`rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all border ${
                                   checked
-                                    ? "bg-accent/10 border border-accent/25"
-                                    : "bg-transparent border border-transparent hover:bg-muted/20"
-                                }`}
+                                    ? "border-accent/40 bg-accent/10 text-accent"
+                                    : "border-border/40 text-muted-foreground/60 hover:border-border cursor-pointer"
+                                } ${locked ? "opacity-70 cursor-not-allowed" : "cursor-pointer"}`}
                               >
-                                <div
-                                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border-[1.5px] transition-colors ${
-                                    checked ? "border-accent bg-accent" : "border-muted-foreground/30"
-                                  }`}
-                                >
-                                  {checked && <Check className="h-2 w-2 text-accent-foreground" weight="bold" />}
-                                </div>
-                                <div
-                                  className="h-2 w-2 rounded-full shrink-0"
-                                  style={{ backgroundColor: prof.calendarColor || "#3b82f6" }}
-                                />
-                                <span className="text-[11px] font-medium text-foreground truncate flex-1">{prof.fullName}</span>
-                                {prof.specialty && (
-                                  <span className="text-[10px] text-muted-foreground/60 truncate">{prof.specialty}</span>
-                                )}
+                                {field.label}
                               </button>
                             )
                           })}
-                          {allowedProfessionalIds.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setAllowedProfessionalIds([])}
-                              className="text-[10px] text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-                            >
-                              Limpar seleção
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* PIX toggle */}
-                      <div className="rounded-xl border border-border/40 bg-muted/5 px-3 py-3">
-                        <div className="flex items-start gap-2.5">
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={requirePaymentBeforeConfirm}
-                            onClick={() => setRequirePaymentBeforeConfirm((v) => !v)}
-                            className={`flex h-5 w-9 shrink-0 mt-0.5 items-center rounded-full transition-colors cursor-pointer ${
-                              requirePaymentBeforeConfirm ? "bg-accent" : "bg-muted"
-                            }`}
-                          >
-                            <motion.div
-                              animate={{ x: requirePaymentBeforeConfirm ? 16 : 2 }}
-                              transition={{ duration: 0.2 }}
-                              className="h-4 w-4 rounded-full bg-white shadow"
-                            />
-                          </button>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <CurrencyDollar className="h-3.5 w-3.5 text-muted-foreground/90" weight="duotone" />
-                              <p className="text-[12px] font-medium text-foreground">PIX antes de agendar</p>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground/90 mt-0.5 leading-relaxed">
-                              Horário → PIX → consulta criada após pagamento.
-                            </p>
-                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
 
-                  {error && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="shrink-0 text-[12px] text-rose-400 pb-2"
-                    >
-                      {error}
-                    </motion.p>
-                  )}
+                    {/* Professionals */}
+                    {professionals.length > 1 && (
+                      <ProfessionalsSection
+                        professionals={professionals}
+                        allowedIds={allowedProfessionalIds}
+                        onChange={setAllowedProfessionalIds}
+                      />
+                    )}
+
+                    {/* PIX toggle */}
+                    <div className="flex items-center justify-between pt-2 border-t border-border/20">
+                      <div>
+                        <p className="text-[11px] font-medium text-foreground">PIX antes de agendar</p>
+                        <p className="text-[9px] text-muted-foreground/50">Cobrar antes de confirmar</p>
+                      </div>
+                      <button type="button" role="switch" aria-checked={requirePaymentBeforeConfirm}
+                        onClick={() => setRequirePaymentBeforeConfirm((v) => !v)}
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors cursor-pointer ${
+                          requirePaymentBeforeConfirm ? "bg-accent" : "bg-muted"
+                        }`}>
+                        <motion.div animate={{ x: requirePaymentBeforeConfirm ? 16 : 2 }} transition={{ duration: 0.2 }}
+                          className="h-4 w-4 rounded-full bg-white shadow" />
+                      </button>
+                    </div>
+
+                    {/* Terminal toggle */}
+                    <div className="flex items-center justify-between pt-2 border-t border-border/20">
+                      <div>
+                        <p className="text-[11px] font-medium text-foreground">Etapa final</p>
+                        <p className="text-[9px] text-muted-foreground/50">Encerra o fluxo</p>
+                      </div>
+                      <button type="button" role="switch" aria-checked={isTerminal}
+                        onClick={() => {
+                          if (!stage || !currentFunnel) return
+                          const next = !isTerminal
+                          setIsTerminal(next)
+                          updateStage.mutate({ stageId: stage.id, funnelId: currentFunnel.id, body: { isTerminal: next } })
+                        }}
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors cursor-pointer ${
+                          isTerminal ? "bg-accent" : "bg-muted"
+                        }`}>
+                        <motion.div animate={{ x: isTerminal ? 16 : 2 }} transition={{ duration: 0.2 }}
+                          className="h-4 w-4 rounded-full bg-white shadow" />
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
               )}
             </div>
