@@ -7,7 +7,6 @@ import {
   Robot,
   Check,
   Spinner,
-  ListChecks,
   Lightning,
   Plus,
   PencilSimple,
@@ -32,7 +31,6 @@ const ease = [0.33, 1, 0.68, 1] as const
 
 const inputCls =
   "w-full rounded-xl border border-border/60 bg-background/40 px-4 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-200"
-const labelCls = "block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5"
 
 const ALLOWED_TOOLS: { value: AllowedTool; label: string }[] = [
   { value: "search_availability", label: "Buscar disponibilidade" },
@@ -556,27 +554,19 @@ export function StageConfigModal({ open, onClose, stage }: StageConfigModalProps
                 /* ─── Agente tab — two-column layout ─── */
                 <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
 
-                  {/* ═══ Left: Prompt (full height) ═══ */}
-                  <div className="flex-1 min-h-0 min-w-0 flex flex-col p-5 lg:pr-0">
-                    <div className="shrink-0 flex items-center gap-1.5 mb-2">
-                      <ListChecks className="h-3.5 w-3.5 text-muted-foreground/90" weight="duotone" />
-                      <label className={labelCls}>Instrucoes da etapa</label>
-                    </div>
-                    <p className="shrink-0 text-[11px] text-muted-foreground/70 mb-2">
-                      Use @ para referenciar etapas, profissionais, servicos, ferramentas ou templates.
-                    </p>
+                  {/* ═══ Left: Prompt (full bleed) ═══ */}
+                  <div className="flex-1 min-h-0 min-w-0 flex flex-col">
                     <InstructionTextarea
                       value={stageContext}
                       onChange={setStageContext}
-                      placeholder="Ex: Apresente a clinica, colete nome e motivo. Ofereca horarios com @tool:search_availability."
-                      className="flex-1 min-h-0"
+                      placeholder="Instrucoes da etapa. Use @ para referenciar etapas, profissionais, servicos, ferramentas ou templates."
+                      className="flex-1 min-h-0 !rounded-none !border-0 !ring-0 !shadow-none"
                     />
 
                     {error && (
-                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        className="shrink-0 text-[12px] text-rose-400 mt-2">
-                        {error}
-                      </motion.p>
+                      <div className="px-4 py-2 border-t border-rose-500/20 bg-rose-500/5">
+                        <p className="text-[12px] text-rose-400">{error}</p>
+                      </div>
                     )}
                   </div>
 
