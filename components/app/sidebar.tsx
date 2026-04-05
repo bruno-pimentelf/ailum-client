@@ -73,7 +73,7 @@ function InstanceSelector({ collapsed }: { collapsed: boolean }) {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const zapiInstances = (integrations ?? []).filter(
-    (i) => i.provider === "zapi" && i.instanceId && i.isActive,
+    (i) => (i.provider === "zapi" || i.provider === "uazapi") && i.instanceId && i.isActive,
   )
 
   useEffect(() => {

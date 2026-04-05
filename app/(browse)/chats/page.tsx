@@ -333,6 +333,12 @@ export default function ChatsPage() {
 
   const aiContacts = baseFiltered.filter((c) => isAiEffective(c))
   const manualContacts = baseFiltered.filter((c) => !isAiEffective(c))
+    .sort((a, b) => {
+      // Attention contacts first
+      if (a.needsAttention && !b.needsAttention) return -1
+      if (!a.needsAttention && b.needsAttention) return 1
+      return 0
+    })
   const attentionCount = manualContacts.filter((c) => c.needsAttention).length
   const filtered = chatTab === "ai" ? aiContacts : manualContacts
 
@@ -386,8 +392,8 @@ export default function ChatsPage() {
           {/* AI / Manual tabs */}
           <div className="flex items-stretch border-b border-border/50 pt-2">
             {([
-              { key: "ai" as ChatTab, label: "IA", icon: Robot, count: aiContacts.length },
-              { key: "manual" as ChatTab, label: "Manuais", icon: UserCircle, count: manualContacts.length },
+              { key: "ai" as ChatTab, label: "IA", icon: Robot },
+              { key: "manual" as ChatTab, label: "Manuais", icon: UserCircle },
             ]).map((tab) => {
               const active = chatTab === tab.key
               return (
@@ -414,13 +420,6 @@ export default function ChatsPage() {
                   )}
                   <tab.icon className="h-3.5 w-3.5" weight={active ? "fill" : "regular"} />
                   <span>{tab.label}</span>
-                  {tab.count > 0 && (
-                    <span className={`text-[9px] rounded-full px-1.5 py-0.5 font-semibold ${
-                      active ? "bg-accent/15 text-accent" : "bg-muted/40 text-muted-foreground/60"
-                    }`}>
-                      {tab.count}
-                    </span>
-                  )}
                   {tab.key === "manual" && attentionCount > 0 && (
                     <span className="relative flex h-4 min-w-4 items-center justify-center">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400/40" />

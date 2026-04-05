@@ -2,7 +2,8 @@ import { apiFetch } from "@/lib/api"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type Provider = "zapi" | "asaas" | "infinitepay" | "elevenlabs"
+export type WhatsAppProvider = "zapi" | "uazapi"
+export type Provider = WhatsAppProvider | "asaas" | "infinitepay" | "elevenlabs"
 
 export type Integration = {
   id?: string
@@ -22,6 +23,13 @@ export type ZapiSaveInput = {
   instanceId: string
   instanceToken: string
   label?: string
+}
+
+export type UazapiSaveInput = {
+  instanceId: string
+  instanceToken: string
+  label?: string
+  baseUrl?: string
 }
 
 export type ZapiSaveResult = Integration & {
@@ -252,6 +260,46 @@ export const integrationsApi = {
 
   zapiRestart: () =>
     apiFetch<{ restarted: boolean }>("/integrations/zapi/restart", { method: "POST" }),
+
+  // ── UazAPI ──────────────────────────────────────────────────────────────────
+
+  saveUazapi: (body: UazapiSaveInput) =>
+    apiFetch<ZapiSaveResult>("/integrations/uazapi", { method: "PUT", body }),
+
+  updateUazapiAi: (body: { instanceId: string; isAiEnabled?: boolean; isAiTestMode?: boolean; aiTestPhones?: string[] }) =>
+    apiFetch<{ success: boolean }>("/integrations/uazapi/ai", { method: "PATCH", body }),
+
+  deleteUazapiInstance: (instanceId: string) =>
+    apiFetch<void>(`/integrations/uazapi/${instanceId}`, { method: "DELETE" }),
+
+  uazapiStatus: (params?: { instanceId?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.instanceId) qs.set("instanceId", params.instanceId)
+    const suffix = qs.toString()
+    return apiFetch<ZapiStatus>(`/integrations/uazapi/status${suffix ? `?${suffix}` : ""}`)
+  },
+
+  uazapiMe: (params?: { instanceId?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.instanceId) qs.set("instanceId", params.instanceId)
+    const suffix = qs.toString()
+    return apiFetch<Record<string, unknown>>(`/integrations/uazapi/me${suffix ? `?${suffix}` : ""}`)
+  },
+
+  uazapiQrCode: (instanceId?: string) => {
+    const qs = new URLSearchParams()
+    if (instanceId) qs.set("instanceId", instanceId)
+    const suffix = qs.toString()
+    return apiFetch<ZapiQrCode>(`/integrations/uazapi/qrcode${suffix ? `?${suffix}` : ""}`)
+  },
+
+  uazapiDisconnect: (body?: { instanceId?: string }) =>
+    apiFetch<{ disconnected: boolean }>("/integrations/uazapi/disconnect", { method: "POST", body }),
+
+  uazapiRestart: (body?: { instanceId?: string }) =>
+    apiFetch<{ restarted: boolean }>("/integrations/uazapi/restart", { method: "POST", body }),
+
+  // ── Asaas ──────────────────────────────────────────────────────────────────
 
   saveAsaas: (body: AsaasSaveInput) =>
     apiFetch<Integration>("/integrations/asaas", { method: "PUT", body }),

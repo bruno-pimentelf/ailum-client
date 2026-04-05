@@ -2,14 +2,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   integrationsApi,
   type ZapiSaveInput,
+  type UazapiSaveInput,
   type AsaasSaveInput,
   type Provider,
+  type WhatsAppProvider,
   type ZapiSyncRoutingInput,
   type ZapiContactRoutingInput,
 } from "@/lib/api/integrations"
 
 export const INTEGRATIONS_KEY = ["integrations"] as const
 export const ZAPI_STATUS_KEY = ["integrations", "zapi", "status"] as const
+export const UAZAPI_STATUS_KEY = ["integrations", "uazapi", "status"] as const
 
 /**
  * Full list of integrations for the active org.
@@ -114,6 +117,87 @@ export function useZapiRestart() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ZAPI_STATUS_KEY }),
   })
 }
+
+// ── Provider-aware hooks (work for both zapi and uazapi) ─────────────────────
+
+export function useWhatsAppStatus(provider: WhatsAppProvider, options?: { enabled?: boolean; refetchInterval?: number; instanceId?: string }) {
+  const statusKey = provider === "uazapi" ? UAZAPI_STATUS_KEY : ZAPI_STATUS_KEY
+  const statusFn = provider === "uazapi" ? integrationsApi.uazapiStatus : integrationsApi.zapiStatus
+  return useQuery({
+    queryKey: [...statusKey, options?.instanceId ?? "default"],
+    queryFn: () => statusFn({ instanceId: options?.instanceId }),
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval,
+    refetchOnWindowFocus: true,
+  })
+}
+
+export function useWhatsAppQrCode(provider: WhatsAppProvider, options?: { enabled?: boolean; instanceId?: string }) {
+  const qrFn = provider === "uazapi" ? integrationsApi.uazapiQrCode : integrationsApi.zapiQrCode
+  return useQuery({
+    queryKey: ["integrations", provider, "qrcode", options?.instanceId ?? "default"],
+    queryFn: () => qrFn(options?.instanceId),
+    enabled: options?.enabled ?? false,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  })
+}
+
+export function useSaveWhatsAppInstance() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { provider: WhatsAppProvider } & (ZapiSaveInput | UazapiSaveInput)) => {
+      const { provider, ...body } = input
+      if (provider === "uazapi") return integrationsApi.saveUazapi(body as UazapiSaveInput)
+      return integrationsApi.saveZapi(body as ZapiSaveInput)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY }),
+  })
+}
+
+export function useWhatsAppDisconnect(provider: WhatsAppProvider) {
+  const qc = useQueryClient()
+  const statusKey = provider === "uazapi" ? UAZAPI_STATUS_KEY : ZAPI_STATUS_KEY
+  return useMutation({
+    mutationFn: (body?: { instanceId?: string }) =>
+      provider === "uazapi"
+        ? integrationsApi.uazapiDisconnect(body)
+        : integrationsApi.zapiDisconnect(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: statusKey })
+      qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY })
+    },
+  })
+}
+
+export function useWhatsAppRestart(provider: WhatsAppProvider) {
+  const qc = useQueryClient()
+  const statusKey = provider === "uazapi" ? UAZAPI_STATUS_KEY : ZAPI_STATUS_KEY
+  return useMutation({
+    mutationFn: (body?: { instanceId?: string }) =>
+      provider === "uazapi"
+        ? integrationsApi.uazapiRestart(body)
+        : integrationsApi.zapiRestart(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: statusKey }),
+  })
+}
+
+export function useDeleteWhatsAppInstance(provider: WhatsAppProvider) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (instanceId: string) =>
+      provider === "uazapi"
+        ? integrationsApi.deleteUazapiInstance(instanceId)
+        : integrationsApi.deleteZapiInstance(instanceId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INTEGRATIONS_KEY })
+      qc.invalidateQueries({ queryKey: provider === "uazapi" ? UAZAPI_STATUS_KEY : ZAPI_STATUS_KEY })
+    },
+  })
+}
+
+// ── Asaas ────────────────────────────────────────────────────────────────────
 
 export function useSaveAsaas() {
   const qc = useQueryClient()

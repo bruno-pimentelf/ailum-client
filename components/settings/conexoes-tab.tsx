@@ -34,10 +34,16 @@ import {
   useSaveAsaas,
   useRemoveIntegration,
   useDeleteZapiInstance,
+  useSaveWhatsAppInstance,
+  useWhatsAppStatus,
+  useWhatsAppQrCode,
+  useWhatsAppDisconnect,
+  useWhatsAppRestart,
+  useDeleteWhatsAppInstance,
 } from "@/hooks/use-integrations"
 import { integrationsApi } from "@/lib/api/integrations"
 import { useMe } from "@/hooks/use-me"
-import type { Integration } from "@/lib/api/integrations"
+import type { Integration, WhatsAppProvider } from "@/lib/api/integrations"
 
 const ease = [0.33, 1, 0.68, 1] as const
 
@@ -87,16 +93,18 @@ function InstanceRow({ instance, isExpanded, onToggle }: {
   isExpanded: boolean
   onToggle: () => void
 }) {
-  const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useZapiStatus({
+  const provider = (instance.provider === "uazapi" ? "uazapi" : "zapi") as WhatsAppProvider
+
+  const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useWhatsAppStatus(provider, {
     enabled: true,
     refetchInterval: 15_000,
     instanceId: instance.instanceId ?? undefined,
   })
   const connected = status?.connected === true
-  const deleteInstance = useDeleteZapiInstance()
+  const deleteInstance = useDeleteWhatsAppInstance(provider)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const { data: qrData, isFetching: qrFetching, isError: qrError, refetch: refetchQr } = useZapiQrCode({
+  const { data: qrData, isFetching: qrFetching, isError: qrError, refetch: refetchQr } = useWhatsAppQrCode(provider, {
     enabled: isExpanded && !connected,
     instanceId: instance.instanceId ?? undefined,
   })
@@ -107,8 +115,8 @@ function InstanceRow({ instance, isExpanded, onToggle }: {
     return () => clearInterval(id)
   }, [isExpanded, connected, refetchQr])
 
-  const disconnect = useZapiDisconnect()
-  const restart = useZapiRestart()
+  const disconnect = useWhatsAppDisconnect(provider)
+  const restart = useWhatsAppRestart(provider)
   const syncRouting = useSyncZapiContactRouting()
   const [syncOnlyUnknown, setSyncOnlyUnknown] = useState(true)
 
@@ -146,6 +154,11 @@ function InstanceRow({ instance, isExpanded, onToggle }: {
         <p className="text-[13px] font-semibold text-foreground truncate flex-1 min-w-0">
           {instance.label || `Instância ${(instance.instanceId ?? "").slice(0, 8)}...`}
         </p>
+        {provider === "uazapi" && (
+          <span className="shrink-0 rounded-md border border-sky-500/20 bg-sky-500/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-sky-400">
+            UazAPI
+          </span>
+        )}
 
         {/* Badges */}
         <span className={`flex items-center gap-1 text-[10px] font-medium shrink-0 ${connected ? "text-emerald-400" : "text-muted-foreground/50"}`}>
@@ -227,11 +240,11 @@ function InstanceRow({ instance, isExpanded, onToggle }: {
               {/* Actions when connected */}
               {connected && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <button onClick={() => disconnect.mutate(undefined, { onSuccess: () => refetchQr() })} disabled={disconnect.isPending}
+                  <button onClick={() => disconnect.mutate({ instanceId: instance.instanceId ?? undefined }, { onSuccess: () => refetchQr() })} disabled={disconnect.isPending}
                     className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-1.5 text-[10px] font-bold text-amber-400/70 hover:text-amber-400 transition-all disabled:opacity-40">
                     {disconnect.isPending ? <Spinner /> : <LinkBreak className="h-3 w-3" />} Desconectar
                   </button>
-                  <button onClick={() => restart.mutate(undefined, { onSuccess: () => refetchStatus() })} disabled={restart.isPending}
+                  <button onClick={() => restart.mutate({ instanceId: instance.instanceId ?? undefined }, { onSuccess: () => refetchStatus() })} disabled={restart.isPending}
                     className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-border/70 bg-foreground/[0.03] px-3 py-1.5 text-[10px] font-bold text-muted-foreground/70 hover:text-foreground/85 transition-all disabled:opacity-40">
                     {restart.isPending ? <Spinner /> : <ArrowsClockwise className="h-3 w-3" />} Reiniciar
                   </button>
@@ -244,8 +257,8 @@ function InstanceRow({ instance, isExpanded, onToggle }: {
                 </p>
               )}
 
-              {/* Sync routing */}
-              {connected && (
+              {/* Sync routing — Z-API only (uses Z-API specific chat endpoints) */}
+              {connected && provider === "zapi" && (
                 <details className="group/sync">
                   <summary className="cursor-pointer text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider hover:text-muted-foreground/70 transition-colors list-none flex items-center gap-1.5">
                     <Gear className="h-3 w-3" /> Sincronizar roteamento
@@ -285,11 +298,13 @@ function InstanceRow({ instance, isExpanded, onToggle }: {
 // ── New Instance Modal ────────────────────────────────────────────────────────
 
 function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [provider, setProvider] = useState<WhatsAppProvider>("zapi")
   const [instanceId, setInstanceId] = useState("")
   const [instanceToken, setInstanceToken] = useState("")
   const [label, setLabel] = useState("")
+  const [baseUrl, setBaseUrl] = useState("")
   const [instanceCheck, setInstanceCheck] = useState<{ inUse: boolean; sameAccount?: boolean } | null>(null)
-  const saveZapi = useSaveZapi()
+  const saveInstance = useSaveWhatsAppInstance()
 
   useEffect(() => {
     const id = instanceId.trim()
@@ -306,8 +321,14 @@ function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!instanceId.trim() || !instanceToken.trim()) return
-    saveZapi.mutate(
-      { instanceId: instanceId.trim(), instanceToken: instanceToken.trim(), label: label.trim() || undefined },
+    saveInstance.mutate(
+      {
+        provider,
+        instanceId: instanceId.trim(),
+        instanceToken: instanceToken.trim(),
+        label: label.trim() || undefined,
+        ...(provider === "uazapi" && baseUrl.trim() ? { baseUrl: baseUrl.trim() } : {}),
+      },
       { onSuccess: () => { onSaved(); onClose() } },
     )
   }
@@ -335,7 +356,7 @@ function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
 
         <form onSubmit={handleSave} className="px-5 py-4 space-y-4">
           <AnimatePresence>
-            {saveZapi.isError && (
+            {saveInstance.isError && (
               <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 className="flex items-center gap-2 rounded-xl border border-rose-500/25 bg-rose-500/[0.08] px-3.5 py-2.5 text-[11px] text-rose-400">
                 <Warning className="h-3.5 w-3.5 shrink-0" weight="fill" /> Não foi possível salvar. Verifique as credenciais.
@@ -343,14 +364,41 @@ function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
             )}
           </AnimatePresence>
 
+          {/* Provider selector */}
+          <div>
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Provider *</label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setProvider("zapi")}
+                className={`cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-[12px] font-semibold transition-all ${
+                  provider === "zapi"
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                    : "border-border/70 bg-foreground/[0.02] text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-foreground/[0.04]"
+                }`}>
+                Z-API
+              </button>
+              <button type="button" onClick={() => setProvider("uazapi")}
+                className={`cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-[12px] font-semibold transition-all ${
+                  provider === "uazapi"
+                    ? "border-sky-500/40 bg-sky-500/10 text-sky-400"
+                    : "border-border/70 bg-foreground/[0.02] text-muted-foreground/60 hover:text-muted-foreground/80 hover:bg-foreground/[0.04]"
+                }`}>
+                UazAPI
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Rótulo</label>
             <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ex: Recepção, Comercial, Dr. João..." className={inputCls} autoFocus />
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Instance ID *</label>
-            <input value={instanceId} onChange={(e) => setInstanceId(e.target.value)} placeholder="3EE8E4989B..." className={inputCls} />
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">
+              {provider === "uazapi" ? "Instance ID *" : "Instance ID *"}
+            </label>
+            <input value={instanceId} onChange={(e) => setInstanceId(e.target.value)}
+              placeholder={provider === "uazapi" ? "ID da instância UazAPI" : "3EE8E4989B..."}
+              className={inputCls} />
             {instanceCheck?.inUse && !instanceCheck.sameAccount && (
               <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-rose-400">
                 <Warning className="h-3 w-3 shrink-0" weight="fill" /> Instância vinculada a outra conta
@@ -364,9 +412,21 @@ function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Instance Token *</label>
+            <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">
+              {provider === "uazapi" ? "Token *" : "Instance Token *"}
+            </label>
             <input type="password" value={instanceToken} onChange={(e) => setInstanceToken(e.target.value)} placeholder="••••••••••••••••" className={inputCls} />
           </div>
+
+          {/* Base URL — UazAPI only */}
+          {provider === "uazapi" && (
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider mb-1.5">Base URL</label>
+              <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="https://api.uazapi.com (opcional)" className={inputCls} />
+              <p className="text-[10px] text-muted-foreground/40 mt-1">Deixe vazio para usar o servidor padrão</p>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 pt-1">
             <button type="button" onClick={onClose}
@@ -374,9 +434,9 @@ function NewInstanceModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
               Cancelar
             </button>
             <button type="submit"
-              disabled={saveZapi.isPending || !instanceId.trim() || !instanceToken.trim() || (instanceCheck?.inUse === true && !instanceCheck.sameAccount)}
+              disabled={saveInstance.isPending || !instanceId.trim() || !instanceToken.trim() || (instanceCheck?.inUse === true && !instanceCheck.sameAccount)}
               className="cursor-pointer flex-1 flex items-center justify-center gap-2 rounded-xl bg-accent py-2.5 text-[12px] font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50">
-              {saveZapi.isPending ? <Spinner /> : <Check className="h-3.5 w-3.5" weight="bold" />}
+              {saveInstance.isPending ? <Spinner /> : <Check className="h-3.5 w-3.5" weight="bold" />}
               Adicionar instância
             </button>
           </div>
@@ -452,7 +512,7 @@ export function ConexoesTab() {
   const [expandedInstanceId, setExpandedInstanceId] = useState<string | null>(null)
   const [showNewInstance, setShowNewInstance] = useState(false)
 
-  const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId)
+  const zapiInstances = (integrations ?? []).filter((i) => (i.provider === "zapi" || i.provider === "uazapi") && i.instanceId)
   const asaasIntegration = (integrations ?? []).find((i) => i.provider === "asaas") ?? null
   const hasAsaas = !!(asaasIntegration?.isActive && asaasIntegration?.hasApiKey)
 
@@ -502,7 +562,7 @@ export function ConexoesTab() {
         <SectionHeader
           icon={WhatsappLogo}
           title="WhatsApp"
-          subtitle="Instâncias conectadas via Z-API"
+          subtitle="Instâncias conectadas via Z-API ou UazAPI"
           color="text-emerald-400"
           badge={
             zapiInstances.length > 0 ? (
@@ -542,7 +602,7 @@ export function ConexoesTab() {
             </div>
             <div className="text-center">
               <p className="text-[13px] font-bold text-foreground/85">Nenhuma instância WhatsApp</p>
-              <p className="text-[11px] text-muted-foreground/60 mt-0.5">Adicione uma instância Z-API para começar a receber mensagens</p>
+              <p className="text-[11px] text-muted-foreground/60 mt-0.5">Adicione uma instância para começar a receber mensagens</p>
             </div>
             <button onClick={() => setShowNewInstance(true)}
               className="cursor-pointer flex items-center gap-1.5 rounded-lg border border-accent/25 bg-accent/8 px-3.5 py-2 text-[11px] font-bold text-accent hover:bg-accent/15 transition-all">

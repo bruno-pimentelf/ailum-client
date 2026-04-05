@@ -32,7 +32,7 @@ export function IATab() {
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null)
   const [testPhoneInput, setTestPhoneInput] = useState("")
 
-  const zapiInstances = (integrations ?? []).filter((i) => i.provider === "zapi" && i.instanceId && i.isActive)
+  const zapiInstances = (integrations ?? []).filter((i) => (i.provider === "zapi" || i.provider === "uazapi") && i.instanceId && i.isActive)
   const selectedInstance = zapiInstances.find((i) => i.instanceId === selectedInstanceId)
 
   useEffect(() => {
@@ -51,8 +51,11 @@ export function IATab() {
   }, [zapiInstances, selectedInstanceId])
 
   const aiMutation = useMutation({
-    mutationFn: (body: { instanceId: string; isAiEnabled?: boolean; isAiTestMode?: boolean; aiTestPhones?: string[] }) =>
-      integrationsApi.updateZapiAi(body),
+    mutationFn: (body: { instanceId: string; isAiEnabled?: boolean; isAiTestMode?: boolean; aiTestPhones?: string[] }) => {
+      const inst = zapiInstances.find((i) => i.instanceId === body.instanceId)
+      if (inst?.provider === "uazapi") return integrationsApi.updateUazapiAi(body)
+      return integrationsApi.updateZapiAi(body)
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["integrations"] }),
   })
 
