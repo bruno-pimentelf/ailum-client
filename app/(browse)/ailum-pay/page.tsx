@@ -584,8 +584,17 @@ export default function AilumPayPage() {
             {step === 3 && (
               <>
                 <div>
-                  <h2 className="text-[15px] font-bold text-foreground">Conta bancária</h2>
-                  <p className="text-xs text-muted-foreground/60 mt-1">Opcional — para receber os repasses automáticos via PIX</p>
+                  <h2 className="text-[15px] font-bold text-foreground">Conta para repasse</h2>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Cadastre uma conta bancária para receber seus repasses automaticamente</p>
+                </div>
+                <div className="rounded-xl border border-accent/20 bg-accent/[0.04] px-4 py-3 space-y-1">
+                  <p className="text-xs font-semibold text-accent">Como funciona o repasse?</p>
+                  <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                    Todo dia de manhã, o saldo acumulado no Ailum Pay é transferido via PIX para esta conta — <span className="font-semibold text-foreground/80">sem nenhuma taxa</span>.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/50 leading-relaxed">
+                    Se preferir, pule esta etapa. O saldo fica seguro no Ailum Pay e você configura a conta depois.
+                  </p>
                 </div>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -618,7 +627,6 @@ export default function AilumPayPage() {
                     <label className={labelCls}>CPF/CNPJ do titular</label>
                     <input value={form.bankHolderDoc} onChange={set("bankHolderDoc")} placeholder={form.cnpj || "Documento"} className={inputCls} />
                   </div>
-                  <p className="text-[10px] text-muted-foreground/40">Pode pular esta etapa — você configura depois se preferir.</p>
                 </div>
               </>
             )}

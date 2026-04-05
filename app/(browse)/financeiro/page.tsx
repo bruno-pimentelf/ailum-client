@@ -508,10 +508,10 @@ function EmptyState() {
           Integração
         </p>
         <h2 className="mt-4 text-xl font-semibold tracking-tight text-foreground">
-          Configure o Asaas para acessar o financeiro
+          Configure os pagamentos para acessar o financeiro
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Conecte sua conta Asaas em Configurações → Conexões para visualizar saldo, cobranças e clientes.
+          Configure o Ailum Pay ou Asaas em Configurações → Conexões para visualizar saldo, cobranças e clientes.
         </p>
         <Link href="/settings?tab=conexoes" className="cursor-pointer mt-6">
           <Button size="lg" className="rounded-xl gap-2">
@@ -541,8 +541,9 @@ export default function FinanceiroPage() {
   // e podem acessar os dados do Asaas diretamente — tratamos como configurado.
   const { data: integrations } = useIntegrations()
   const asaasIntegration = integrations?.find((i) => i.provider === "asaas")
-  const asaasConfigured = isAdmin
-    ? !!(asaasIntegration?.isActive && asaasIntegration?.hasApiKey)
+  const rinneIntegration = integrations?.find((i) => i.provider === "rinne")
+  const paymentConfigured = isAdmin
+    ? !!(asaasIntegration?.isActive && asaasIntegration?.hasApiKey) || !!(rinneIntegration?.isActive && rinneIntegration?.instanceId)
     : me !== undefined // não-admin: assume configurado assim que me carregou
 
   const balanceQuery = useFinanceBalance({ refetchInterval: 60_000 })
@@ -574,7 +575,7 @@ export default function FinanceiroPage() {
     overdueQuery.refetch()
   }
 
-  if (!asaasConfigured) {
+  if (!paymentConfigured) {
     return <EmptyState />
   }
 

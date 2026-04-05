@@ -4,6 +4,30 @@ import { apiFetch } from "@/lib/api"
 
 export interface FinanceBalance {
   balance: number
+  blockedBalance?: number
+  totalBalance?: number
+  provider?: "asaas" | "rinne"
+}
+
+export interface RinneStatementItem {
+  movement_id: string | null
+  occurred_at: string
+  amount: number
+  type: "CREDIT" | "DEBIT"
+  movement_type: string
+  status_description: string | null
+  balanceBefore: number | null
+  balanceAfter: number | null
+  name_credit: string | null
+  name_debit: string | null
+}
+
+export interface RinneStatement {
+  items: RinneStatementItem[]
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
 }
 
 export interface AsaasCustomer {
@@ -219,6 +243,16 @@ function buildQuery(params: Record<string, string | number | boolean | undefined
 export const financeApi = {
   balance: () =>
     apiFetch<FinanceBalance>("/integrations/asaas/finance/balance"),
+
+  rinneBalance: () =>
+    apiFetch<FinanceBalance>("/integrations/rinne/balance"),
+
+  rinneStatement: (params: { dateFrom: string; dateTo: string; page?: number; limit?: number }) => {
+    const qs = new URLSearchParams({ dateFrom: params.dateFrom, dateTo: params.dateTo })
+    if (params.page) qs.set("page", String(params.page))
+    if (params.limit) qs.set("limit", String(params.limit))
+    return apiFetch<RinneStatement>(`/integrations/rinne/statement?${qs.toString()}`)
+  },
 
   customers: (params?: AsaasCustomerListParams) =>
     apiFetch<AsaasCustomerList>(`/integrations/asaas/customers${buildQuery((params ?? {}) as Record<string, string | number | undefined>)}`),

@@ -12,10 +12,25 @@ import {
 
 const FINANCE_KEY = ["finance"] as const
 
+/**
+ * Tries Rinne (Ailum Pay) first, falls back to Asaas.
+ * Returns whichever succeeds with a `provider` field.
+ */
+async function fetchBalance() {
+  try {
+    const rinne = await financeApi.rinneBalance()
+    return { ...rinne, provider: "rinne" as const }
+  } catch {
+    // Rinne not configured — try Asaas
+  }
+  const asaas = await financeApi.balance()
+  return { ...asaas, provider: "asaas" as const }
+}
+
 export function useFinanceBalance(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: [...FINANCE_KEY, "balance"],
-    queryFn: () => financeApi.balance(),
+    queryFn: fetchBalance,
     refetchInterval: options?.refetchInterval ?? 60_000,
   })
 }
