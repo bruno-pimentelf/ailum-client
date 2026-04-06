@@ -199,6 +199,8 @@ function SettingsContent() {
               {activeTab === "membros"         && <MembersTab         key="membros"         />}
               {activeTab === "meus-servicos"   && <DisponibilidadeTab key="meus-servicos"   />}
               {activeTab === "templates"       && <TemplatesTab       key="templates"       />}
+              {activeTab === "fichas"          && <FichasTab          key="fichas"          />}
+              {activeTab === "documentos"      && <DocumentosTab      key="documentos"      />}
               {activeTab === "ia"              && <IATab              key="ia"              />}
               {activeTab === "knowledge"       && <KnowledgeTab       key="knowledge"       />}
               {activeTab === "captacao"        && <CaptacaoTab        key="captacao"        />}
