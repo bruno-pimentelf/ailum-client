@@ -6,6 +6,7 @@ import { MagnifyingGlass, Stethoscope, User, X } from "@phosphor-icons/react"
 import { ClinicalTimeline } from "@/components/clinical-records/clinical-timeline"
 import { ClinicalRecordEditor } from "@/components/clinical-records/clinical-record-editor"
 import { useMe } from "@/hooks/use-me"
+import { API_BASE } from "@/lib/api"
 import type { TimelineEntry } from "@/lib/api/clinical-records"
 
 const ease = [0.33, 1, 0.68, 1] as const
@@ -37,7 +38,7 @@ export default function ClinicalPage() {
     const timer = setTimeout(async () => {
       setSearching(true)
       try {
-        const res = await fetch(`/api/v1/contacts?search=${encodeURIComponent(search.trim())}&limit=8`, {
+        const res = await fetch(`${API_BASE}/contacts?search=${encodeURIComponent(search.trim())}&limit=8`, {
           credentials: "include",
         })
         if (res.ok) {
